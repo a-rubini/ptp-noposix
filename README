@@ -1,0 +1,74 @@
+
+This is a version of wr_ptpd meant to be ported to ZPU or other
+embedded processors. Currently it is not ported at all.
+
+I imported in this git tree an unmodified copy of version 916 for the
+svn repository (white-rabbit/trunl/software/), and started working on
+that.  
+
+I planned to change the Makefiles to have no external dependencies (like
+../../Makedefs), but I finally chose to write a new top-level Makefile
+and use that instead.  So the internal Makefiles are still there,
+but are not meant to be used here.
+
+WARNING: The is no dependencies support, so if you touch headers you should
+"make clean" and again "make".
+
+Configuration of the package, for use witht he top-level Makefile, is
+with environment variables. You should set the following two at this
+point:
+
+    CROSS_COMPILE   (the compilation prefix, may be a full path)
+    LINUX           (the main directory of the kernel sources)
+
+For example, I do like this in my own systems:
+
+    export CROSS_COMPILE=/opt/eldk-4.2-arm/usr/bin/arm-linux-
+    export LINUX=/usr/src/wrs-kernel
+or
+    export CROSS_COMPILE=$HOME/zpugcc-install/bin/zpu-elf-
+
+(the latter is not working, as the package has not been ported yet).
+
+The current situation is working. It means that this new ptpd 
+can work on a White Rabbit Switch like the original one, when compiled
+for ARM.
+
+
+     List of issues I am facing
+     --------------------------
+
+* This binary is horribly big:
+
+   tornado$ size ptpd
+      text    data     bss     dec     hex filename
+     89420     564    1216   91200   16440 ptpd
+
+The biggest files are the following 4:
+
+       text    data     bss     dec     hex filename
+       7628       0       0    7628    1dcc ./PTPWRd/dep/msg.o
+       8780       0       0    8780    224c ./PTPWRd/display.o
+      11704       4     256   11964    2ebc ./libwripc/wr_ipc.o
+      13700       0       0   13700    3584 ./PTPWRd/protocol.o
+
+
+* The program is built over floating point. From a cursory look it
+seems zpu is supporting floating point, but I'd better use fixed point
+if at all possible (I still have to check all uses of floating point.
+Actually, par of the program size comes from libgcc functions.
+
+* The IPC engine must be removed, and library calls should
+be made instead. The following functions are RPC-called by wr_ptpd:
+
+./libptpnetif/ptpd_netif.o: halexp_calibration_cmd
+./libptpnetif/ptpd_netif.o: halexp_client_init
+./libptpnetif/ptpd_netif.o: halexp_get_port_state
+./libptpnetif/ptpd_netif.o: halexp_lock_cmd
+./libptpnetif/ptpd_netif.o: halexp_query_ports
+./PTPWRd/dep/wr_servo.o:    halexp_pps_cmd
+./PTPWRd/dep/net.o:         halexp_get_port_state
+
+* The list of headers and external functions is noticeable. At this
+point (no porting started yet) it's 63 library functions and around
+50 external headers.
