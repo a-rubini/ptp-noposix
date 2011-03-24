@@ -34,6 +34,11 @@ void issueDelayResp(MsgHeader*,RunTimeOpts*,PtpClock*);
 void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpClock*);
 void issueManagement(MsgHeader*,MsgManagement*,RunTimeOpts*,PtpClock*);
 
+/* The code used pow(2, ...) but we don't want floating point here (ARub) */
+static inline unsigned long pow_2(int exp)
+{
+	return 1 << exp;
+}
 
 
 
@@ -221,24 +226,30 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   case PTP_LISTENING:
     DBG("state PTP_LISTENING\n");
-    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout)*(pow(2,ptpClock->logAnnounceInterval)), ptpClock->itimer);
+    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout)
+	       * (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
     ptpClock->portState = PTP_LISTENING;
     break;
 
    case PTP_MASTER:
     DBG("state PTP_MASTER\n");
-    timerStart(SYNC_INTERVAL_TIMER, pow(2,ptpClock->logSyncInterval), ptpClock->itimer);
-    DBG("SYNC INTERVAL TIMER : %f \n",pow(2,ptpClock->logSyncInterval));
-    timerStart(ANNOUNCE_INTERVAL_TIMER, pow(2,ptpClock->logAnnounceInterval), ptpClock->itimer);
-    timerStart(PDELAYREQ_INTERVAL_TIMER, pow(2,ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+    timerStart(SYNC_INTERVAL_TIMER,
+	       pow_2(ptpClock->logSyncInterval), ptpClock->itimer);
+    DBG("SYNC INTERVAL TIMER : %f \n",pow_int(2, ptpClock->logSyncInterval));
+    timerStart(ANNOUNCE_INTERVAL_TIMER,
+	       pow_2(ptpClock->logAnnounceInterval), ptpClock->itimer);
+    timerStart(PDELAYREQ_INTERVAL_TIMER,
+	       pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
     ptpClock->portState = PTP_MASTER;
     break;
 
 
   case PTP_PASSIVE:
     DBG("state PTP_PASSIVE\n");
-    timerStart(PDELAYREQ_INTERVAL_TIMER, pow(2,ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
-    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout)*(pow(2,ptpClock->logAnnounceInterval)), ptpClock->itimer);
+    timerStart(PDELAYREQ_INTERVAL_TIMER,
+	       pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout) *
+	       (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
     ptpClock->portState = PTP_PASSIVE;
     break;
 
@@ -304,12 +315,15 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     ptpClock->pdelay_resp_receive_time.seconds = 0;
     ptpClock->pdelay_resp_receive_time.nanoseconds = 0;
 
-    timerStart(ANNOUNCE_RECEIPT_TIMER,(ptpClock->announceReceiptTimeout)*(pow(2,ptpClock->logAnnounceInterval)), ptpClock->itimer);
+    timerStart(ANNOUNCE_RECEIPT_TIMER,(ptpClock->announceReceiptTimeout) *
+	       (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
 
     if (rtOpts->E2E_mode)
-      timerStart(DELAYREQ_INTERVAL_TIMER, pow(2,ptpClock->logMinDelayReqInterval), ptpClock->itimer);
+      timerStart(DELAYREQ_INTERVAL_TIMER,
+		 pow_2(ptpClock->logMinDelayReqInterval), ptpClock->itimer);
     else
-      timerStart(PDELAYREQ_INTERVAL_TIMER, pow(2,ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+      timerStart(PDELAYREQ_INTERVAL_TIMER,
+		 pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
 
     ptpClock->portState = PTP_SLAVE;
     break;
@@ -828,7 +842,10 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			s1(header,&ptpClock->msgTmp.announce,ptpClock);
 
 			/*Reset Timer handling Announce receipt timeout*/
-			timerStart(ANNOUNCE_RECEIPT_TIMER,(ptpClock->announceReceiptTimeout)*(pow(2,ptpClock->logAnnounceInterval)), ptpClock->itimer);
+			timerStart(ANNOUNCE_RECEIPT_TIMER,
+				   (ptpClock->announceReceiptTimeout) *
+				   (pow_2(ptpClock->logAnnounceInterval)),
+				   ptpClock->itimer);
 			break;
 
 			case FALSE:
@@ -837,7 +854,10 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			addForeign(ptpClock->msgIbuf,header,ptpClock);
 
 			/*Reset Timer handling Announce receipt timeout*/
-			timerStart(ANNOUNCE_RECEIPT_TIMER,(ptpClock->announceReceiptTimeout)*(pow(2,ptpClock->logAnnounceInterval)), ptpClock->itimer);
+			timerStart(ANNOUNCE_RECEIPT_TIMER,
+				   (ptpClock->announceReceiptTimeout) *
+				   (pow_2(ptpClock->logAnnounceInterval)),
+				   ptpClock->itimer);
 			break;
 
 			default:
