@@ -527,6 +527,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 		}
 
 	}
+	return PTP_PASSIVE; /* only reached in error condition */
 
 }
 

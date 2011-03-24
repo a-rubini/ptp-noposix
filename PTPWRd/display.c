@@ -52,10 +52,11 @@ printf(
 
 
 /**\brief Display Network info*/
-void netPath_display(NetPath *net){
+void netPath_display(NetPath *net)
+{
+#if 0
 	struct in_addr addr;
 
-#if 0
 	printf("eventSock : %d \n",net->eventSock);
 	printf("generalSock : %d \n",net->generalSock);
 

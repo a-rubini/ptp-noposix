@@ -190,7 +190,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
     case 'y':
       rtOpts->syncInterval = strtol(optarg, 0, 0);
-      break;PtpClock * currentPtpdClockData;
+      break;
 
      case 'n':
      rtOpts->announceInterval=strtol(optarg, 0, 0);

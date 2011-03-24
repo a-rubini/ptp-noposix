@@ -156,5 +156,28 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2);
 int wr_servo_got_delay(PtpClock *clock, Integer32 cf);
 int wr_servo_update(PtpClock *clock);
 
+/* What follows are the protopytes that were missing when I started (ARub) */
+extern void do_irq_less_timing(PtpClock *ptpClock);
+extern void ptpd_handle_wripc(void);
+extern void handleFollowUp(MsgHeader *header, Octet *msgIbuf,
+			   ssize_t length, Boolean isFromSelf,
+			   RunTimeOpts *rtOpts, PtpClock *ptpClock);
+extern void msgUnpackDelayResp(void *buf,MsgDelayResp *resp);
+extern void msgUnpackWRManagement(void *buf,MsgManagement *management,
+				  Enumeration16 *wr_managementId,
+				  PtpClock *ptpClock );
+extern void msgPackDelayReq(void *buf,Timestamp *originTimestamp,
+			    PtpClock *ptpClock);
+extern void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock);
+extern UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock,
+					   Enumeration16 wr_managementId);
+extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
+extern void handle(RunTimeOpts*,PtpClock*);
+extern void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,
+			      PtpClock*);
+extern void ptpd_init_exports(void);
+extern void wr_servo_enable_tracking(int enable);
+extern int wr_servo_man_adjust_phase(int phase);
+
 
 #endif /*PTPD_H_*/

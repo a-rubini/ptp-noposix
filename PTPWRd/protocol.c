@@ -126,7 +126,6 @@ void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   DBG("event POWERUP\n");
 
   toState(PTP_INITIALIZING, rtOpts, ptpClock);
-  int i=0;
 
   for(;;)
   {
@@ -608,7 +607,6 @@ check and handle received messages
 void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
 
-  int ret;
   ssize_t length;
   Boolean isFromSelf;
   TimeInternal time = { 0, 0 };
@@ -754,10 +752,10 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   if(length > 0)
   {
     DBG("\tRX HW_timestamp %s [ret=%d]\n", format_wr_timestamp(ptpClock->current_rx_ts), length);
-//    DBG("\tRX SW_timestamp : \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
+/*    DBG("\tRX SW_timestamp : \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
 	(unsigned      long)ptpClock->current_rx_ts.seconds.hi,\
 	(unsigned long long)ptpClock->current_rx_ts.seconds.lo,\
-	(unsigned long long)ptpClock->current_rx_ts.nanoseconds);
+	(unsigned long long)ptpClock->current_rx_ts.nanoseconds); */
   }
 }
 
@@ -1520,7 +1518,6 @@ void handlePDelayRespFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length,
 
 if (!rtOpts->E2E_mode)
  {
-	Boolean isFromCurrentParent = FALSE;
 	TimeInternal responseOriginTimestamp;
 	TimeInternal correctionField;
 
@@ -1613,7 +1610,6 @@ WR: custom White Rabbit management
 void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
   MsgManagement management;
-  Enumeration16 wr_cmd;
   DBG("%s\n",__func__);
 
   if(!isFromSelf)

@@ -616,7 +616,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 {
 
 	if (ptpClock->wrNodeMode == NON_WR)
-	  return;
+	  return 0;
 
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType

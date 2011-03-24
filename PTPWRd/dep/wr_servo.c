@@ -48,7 +48,6 @@ static void dump_timestamp(char *what, wr_timestamp_t ts)
   fprintf(stderr, "%s = %lld:%d:%d\n", what, ts.utc, ts.nsec, ts.phase);
 }
 
-
 static int64_t ts_to_picos(wr_timestamp_t ts)
 {
   return (int64_t) ts.utc * (int64_t)1000000000000LL
@@ -128,6 +127,7 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 }
 
 
+#if 0 /* not used */
 static wr_timestamp_t ts_div2(wr_timestamp_t a)
 {
   if(a.utc % 1LL)
@@ -146,7 +146,7 @@ static wr_timestamp_t ts_div2(wr_timestamp_t a)
 
   return a;
 }
-
+#endif
 
 // "Hardwarizes" the timestamp - e.g. makes the nanosecond field a multiple of 8ns cycles
 // and puts the extra nanoseconds in the phase field
@@ -167,6 +167,7 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
   return ts;
 }
 
+#if 0 /* not used */
 static wr_timestamp_t ts_zero()
 {
   wr_timestamp_t a;
@@ -175,6 +176,7 @@ static wr_timestamp_t ts_zero()
   a.phase = 0;
   return a;
 }
+#endif
 
 
 
@@ -207,6 +209,7 @@ int wr_servo_init(PtpClock *clock)
 	strncpy(cur_servo_state.slave_servo_state, "Uninitialized", 32);
 	servo_state_valid = 1;
 	cur_servo_state.valid = 1;
+	return 0;
 }
 
 wr_timestamp_t timeint_to_wr(TimeInternal t)
@@ -224,6 +227,7 @@ static int ph_adjust = 0;
 int wr_servo_man_adjust_phase(int phase)
 {
 	ph_adjust = phase;
+	return phase;
 }
 
 
@@ -234,6 +238,7 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
   s->t1 = timeint_to_wr(t1);
   //  s->t1.phase = 0;
   s->t2 = timeint_to_wr(t2);
+  return 0;
 }
 
 int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
@@ -244,28 +249,34 @@ int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
   //  s->t3.phase = 0;
   s->t4 = timeint_to_wr(clock->delay_req_receive_time);
   s->t4.phase = (Integer32) ((double)cf / 65536.0 * 1000.0);
-
-//  dump_timestamp("T3", s->t3);
-//  dump_timestamp("T4", s->t4);
+  if (0) { /* enable for debugging */
+      dump_timestamp("T3", s->t3);
+      dump_timestamp("T4", s->t4);
+  }
+  return 0;
 }
 
 int wr_servo_update(PtpClock *clock)
 {
   wr_servo_state_t *s = &clock->wr_servo;
 
-  double big_delta, mu, alpha, asymmetry;
+  double big_delta, alpha /*, mu, asymmetry */;
   double delay_ms;
-  wr_timestamp_t ts_offset, ts_offset_hw, ts_phase_adjust;
+  wr_timestamp_t ts_offset, ts_offset_hw /*, ts_phase_adjust */;
   hexp_pps_params_t adjust;
 
-//  dump_timestamp("t1", s->t1);
-//  dump_timestamp("t2", s->t2);
-//  dump_timestamp("t3", s->t3);
-//  dump_timestamp("t4", s->t4);
+  if (0) { /* enable for debugging */
+      dump_timestamp("t1", s->t1);
+      dump_timestamp("t2", s->t2);
+      dump_timestamp("t3", s->t3);
+      dump_timestamp("t4", s->t4);
+  }
 
   s->mu = ts_sub(ts_sub(s->t4, s->t1), ts_sub(s->t3, s->t2));
 
-//  dump_timestamp("mdelay", s->mu);
+  if (0) { /* enable for debugging */
+      dump_timestamp("mdelay", s->mu);
+  }
 
   alpha = 1.4682e-04*1.76; // EXPERIMENTALLY DERIVED. VALID.
 
@@ -294,7 +305,9 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 	cur_servo_state.total_asymmetry = (cur_servo_state.mu - 2.0 * delay_ms);
 	cur_servo_state.fiber_asymmetry = cur_servo_state.total_asymmetry - (s->delta_tx_m + s->delta_rx_s) + (s->delta_rx_m + s->delta_tx_s);
 
-//  dump_timestamp("offset", ts_offset_hw);
+	if (0) { /* enable for debugging */
+	    dump_timestamp("offset", ts_offset_hw);
+	}
 
   //printf("state %d\n", s->state);
 
@@ -398,6 +411,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 	    break;
 
     }
+  return 0;
 }
 
 

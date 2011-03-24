@@ -1094,8 +1094,7 @@ return:
 Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 {
   DBG("starting\n");
-  uint64_t deltaTx, deltaRx;
-  int i;
+  uint64_t deltaTx;
   int ret;
   /*
    * check if Rx & Tx delays known
@@ -1195,7 +1194,8 @@ char *format_wr_timestamp(wr_timestamp_t ts)
 {
   char buf[64];
 
-  snprintf(buf,64, "sec: %lld nsec: %lld ", (uint64_t)ts.utc,(uint32_t) ts.nsec);
+  snprintf(buf,64, "sec: %lld nsec: %ld ", (long long)ts.utc,
+	   (long) ts.nsec);
 
   return strdup(buf);
 }
@@ -1222,9 +1222,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    * we need to ask HW again, again and again, therefore substates
    *
    */
-
-
-  UInteger8 state;
   uint64_t delta;
 
   switch(ptpClock->wrPortState)
