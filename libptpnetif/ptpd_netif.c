@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <arpa/inet.h>
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
@@ -87,11 +88,13 @@ static inline int tmo_init(timeout_t *tmo, uint32_t milliseconds)
 {
 	tmo->start_tics = get_tics();
 	tmo->timeout = (uint64_t) milliseconds * 1000ULL;
+	return 0;
 }
 
 static inline int tmo_restart(timeout_t *tmo)
 {
 	tmo->start_tics = get_tics();
+	return 0;
 }
 
 static inline int tmo_expired(timeout_t *tmo)
@@ -293,7 +296,6 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 	struct etherpacket pkt;
 	struct my_socket *s = (struct my_socket *)sock;
 	struct sockaddr_ll sll;
-	uint32_t our_tag;
 	int rval;
 	wr_timestamp_t ts;
 
@@ -343,6 +345,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 }
 
 
+#if 0
 static void hdump(uint8_t *buf, int size)
 {
 	int i;
@@ -350,6 +353,7 @@ static void hdump(uint8_t *buf, int size)
 	for(i=0;i<size;i++) netif_dbg("%02x ", buf[i]);
 	netif_dbg("\n");
 }
+#endif
 
 
 static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
@@ -367,7 +371,6 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 	struct cmsghdr *cmsg;
 	int res;
 	uint32_t rtag;
-	int i;
 
 	struct sock_extended_err *serr = NULL;
 	struct scm_timestamping *sts = NULL;
@@ -441,7 +444,6 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 	} control;
 	struct cmsghdr *cmsg;
 	struct scm_timestamping *sts;
-	int res;
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
@@ -716,7 +718,6 @@ int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName,
 				uint64_t *delta)
 {
 #ifdef TOMEK
-	int ret;
 	hexp_port_state_t state;
 
 	halexp_get_port_state(&state, ifaceName);
@@ -868,7 +869,6 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 	int i;
 	int j = 0;
 	hexp_port_list_t list;
-	hexp_port_state_t state;
 
 	halexp_query_ports(&list);
 
