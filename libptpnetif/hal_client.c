@@ -10,7 +10,8 @@ static wripc_handle_t hal_cli;
 int halexp_check_running()
 {
 	//int res_int;
-//	return wripc_call(hal_ipc, "halexp_check_running", ;
+	//return wripc_call(hal_ipc, "halexp_check_running", ;
+	return 0;
 }
 
 int halexp_reset_port(const char *port_name)
@@ -42,6 +43,7 @@ int halexp_query_ports(hexp_port_list_t *list)
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
 	wripc_call(hal_cli, "halexp_get_port_state", state, 1, A_STRING(port_name));
+	return 0;
 }
 
 int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
@@ -51,6 +53,7 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
 	return rval;
 }
 
+#if 0
 int halexp_pll_cmd(int cmd, hexp_pll_cmd_t *params)
 {
   int rval;
@@ -58,6 +61,7 @@ int halexp_pll_cmd(int cmd, hexp_pll_cmd_t *params)
 	return rval;
 
 }
+#endif
 
 int halexp_client_init()
 {
