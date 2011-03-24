@@ -32,7 +32,7 @@ void init_default_rtopts(RunTimeOpts *rto)
    rto->calibrationPattern    = WR_DEFAULT_CAL_PATTERN;
    rto->calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN;
    rto->E2E_mode 		= TRUE;
-   /********************************************************/ 
+   /********************************************************/
 
 }
 
@@ -42,61 +42,61 @@ int main(int argc, char **argv)
    PtpClock *ptpClock;
    Integer16 ret;
    int i;
-   /* initialize run-time options to default values */ 
+   /* initialize run-time options to default values */
 
    init_default_rtopts(&rtOpts);
-   
+
    netStartup();
 
   /*Initialize run time options with command line arguments*/
    if( !(ptpClock = ptpdStartup(argc, argv, &ret, &rtOpts)) )
      return ret;
-   
+
     /* White rabbit debugging info*/
     DBG("------------- INFO ----------------------\n\n");
-    if(rtOpts.E2E_mode) 
+    if(rtOpts.E2E_mode)
       DBG("E2E_mode ........................ TRUE\n");
     else
       DBG("P2P_mode ........................ TRUE\n");
 
-    DBG("portNumber  ..................... %d\n",rtOpts.portNumber); 
+    DBG("portNumber  ..................... %d\n",rtOpts.portNumber);
     for(i = 0; i < rtOpts.portNumber; i++)
-      DBG("net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i]);     
-    
-    
+      DBG("net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i]);
+
+
     for(i = 0; i < rtOpts.portNumber; i++)
     {
-    
+
       if(i == 0 && rtOpts.wrNodeMode == WR_SLAVE)
-	DBG("wrNodeMode    [port = %d] ........ Slave \n",i+1);   
-      else if(rtOpts.wrNodeMode != NON_WR) 
+	DBG("wrNodeMode    [port = %d] ........ Slave \n",i+1);
+      else if(rtOpts.wrNodeMode != NON_WR)
 	DBG("wrNodeMode    [port = %d] ........ Master\n",i+1);
       else
-	DBG("wrNodeMode    [port = %d] ........ NON WR\n",i+1); 
+	DBG("wrNodeMode    [port = %d] ........ NON WR\n",i+1);
     }
     if(rtOpts.portNumber == 1)
-	DBG("running as ...................... single port node\n"); 
+	DBG("running as ...................... single port node\n");
     else
-	DBG("running as ....................... multi port node [%d]\n",rtOpts.portNumber ); 
-    
+	DBG("running as ....................... multi port node [%d]\n",rtOpts.portNumber );
+
     DBG("----------- now the fun ------------\n\n");
-  
+
 
 
 
 //    if(rtOpts.wrNodeMode == WR_SLAVE)
 //    	ptpd_init_exports();
-   
+
   /* do the protocol engine */
    if(rtOpts.portNumber == 1)
      protocol(&rtOpts, ptpClock);	 //forever loop..
    else if(rtOpts.portNumber > 1)
-     multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested) 
+     multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested)
    else
      ERROR("Not appropriate portNumber\n");
- 
+
    ptpdShutdown();
-   
+
    NOTIFY("self shutdown, probably due to an error\n");
 
   return 1;

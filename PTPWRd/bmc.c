@@ -12,82 +12,82 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 /* Default data set */
 	ptpClock->twoStepFlag = TWO_STEP_FLAG;
-	
+
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
 	for (i=0;i<CLOCK_IDENTITY_LENGTH;i++)
-	{ 
-	  
-	  	if (i==3) ptpClock->clockIdentity[i]=0xFF;		
+	{
+
+		if (i==3) ptpClock->clockIdentity[i]=0xFF;
 		else if (i==4) ptpClock->clockIdentity[i]=0xFE;
 		else if (i == 5 && rtOpts->overrideClockIdentity != 0x0)
 		  /*
 		   * temporary hack to run the daemon on lo (single interface)
 		   */
 		  ptpClock->clockIdentity[i] = rtOpts->overrideClockIdentity;
-		else 
-		{	
+		else
+		{
 		  ptpClock->clockIdentity[i]=ptpClock->port_uuid_field[j];
 		  j++;
 		}
 	}
 	ptpClock->numberPorts = rtOpts->portNumber;
-	
+
 	ptpClock->clockQuality.clockAccuracy = rtOpts->clockQuality.clockAccuracy;
-	
+
 	ptpClock->clockQuality.offsetScaledLogVariance = rtOpts->clockQuality.offsetScaledLogVariance;
-	
-	
+
+
 	/* If priority not defined at the runtime, set it high for the WR master*/
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrNodeMode == WR_MASTER)
 	  ptpClock->priority1 = WR_MASTER_PRIORITY1;
 	else
 	  ptpClock->priority1 = rtOpts->priority1;
-	
+
 	ptpClock->priority2 = rtOpts->priority2;
-	
+
 	ptpClock->domainNumber = rtOpts->domainNumber;
 	ptpClock->slaveOnly = rtOpts->slaveOnly;
 	if(rtOpts->slaveOnly)
            rtOpts->clockQuality.clockClass = 255;
 
-	
+
 	ptpClock->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
-	
+
 /*Port configuration data set */
 
 	/*PortIdentity Init (portNumber = 1 for an ardinary clock spec 7.5.2.3)*/
 	memcpy(ptpClock->portIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
-	
+
 	ptpClock->logMinDelayReqInterval = DEFAULT_DELAYREQ_INTERVAL;
 	ptpClock->peerMeanPathDelay.seconds = 0;
 	ptpClock->peerMeanPathDelay.nanoseconds = 0;
-	
+
 	ptpClock->logAnnounceInterval = rtOpts->announceInterval;
 	ptpClock->announceReceiptTimeout = DEFAULT_ANNOUNCE_RECEIPT_TIMEOUT;
 	ptpClock->logSyncInterval = rtOpts->syncInterval;
 	ptpClock->delayMechanism = DEFAULT_DELAY_MECHANISM;
 	ptpClock->logMinPdelayReqInterval = DEFAULT_PDELAYREQ_INTERVAL;
 	ptpClock->versionNumber = VERSION_PTP;
-	
+
 	/*Initialize seed for random number used with Announce Timeout (spec 9.2.6.11)*/
-	srand(time(NULL)); 
-	ptpClock->R = getRand();	
-	
+	srand(time(NULL));
+	ptpClock->R = getRand();
+
 	/*Init other stuff*/
 	ptpClock->number_foreign_records = 0;
-  	ptpClock->max_foreign_records = rtOpts->max_foreign_records;
-	
+	ptpClock->max_foreign_records = rtOpts->max_foreign_records;
+
 	if(ptpClock->wrNodeMode != NON_WR)
 	{
 	  /* we want White Rabbit daemon, so here we are */
-	  
-	  
-	  
+
+
+
 	  /* setting appropriate clock class for WR node
 	   * if the class was not set by the user (is default)*/
-	
-  
-	  
+
+
+
 	  if(rtOpts->clockQuality.clockClass == DEFAULT_CLOCK_CLASS)
 	  {
 	    if( ptpClock->wrNodeMode == WR_MASTER)
@@ -98,8 +98,8 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	  else
 	    ptpClock->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
 
-	  
-	  
+
+
 // 	  if(ptpClock->portIdentity.portNumber == 1 )
 // 	  {
 // 	    /* there can be only one slave (not entirely
@@ -110,7 +110,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 // 	  }
 // 	  else
 // 	  {
-// 	    /* All the other ports except port = 1 are 
+// 	    /* All the other ports except port = 1 are
 // 	     * WR Masters and no discussion about that
 // 	     */
 // 	    ptpClock->wrNodeMode                 = WR_MASTER;
@@ -121,9 +121,9 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	  /* normal PTP daemon on all ports */
 	  //ptpClock->wrNodeMode                   = NON_WR;
 	}
-	    
+
 	ptpClock->isWRmode      		 = FALSE;
-	
+
 	/*this one should be set at runtime*/
 	ptpClock->isCalibrated  		 = FALSE;
 	ptpClock->deltaTx.scaledPicoseconds.lsb  = 0;
@@ -131,26 +131,26 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->deltaRx.scaledPicoseconds.lsb	 = 0;
 	ptpClock->deltaRx.scaledPicoseconds.msb	 = 0;
 	/**/
-	
+
 	//ptpClock->tx_tag 		 = 0;
 	//ptpClock->new_tx_tag_read   		 = FALSE;
-	
+
 	ptpClock->pending_tx_ts            = FALSE;
 	ptpClock->pending_Synch_tx_ts      = 0;
 	ptpClock->pending_DelayReq_tx_ts   = 0;
 	ptpClock->pending_PDelayReq_tx_ts  = 0;
-	ptpClock->pending_PDelayResp_tx_ts = 0;	
-	
+	ptpClock->pending_PDelayResp_tx_ts = 0;
+
 #ifdef NEW_SINGLE_WRFSM
 	ptpClock->wrPortState = WRS_IDLE;
 #else
 	ptpClock->wrPortState = PTPWR_IDLE;
 #endif
-	
+
 	ptpClock->calibrationPeriod = rtOpts->calibrationPeriod;
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
 	ptpClock->calibrationPatternLen = rtOpts->calibrationPatternLen;
-	
+
 	for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
 	  {
 	    ptpClock->wrTimeouts[i] = WR_DEFAULT_STATE_TIMEOUT_MS;
@@ -161,11 +161,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->wrTimeouts[WRS_S_LOCK] = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_1] = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_2] = 10000;
-	    
-	
-	
 }
-
 
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpClock *ptpClock)
@@ -177,7 +173,7 @@ void m1(PtpClock *ptpClock)
 	ptpClock->offsetFromMaster.seconds = 0;
 	ptpClock->meanPathDelay.nanoseconds = 0;
 	ptpClock->meanPathDelay.seconds = 0;
-	
+
 	/*Parent data set*/
 	memcpy(ptpClock->parentPortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpClock->parentPortIdentity.portNumber = 0;
@@ -190,13 +186,13 @@ void m1(PtpClock *ptpClock)
 	ptpClock->grandmasterClockQuality.offsetScaledLogVariance = ptpClock->clockQuality.offsetScaledLogVariance;
 	ptpClock->grandmasterPriority1 = ptpClock->priority1;
 	ptpClock->grandmasterPriority2 = ptpClock->priority2;
-	
+
 	/*White Rabbit*/
 	ptpClock->grandmasterWrNodeMode   = ptpClock->wrNodeMode;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrNodeMode != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
-	
+
 	/*Time Properties data set*/
 	ptpClock->timeSource = INTERNAL_OSCILLATOR;
 		}
@@ -207,7 +203,7 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 {
 	/*Current DS*/
 	ptpClock->stepsRemoved = announce->stepsRemoved + 1;
-	
+
 	/*Parent DS*/
 
 	memcpy(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
@@ -218,13 +214,13 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	ptpClock->grandmasterClockQuality.offsetScaledLogVariance = announce->grandmasterClockQuality.offsetScaledLogVariance;
 	ptpClock->grandmasterPriority1 = announce->grandmasterPriority1;
 	ptpClock->grandmasterPriority2 = announce->grandmasterPriority2;
-	
+
 	/*White Rabbit*/
 	ptpClock->grandmasterIsWRnode     = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpClock->grandmasterIsWRmode     = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
 	ptpClock->grandmasterIsCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
 	ptpClock->grandmasterWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
-	
+
 
 	/*Timeproperties DS*/
 	ptpClock->currentUtcOffset = announce->currentUtcOffset;
@@ -235,7 +231,6 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	ptpClock->frequencyTraceable = ((header->flagField[1] & 0x20) == 0x20);
 	ptpClock->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
 	ptpClock->timeSource = announce->timeSource;
-	
 }
 
 
@@ -250,45 +245,44 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 	announce->grandmasterPriority2 = ptpClock->priority2;
 	announce->stepsRemoved = 0;
 	memcpy(header->sourcePortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
-	
+
 	/*White Rabbit*/
 	announce->wr_flags = (announce->wr_flags | ptpClock->wrNodeMode) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
-
 }
-	
+
 
 /*Data set comparison bewteen two foreign masters (9.3.4 fig 27)
  * return similar to memcmp() */
- 
+
 Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 								MsgHeader *headerB,MsgAnnounce *announceB,PtpClock *ptpClock)
-{ 
+{
 	DBGV("Data set comparison \n");
 	short comp = 0;
 	if(announceA->wr_flags & WR_MASTER)
 	  DBG("A is WR_MASTER\n");
 	else if(announceA->wr_flags & WR_SLAVE)
 	  DBG("A is WR_SLAVE\n");
-	else 
+	else
 	  DBG("A is not WR\n");
-	  
+
 	if(announceB->wr_flags & WR_MASTER)
 	  DBG("B is WR_MASTER\n");
 	else if(announceB->wr_flags & WR_SLAVE)
 	  DBG("B is WR_SLAVE\n");
-	else 
+	else
 	  DBG("B is not WR\n");
 
-	
+
 	/*white rabbit staff*/
 	if(announceA->wr_flags & WR_MASTER && !(announceB->wr_flags & WR_MASTER))
 	{
 	  DBG("A better B [White Rabbit]\n");
 	  return -1;
 	}
-	
+
 	if(announceB->wr_flags & WR_MASTER && !(announceA->wr_flags & WR_MASTER))
 	{
 	  DBG("B better A [White Rabbit]\n");
@@ -308,7 +302,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 		    return -1;//A better than B
 		}
 		else //A within 1 of B
-		{ 
+		{
 			if (announceA->stepsRemoved > announceB->stepsRemoved)
 			{
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
@@ -320,7 +314,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 				{
 				    return 1;
 				}
-				
+
 			}
 			else if (announceB->stepsRemoved > announceA->stepsRemoved)
 			{
@@ -350,21 +344,21 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 					return 1;
 				}
 			}
-		
+
 		}
 	}
 	else //GrandMaster are not identical
-	{ 
-		
+	{
+
 		if(announceA->grandmasterPriority1 == announceB->grandmasterPriority1)
 		{
-			
+
 			if (announceA->grandmasterClockQuality.clockClass == announceB->grandmasterClockQuality.clockClass)
 			{
-				
+
 				if (announceA->grandmasterClockQuality.clockAccuracy == announceB->grandmasterClockQuality.clockAccuracy)
 				{
-					
+
 					if (announceA->grandmasterClockQuality.offsetScaledLogVariance == announceB->grandmasterClockQuality.offsetScaledLogVariance)
 					{
 						if (announceA->grandmasterPriority2 == announceB->grandmasterPriority2)
@@ -381,7 +375,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 							else
 							{
 								return 0;
-							}  
+							}
 						}
 						else //Priority2 are not identical
 						{
@@ -397,12 +391,12 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 							else
 							{
 								return 0;
-							}  
+							}
 						}
 					}
-					
+
 					else //offsetScaledLogVariance are not identical
-					{	
+					{
 						comp= memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
 						if (comp < 0)
 						{
@@ -415,11 +409,11 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 						else
 						{
 							return 0;
-						}  
+						}
 					}
-				
-				}	
-				
+
+				}
+
 				else // Accuracy are not identitcal
 				{
 					comp = memcmp(&announceA->grandmasterClockQuality.clockAccuracy,&announceB->grandmasterClockQuality.clockAccuracy,1);
@@ -434,11 +428,11 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 					else
 					{
 						return 0;
-					}  
+					}
 				}
-				
+
 			}
-			
+
 			else //ClockClass are not identical
 			{
 				comp =  memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
@@ -453,10 +447,10 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 				else
 				{
 					return 0;
-				}  
-			}	
+				}
+			}
 		}
-		
+
 		else // Priority1 are not identical
 		{
 			comp =  memcmp(&announceA->grandmasterPriority1,&announceB->grandmasterPriority1,1);
@@ -471,11 +465,11 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			else
 			{
 				return 0;
-			}  
+			}
 		}
-		
+
 	}
-	
+
 }
 
 /*State decision algorithm 9.3.3 Fig 26*/
@@ -488,12 +482,12 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 
 		  return PTP_SLAVE;
 	}
-	
+
 	if ((!ptpClock->number_foreign_records) && (ptpClock->portState == PTP_LISTENING))
 	{
 		return PTP_LISTENING;
 	}
-	
+
 	copyD0(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,ptpClock);
 
 	if (ptpClock->clockQuality.clockClass < 128)
@@ -511,12 +505,12 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 		else
 		{
 			DBG("Error in bmcDataSetComparison..\n");
-		}		
+		}
 	}
-	
+
 	else
 	{
-	  
+
 		if ((bmcDataSetComparison(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,header,announce,ptpClock))<0)
 		{
 			m1(ptpClock);
@@ -531,21 +525,19 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 		{
 			DBG("Error in bmcDataSetComparison..\n");
 		}
-	
+
 	}
-	
+
 }
-
-
 
 UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *ptpClock )
 {
 	DBG("Best Master Clock Algorithm @ working\n");
 	Integer16 i,best;
-	
-	
 
-	
+
+
+
 	if (!ptpClock->number_foreign_records)
 	{
 		if (ptpClock->portState == PTP_MASTER)
@@ -554,7 +546,7 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *
 			return ptpClock->portState;
 		}
 	}
-	
+
 	for (i=1,best = 0; i<ptpClock->number_foreign_records;i++)
 	{
 		if ((bmcDataSetComparison(&foreignMaster[i].header,&foreignMaster[i].announce,
@@ -563,12 +555,12 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *
 			best = i;
 		}
 	}
-	
+
 	DBG("Best record : %d \n",best);
 	ptpClock->foreign_record_best = best;
 
-	
-	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce,rtOpts,ptpClock);	
+
+	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce,rtOpts,ptpClock);
 }
 
 

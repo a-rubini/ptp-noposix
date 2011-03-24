@@ -588,7 +588,7 @@ typedef struct {
 	Integer16	ap, ai;
 	Integer16	s;
 	TimeInternal	inboundLatency, outboundLatency;
-	Integer1	max_foreign_records;
+	Integer16	max_foreign_records;
 	Boolean		ethernet_mode;
 	Boolean		E2E_mode;
 	Boolean		offset_first_updated;

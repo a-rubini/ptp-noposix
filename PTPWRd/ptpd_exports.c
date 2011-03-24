@@ -43,12 +43,12 @@ static wripc_handle_t wripc_srv;
 void ptpd_init_exports()
 {
 	wripc_srv = wripc_create_server("ptpd");
- 
+
 	wripc_export(wripc_srv, T_STRUCT(ptpdexp_sync_state_t), "ptpdexp_get_sync_state", ptpdexp_get_sync_state, 0);
 	wripc_export(wripc_srv, T_VOID, "ptpdexp_cmd", ptpdexp_cmd, 2, T_INT32, T_INT32);
 }
 
 void ptpd_handle_wripc()
 {
-	wripc_process(wripc_srv);	
+	wripc_process(wripc_srv);
 }

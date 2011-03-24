@@ -88,7 +88,7 @@ static wr_timestamp_t ts_add(wr_timestamp_t a, wr_timestamp_t b)
     }
 
   c.nsec += (a.nsec + b.nsec);
-  
+
   if(c.nsec >= 1000000000L)
     {
       c.nsec -= 1000000000L;
@@ -109,7 +109,7 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 
   c.phase = a.phase - b.phase;
 
-  if(c.phase < 0) 
+  if(c.phase < 0)
     {
     c.phase+=1000;
     c.nsec--;
@@ -201,7 +201,7 @@ int wr_servo_init(PtpClock *clock)
 	cur_servo_state.delta_rx_m = (double)s->delta_rx_m;
 	cur_servo_state.delta_tx_s = (double)s->delta_tx_s;
 	cur_servo_state.delta_rx_s = (double)s->delta_rx_s;
-	
+
 
 	strncpy(cur_servo_state.sync_source, clock->netPath.ifaceName, 16);//fixme
 	strncpy(cur_servo_state.slave_servo_state, "Uninitialized", 32);
@@ -230,7 +230,7 @@ int wr_servo_man_adjust_phase(int phase)
 int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 {
   wr_servo_state_t *s = &clock->wr_servo;
-  
+
   s->t1 = timeint_to_wr(t1);
   //  s->t1.phase = 0;
   s->t2 = timeint_to_wr(t2);
@@ -239,7 +239,7 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
 {
   wr_servo_state_t *s = &clock->wr_servo;
-  
+
   s->t3 = clock->delayReq_tx_ts;
   //  s->t3.phase = 0;
   s->t4 = timeint_to_wr(clock->delay_req_receive_time);
@@ -259,7 +259,7 @@ int wr_servo_update(PtpClock *clock)
   hexp_pps_params_t adjust;
 
 //  dump_timestamp("t1", s->t1);
-//  dump_timestamp("t2", s->t2); 
+//  dump_timestamp("t2", s->t2);
 //  dump_timestamp("t3", s->t3);
 //  dump_timestamp("t4", s->t4);
 
@@ -284,7 +284,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 
 //  printf("delay_ms = %.0f\n", delay_ms);
 //  printf("mu = %lld\n", ts_to_picos(s->mu));
-  
+
   ts_offset = ts_add(ts_sub(s->t1, s->t2), picos_to_ts((int64_t)delay_ms));
   ts_offset_hw = ts_hardwarize(ts_offset);
 
@@ -306,10 +306,10 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
     {
 
     case WR_WAIT_SYNC_IDLE:
-      strcpy(adjust.port_name, s->if_name); 
-	
+      strcpy(adjust.port_name, s->if_name);
+
       if(!halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &adjust) && (get_tics() - s->last_tics) > 2000000ULL)
-	  		s->state = s->next_state;
+			s->state = s->next_state;
 
       break;
 
@@ -318,7 +318,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 	{
 			strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
 
-	  strcpy(adjust.port_name, s->if_name); 
+	  strcpy(adjust.port_name, s->if_name);
 	  adjust.adjust_utc = ts_offset_hw.utc;
 
 	//  fprintf(stderr,"[slave] Adjusting UTC counter\n");
@@ -328,7 +328,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 
 	  s->state = WR_WAIT_SYNC_IDLE;
  	  s->last_tics = get_tics();
-	  
+
 	} else s->state = WR_SYNC_NSEC;
       break;
 
@@ -338,7 +338,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
       if(ts_offset_hw.nsec != 0)
 	{
 
-	  strcpy(adjust.port_name, s->if_name); 
+	  strcpy(adjust.port_name, s->if_name);
 	  adjust.adjust_nsec = ts_offset_hw.nsec;
 
 	  fprintf(stderr,"[slave] Adjusting NSEC counter\n");
@@ -356,14 +356,14 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 
       s->cur_setpoint = -ts_offset_hw.phase;
 
-      strcpy(adjust.port_name, s->if_name); 
+      strcpy(adjust.port_name, s->if_name);
       adjust.adjust_phase_shift = s->cur_setpoint;
       halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
       s->next_state = WR_TRACK_PHASE;
       s->state = WR_WAIT_SYNC_IDLE;
-	 	  s->last_tics = get_tics();
-	 	  
+		  s->last_tics = get_tics();
+
       s->delta_ms_prev = s->delta_ms;
 
       break;
@@ -374,28 +374,28 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 
 			cur_servo_state.cur_setpoint = s->cur_setpoint;
 			cur_servo_state.cur_skew = s->delta_ms - s->delta_ms_prev;
-			
+
 			if(tracking_enabled)
 			{
 
 	      // just follow the changes of deltaMS
 	      s->cur_setpoint -= (s->delta_ms - s->delta_ms_prev);
-      
-	      strcpy(adjust.port_name, s->if_name); 
+
+	      strcpy(adjust.port_name, s->if_name);
 	      adjust.adjust_phase_shift = s->cur_setpoint;
 	      halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
-      	s->delta_ms_prev = s->delta_ms;
+	s->delta_ms_prev = s->delta_ms;
 				s->next_state = WR_TRACK_PHASE;
 				s->state = WR_WAIT_SYNC_IDLE;
 				s->last_tics = get_tics();
-			
-			}
-  
 
-			
+			}
+
+
+
 //      sleep(1);
- 	    break;
+	    break;
 
     }
 }
