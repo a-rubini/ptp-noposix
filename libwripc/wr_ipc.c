@@ -426,15 +426,13 @@ static inline int deserialize_string(uint32_t *stream, int current_pos,
 	int num_words = ((length + 4) >> 2) + 1;
 	char *str_p;
 
-	int i;
-
 	// printf("DeserializeString: cp %d nwords %d bsize %d \n",
 	//        current_pos, num_words, buf_size);
 
 	if( current_pos + num_words > buf_size)
 		return -1;
 
-	str_p = (stream + current_pos + 1);
+	str_p = (char *)(stream + current_pos + 1);
 
 	// printf("Str_P %s length %d\n", str_p);
 
@@ -442,7 +440,7 @@ static inline int deserialize_string(uint32_t *stream, int current_pos,
 		return -1;
 	//for(i=0;i<num_words;i++) printf("%08x ", stream[current_pos+i]);
 	//printf("\n");
-	*dst = &stream[current_pos + 1];
+	*dst = (uint32_t)&stream[current_pos + 1];
 
 	return current_pos + num_words;
 }
@@ -458,7 +456,7 @@ static inline int deserialize_struct(uint32_t *stream, int current_pos,
 	if( current_pos + num_words > buf_size)
 		return -1;
 
-	*dst = &stream[current_pos + 1];
+	*dst = (uint32_t)&stream[current_pos + 1];
 
 	return current_pos + num_words;
 }
