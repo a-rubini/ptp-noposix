@@ -23,7 +23,7 @@ typedef struct{
 	double total_asymmetry;
 	double cur_offset;
 	double cur_setpoint;
-	double cur_skew;	
+	double cur_skew;
 }  ptpdexp_sync_state_t ;
 
 #define PTPDEXP_COMMAND_TRACKING 1

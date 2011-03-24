@@ -82,7 +82,7 @@ typedef struct {
 	UInteger8 lengthField;
 	Octet* textField;
 } PTPText;
-	
+
 /**
 * \brief The FaultRecord type is used to construct fault logs
  */
@@ -101,17 +101,17 @@ typedef struct {
  */
 /* Message header */
 typedef struct {
- 	Nibble transportSpecific;
- 	Enumeration4 messageType;
- 	UInteger4 versionPTP;
- 	UInteger16 messageLength;
- 	UInteger8 domainNumber;
- 	Octet flagField[2];
- 	Integer64 correctionfield;
+	Nibble transportSpecific;
+	Enumeration4 messageType;
+	UInteger4 versionPTP;
+	UInteger16 messageLength;
+	UInteger8 domainNumber;
+	Octet flagField[2];
+	Integer64 correctionfield;
 	PortIdentity sourcePortIdentity;
- 	UInteger16 sequenceId;
- 	UInteger8 controlField;
- 	Integer8 logMessageInterval;
+	UInteger16 sequenceId;
+	UInteger8 controlField;
+	Integer8 logMessageInterval;
 } MsgHeader;
 
 /** 
@@ -135,9 +135,9 @@ typedef struct {
 	ClockIdentity grandmasterIdentity;
 	UInteger16 stepsRemoved;
 	Enumeration8 timeSource;
-	
+
 	//White Rabbit flags
-        UInteger8 wr_flags;	
+	UInteger8 wr_flags;
 
 }MsgAnnounce;
 
@@ -175,7 +175,7 @@ typedef struct {
 	Timestamp preciseOriginTimestamp;
 }MsgFollowUp;
 
-/** 
+/**
 * \brief PDelayReq message fields (Table 29 of the spec)
  */
 /*PdelayReq Message*/
@@ -184,7 +184,7 @@ typedef struct {
 
 }MsgPDelayReq;
 
-/** 
+/**
 * \brief PDelayResp message fields (Table 30 of the spec)
  */
 /*PdelayResp Message*/
@@ -193,7 +193,7 @@ typedef struct {
 	PortIdentity requestingPortIdentity;
 }MsgPDelayResp;
 
-/** 
+/**
 * \brief PDelayRespFollowUp message fields (Table 31 of the spec)
  */
 /*PdelayRespFollowUp Message*/
@@ -202,7 +202,7 @@ typedef struct {
 	PortIdentity requestingPortIdentity;
 }MsgPDelayRespFollowUp;
 
-/** 
+/**
 * \brief Signaling message fields (Table 33 of the spec)
  */
 /*Signaling Message*/
@@ -211,7 +211,7 @@ typedef struct {
 	char* tlv;
 }MsgSignaling;
 
-/** 
+/**
 * \brief Management message fields (Table 37 of the spec)
  */
 /*management Message*/
@@ -219,43 +219,41 @@ typedef struct {
 	PortIdentity targetPortIdentity;
 	UInteger8 startingBoundaryHops;
 	UInteger8 boundaryHops;
-	Enumeration4 actionField;	
+	Enumeration4 actionField;
 	char* tlv;
 }MsgManagement;
 
-
-
-/** 
+/**
 * \brief Time structure to handle Linux time information. Fixed for WR compliance
  */
 typedef struct {
-  Integer32 seconds;
-  Integer32 nanoseconds;  
+	Integer32 seconds;
+	Integer32 nanoseconds;
 	Integer32 phase;
 } TimeInternal;
 
-/** 
-* \brief Structure used as a timer
+/**
+ * \brief Structure used as a timer
  */
 typedef struct {
-  Integer32  interval;
-  Integer32  left;
-  Boolean expire;
+	Integer32  interval;
+	Integer32  left;
+	Boolean expire;
 } IntervalTimer;
 
 
-/** 
-* \brief ForeignMasterRecord is used to manage foreign masters
+/**
+ * \brief ForeignMasterRecord is used to manage foreign masters
  */
 typedef struct
 {
-  PortIdentity foreignMasterPortIdentity;
-  UInteger16 foreignMasterAnnounceMessages;
-  
-  //This one is not in the spec
-  MsgAnnounce  announce;
-  MsgHeader    header;
-  
+	PortIdentity foreignMasterPortIdentity;
+	UInteger16 foreignMasterAnnounceMessages;
+
+	//This one is not in the spec
+	MsgAnnounce  announce;
+	MsgHeader    header;
+
 } ForeignMasterRecord;
 
 
@@ -266,314 +264,305 @@ typedef struct
 /* main program data structure */
 typedef struct {
 /***** Default data set ******/
-  NetPath netPath;
-  
-  /*Static members*/
-  Boolean twoStepFlag;
-  ClockIdentity clockIdentity;
-  UInteger16 numberPorts;
+	NetPath netPath;
 
-  /*Dynamic members*/
-  ClockQuality clockQuality;
-		
-  /*Configurable members*/
-  UInteger8 priority1;
-  UInteger8 priority2;
-  UInteger8 domainNumber;
-  Boolean slaveOnly;
+	/*Static members*/
+	Boolean twoStepFlag;
+	ClockIdentity clockIdentity;
+	UInteger16 numberPorts;
+
+	/*Dynamic members*/
+	ClockQuality clockQuality;
+
+	/*Configurable members*/
+	UInteger8 priority1;
+	UInteger8 priority2;
+	UInteger8 domainNumber;
+	Boolean slaveOnly;
 
 /***** Current data set ******/
-  /*Dynamic members*/
-  UInteger16 stepsRemoved;
-  TimeInternal offsetFromMaster;
-  TimeInternal meanPathDelay;
+	/*Dynamic members*/
+	UInteger16 stepsRemoved;
+	TimeInternal offsetFromMaster;
+	TimeInternal meanPathDelay;
 
-  
 /******* Parent data set *******/
-  
-  /*Dynamic members*/
-  PortIdentity parentPortIdentity;
-  Boolean parentStats;
-  UInteger16 observedParentOffsetScaledLogVariance;
-  Integer32 observedParentClockPhaseChangeRate;
-  ClockIdentity grandmasterIdentity;
-  ClockQuality grandmasterClockQuality;
-  UInteger8 grandmasterPriority1;
-  UInteger8 grandmasterPriority2;
-		
-  /*
+
+	/*Dynamic members*/
+	PortIdentity parentPortIdentity;
+	Boolean parentStats;
+	UInteger16 observedParentOffsetScaledLogVariance;
+	Integer32 observedParentClockPhaseChangeRate;
+	ClockIdentity grandmasterIdentity;
+	ClockQuality grandmasterClockQuality;
+	UInteger8 grandmasterPriority1;
+	UInteger8 grandmasterPriority2;
+
+	/*
    ******* White Rabbit *******
    *       (parentDS)
    */
-  Boolean grandmasterIsWRnode; 
-  Boolean grandmasterIsWRmode;
-  Boolean grandmasterIsCalibrated;
-  Enumeration8 grandmasterWrNodeMode; 
+	Boolean grandmasterIsWRnode;
+	Boolean grandmasterIsWRmode;
+	Boolean grandmasterIsCalibrated;
+	Enumeration8 grandmasterWrNodeMode;
 
-  FixedDelta grandmasterDeltaTx;
-  FixedDelta grandmasterDeltaRx;
-		
+	FixedDelta grandmasterDeltaTx;
+	FixedDelta grandmasterDeltaRx;
+
 /******* Global time properties data set *********/
-  
-  /*Dynamic members*/
-  Integer16 currentUtcOffset;
-  Boolean currentUtcOffsetValid;
-  Boolean leap59;
-  Boolean leap61;
-  Boolean timeTraceable;
-  Boolean frequencyTraceable;
-  Boolean ptpTimescale;
-  Enumeration8 timeSource;
-  
+
+	/*Dynamic members*/
+	Integer16 currentUtcOffset;
+	Boolean currentUtcOffsetValid;
+	Boolean leap59;
+	Boolean leap61;
+	Boolean timeTraceable;
+	Boolean frequencyTraceable;
+	Boolean ptpTimescale;
+	Enumeration8 timeSource;
+
 /****** Port configuration data set ***********/
-  		
-  /*Static members*/
-  PortIdentity portIdentity;
-  		
-  /*Dynamic members*/
-  Enumeration8 portState;
-  Integer8 logMinDelayReqInterval;
-  TimeInternal peerMeanPathDelay;
-  
-  /*Configurable members*/
-  Integer8 logAnnounceInterval;
-  UInteger8 announceReceiptTimeout;
-  Integer8 logSyncInterval;
-  Enumeration8 delayMechanism;
-  Integer8 logMinPdelayReqInterval;
-  UInteger4 versionNumber;
 
-	
-  
-  /* Foreign master data set */
-  ForeignMasterRecord *foreign;
-  
-  /* Other things we need for the protocol */
-  UInteger16 number_foreign_records;
-  Integer16  max_foreign_records;
-  Integer16  foreign_record_i;
-  Integer16  foreign_record_best;
-  Boolean  record_update;
-  
-  
-  MsgHeader msgTmpHeader;
-  
-  union {
-    MsgSync  sync;
-    MsgFollowUp  follow;
-    MsgDelayReq  req;
-    MsgDelayResp resp;
-    MsgPDelayReq  preq;
-    MsgPDelayResp  presp;
-    MsgPDelayRespFollowUp  prespfollow;
-    MsgManagement  manage;
-    MsgAnnounce  announce;
-    MsgSignaling signaling;
-  } msgTmp;
-  
-  
-  Octet msgObuf[PACKET_SIZE];
-  Octet msgIbuf[PACKET_SIZE];
-  
-  TimeInternal  master_to_slave_delay;
-  TimeInternal  slave_to_master_delay;
-  Integer32 	observed_drift;
-  
-  TimeInternal  pdelay_req_receive_time;
-  TimeInternal  pdelay_req_send_time;
-  TimeInternal  pdelay_resp_receive_time;
-  TimeInternal  pdelay_resp_send_time;
-  TimeInternal  sync_receive_time;
-  TimeInternal  delay_req_send_time;
-  TimeInternal  delay_req_receive_time;
-  MsgHeader		PdelayReqHeader;
-  MsgHeader		delayReqHeader;
-  TimeInternal	pdelayMS;
-  TimeInternal	pdelaySM;
-  TimeInternal  delayMS;
-  TimeInternal	delaySM;
-  TimeInternal  lastSyncCorrectionField;
-  TimeInternal  lastPdelayRespCorrectionField;
-  
+	/*Static members*/
+	PortIdentity portIdentity;
 
-  double  R;
-  
-  Boolean  sentPDelayReq;
-  UInteger16  sentPDelayReqSequenceId;
-  UInteger16  sentDelayReqSequenceId;
-  UInteger16  sentSyncSequenceId;
-  UInteger16  sentAnnounceSequenceId;
-  UInteger16  recvPDelayReqSequenceId;
-  UInteger16  recvSyncSequenceId;
-  Boolean  waitingForFollow;
-  
-  offset_from_master_filter  ofm_filt;
-  one_way_delay_filter  owd_filt;
-  
-  Boolean message_activity;
-  
-  IntervalTimer  itimer[TIMER_ARRAY_SIZE];
-  
+	/*Dynamic members*/
+	Enumeration8 portState;
+	Integer8 logMinDelayReqInterval;
+	TimeInternal peerMeanPathDelay;
 
-  /*Usefull to init network stuff*/
-  UInteger8 port_communication_technology;
-  Octet port_uuid_field[PTP_UUID_LENGTH];
-  
-  wr_servo_state_t wr_servo;
-  
-  /*
-   ***********White Rabbit **************
-   */
-  
-  /*
-   * white rabbit FSM state
-   */
-  Enumeration8  wrPortState;  
-  
-  /*
-   * stores current managementId 
-   * it's set to null when used
-   */
-  Enumeration16 msgTmpManagementId;
- 
-  /*
-   * This says whether PTPd is run for:
-   * - non-WR node, 
-   * - WR Slave 
-   * - WR Master 
-   *
-   * Its important that the node knows what it is,
-   * by default PTPd runs in NON_WR
-   */
-  Enumeration8 wrNodeMode; //copied to new
-  
-  /*
-   * tell us whether we work in WR 
-   * mode at the moment
-   * starts with FALSE
-   */
-  Boolean isWRmode;
-  
-  /*
-   * If port is aware of it's 
-   * fixed delays (they are measured and
-   * stored in deltaTx and deltaRx)
-   * it's TRUE
-   */
-  Boolean isCalibrated;
-  
-  /*
-   * Fixed elays
-   */
-  FixedDelta deltaTx;
-  FixedDelta deltaRx;
-  
-  
-  /*
-   * Calibration parameters of the 
-   * current port
-   */
-  
-  UInteger32 calibrationPeriod;//[us]
-  UInteger32 calibrationPattern;
-  UInteger16 calibrationPatternLen;
+	/*Configurable members*/
+	Integer8 logAnnounceInterval;
+	UInteger8 announceReceiptTimeout;
+	Integer8 logSyncInterval;
+	Enumeration8 delayMechanism;
+	Integer8 logMinPdelayReqInterval;
+	UInteger4 versionNumber;
 
-  UInteger16 otherNodeCalibrationSendPattern;
-  UInteger32 otherNodeCalibrationPeriod;
-  UInteger32 otherNodeCalibrationPattern;
-  UInteger16 otherNodeCalibrationPatternLen;
-  
-  
-  /*
-   * used to implemetn two-step clock
-   * this is implemented in WR differently than 
-   * in original deamon (in original they used errored
-   * self message to read timestam and know that
-   * follow up should be read)
-   */
-  Enumeration8   pending_follow_up;
 
-  /*
-   * Alpha parameter, represents physical
-   * medium correlation
-   * used to obtan asymmetry
-   */
-  UInteger32 scalled_alpha;
 
-  
-  
-  /******White rabbit HW timestamps *******/  
+	/* Foreign master data set */
+	ForeignMasterRecord *foreign;
 
-  /*
-   * if any Tx timestamps should
-   * be read (any pending) it's true
-   */
-  Boolean pending_tx_ts;
-  
-  /*
-   * pending flags for each kind
-   * of tx message (not needed for Rx
-   */
-  Boolean pending_Synch_tx_ts;
-  Boolean pending_DelayReq_tx_ts;
-  Boolean pending_PDelayReq_tx_ts;
-  Boolean pending_PDelayResp_tx_ts;
-  
-  /*
-   * for storing frame_tags which keep 
-   * track of which timestamp is read from HW
-   * for each msg
-   */
+	/* Other things we need for the protocol */
+	UInteger16 number_foreign_records;
+	Integer16  max_foreign_records;
+	Integer16  foreign_record_i;
+	Integer16  foreign_record_best;
+	Boolean  record_update;
+
+
+	MsgHeader msgTmpHeader;
+
+	union {
+		MsgSync  sync;
+		MsgFollowUp  follow;
+		MsgDelayReq  req;
+		MsgDelayResp resp;
+		MsgPDelayReq  preq;
+		MsgPDelayResp  presp;
+		MsgPDelayRespFollowUp  prespfollow;
+		MsgManagement  manage;
+		MsgAnnounce  announce;
+		MsgSignaling signaling;
+	} msgTmp;
+
+
+	Octet msgObuf[PACKET_SIZE];
+	Octet msgIbuf[PACKET_SIZE];
+
+	TimeInternal  master_to_slave_delay;
+	TimeInternal  slave_to_master_delay;
+	Integer32 	observed_drift;
+
+	TimeInternal  pdelay_req_receive_time;
+	TimeInternal  pdelay_req_send_time;
+	TimeInternal  pdelay_resp_receive_time;
+	TimeInternal  pdelay_resp_send_time;
+	TimeInternal  sync_receive_time;
+	TimeInternal  delay_req_send_time;
+	TimeInternal  delay_req_receive_time;
+	MsgHeader		PdelayReqHeader;
+	MsgHeader		delayReqHeader;
+	TimeInternal	pdelayMS;
+	TimeInternal	pdelaySM;
+	TimeInternal  delayMS;
+	TimeInternal	delaySM;
+	TimeInternal  lastSyncCorrectionField;
+	TimeInternal  lastPdelayRespCorrectionField;
+
+	double  R;
+
+	Boolean  sentPDelayReq;
+	UInteger16  sentPDelayReqSequenceId;
+	UInteger16  sentDelayReqSequenceId;
+	UInteger16  sentSyncSequenceId;
+	UInteger16  sentAnnounceSequenceId;
+	UInteger16  recvPDelayReqSequenceId;
+	UInteger16  recvSyncSequenceId;
+	Boolean  waitingForFollow;
+
+	offset_from_master_filter  ofm_filt;
+	one_way_delay_filter  owd_filt;
+
+	Boolean message_activity;
+
+	IntervalTimer  itimer[TIMER_ARRAY_SIZE];
+
+
+	/*Usefull to init network stuff*/
+	UInteger8 port_communication_technology;
+	Octet port_uuid_field[PTP_UUID_LENGTH];
+
+	wr_servo_state_t wr_servo;
+
+	/***********White Rabbit ***************/
+
+	/*
+	 * white rabbit FSM state
+	 */
+	Enumeration8  wrPortState;
+
+	/*
+	 * stores current managementId
+	 * it's set to null when used
+	 */
+	Enumeration16 msgTmpManagementId;
+
+	/*
+	 * This says whether PTPd is run for:
+	 * - non-WR node,
+	 * - WR Slave
+	 * - WR Master
+	 *
+	 * Its important that the node knows what it is,
+	 * by default PTPd runs in NON_WR
+	 */
+	Enumeration8 wrNodeMode; //copied to new
+
+	/*
+	 * tell us whether we work in WR
+	 * mode at the moment
+	 * starts with FALSE
+	 */
+	Boolean isWRmode;
+
+	/*
+	 * If port is aware of it's
+	 * fixed delays (they are measured and
+	 * stored in deltaTx and deltaRx)
+	 * it's TRUE
+	 */
+	Boolean isCalibrated;
+
+	/*
+	 * Fixed elays
+	 */
+	FixedDelta deltaTx;
+	FixedDelta deltaRx;
+
+	/*
+	 * Calibration parameters of the
+	 * current port
+	 */
+
+	UInteger32 calibrationPeriod;//[us]
+	UInteger32 calibrationPattern;
+	UInteger16 calibrationPatternLen;
+
+	UInteger16 otherNodeCalibrationSendPattern;
+	UInteger32 otherNodeCalibrationPeriod;
+	UInteger32 otherNodeCalibrationPattern;
+	UInteger16 otherNodeCalibrationPatternLen;
+
+	/*
+	 * used to implemetn two-step clock
+	 * this is implemented in WR differently than
+	 * in original deamon (in original they used errored
+	 * self message to read timestam and know that
+	 * follow up should be read)
+	 */
+	Enumeration8   pending_follow_up;
+
+	/*
+	 * Alpha parameter, represents physical
+	 * medium correlation
+	 * used to obtan asymmetry
+	 */
+	UInteger32 scalled_alpha;
+
+	/******White rabbit HW timestamps *******/
+
+	/*
+	 * if any Tx timestamps should
+	 * be read (any pending) it's true
+	 */
+	Boolean pending_tx_ts;
+
+	/*
+	 * pending flags for each kind
+	 * of tx message (not needed for Rx
+	 */
+	Boolean pending_Synch_tx_ts;
+	Boolean pending_DelayReq_tx_ts;
+	Boolean pending_PDelayReq_tx_ts;
+	Boolean pending_PDelayResp_tx_ts;
+
+	/*
+	 * for storing frame_tags which keep
+	 * track of which timestamp is read from HW
+	 * for each msg
+	 */
 //  wr_frame_tag_t synch_tx_tag;
 //  wr_frame_tag_t delayReq_tx_tag;
 //  wr_frame_tag_t pDelayReq_tx_tag;
 //  wr_frame_tag_t pDelayResp_tx_tag;
 
-  
-  /*
-   * store timestamp for each msg
-   */
-  wr_timestamp_t synch_tx_ts;
-  wr_timestamp_t delayReq_tx_ts;
-  wr_timestamp_t pDelayReq_tx_ts;
-  wr_timestamp_t pDelayResp_tx_ts;
-  
-  /*
-   * stores current Rx timestamp
-   */
-  wr_timestamp_t current_rx_ts;
-  wr_timestamp_t current_tx_ts;  
-  
-  /******White rabbit timers *******/  
-  
-  /*
-   * holds info how many times
-   * current WR state has been repeated
-   */
-  UInteger8 currentWRstateCnt;
-  
-  /*
-   * stores eclapsed time for each timer
-   */
-  IntervalTimer wrtimer[WR_TIMER_ARRAY_SIZE];
-  
-  /*
-   * stores timeout for each timer
-   */
-  UInteger16 wrTimeouts[WR_TIMER_ARRAY_SIZE];
-  
-  /*
-   * used to calculate eclapsed time,
-   * we don't use interrapts, but periodically
-   * call do_irq_less_timing()
-   * and check time since last it's call
-   */
-  struct timeval last_update;
-  
-  //wr_servo_state_t servo
+
+	/*
+	 * store timestamp for each msg
+	 */
+	wr_timestamp_t synch_tx_ts;
+	wr_timestamp_t delayReq_tx_ts;
+	wr_timestamp_t pDelayReq_tx_ts;
+	wr_timestamp_t pDelayResp_tx_ts;
+
+	/*
+	 * stores current Rx timestamp
+	 */
+	wr_timestamp_t current_rx_ts;
+	wr_timestamp_t current_tx_ts;
+
+	/******White rabbit timers *******/
+
+	/*
+	 * holds info how many times
+	 * current WR state has been repeated
+	 */
+	UInteger8 currentWRstateCnt;
+
+	/*
+	 * stores eclapsed time for each timer
+	 */
+	IntervalTimer wrtimer[WR_TIMER_ARRAY_SIZE];
+
+	/*
+	 * stores timeout for each timer
+	 */
+	UInteger16 wrTimeouts[WR_TIMER_ARRAY_SIZE];
+
+	/*
+	 * used to calculate eclapsed time,
+	 * we don't use interrapts, but periodically
+	 * call do_irq_less_timing()
+	 * and check time since last it's call
+	 */
+	struct timeval last_update;
+
+	//wr_servo_state_t servo
 
 } PtpClock;
-
 
 /**
  * \struct RunTimeOpts
@@ -581,38 +570,38 @@ typedef struct {
  */
 /* program options set at run-time */
 typedef struct {
-	
-  Integer8		announceInterval;	
-  Integer8		syncInterval;
-  ClockQuality	clockQuality;
-  UInteger8		priority1;
-  UInteger8		priority2;
-  UInteger8		domainNumber;
-  Boolean		slaveOnly;
-  Integer16		currentUtcOffset;
-  Octet			ifaceName[MAX_PORT_NUMBER][IFACE_NAME_LENGTH];
-  Boolean		noResetClock;
-  Boolean		noAdjust;
-  Boolean		displayStats;
-  Boolean		csvStats;
-  Octet			unicastAddress[NET_ADDRESS_LENGTH];
-  Integer16		ap, ai;
-  Integer16 		s;
-  TimeInternal  	inboundLatency, outboundLatency;
-  Integer16  		max_foreign_records;
-  Boolean 		ethernet_mode;
-  Boolean       	E2E_mode;
-  Boolean		offset_first_updated;
 
-  /********* White Rabbit ********/
-  UInteger16 		portNumber;
-  Enumeration8		wrNodeMode; 
-  UInteger32 		calibrationPeriod;
-  UInteger32 		calibrationPattern;
-  UInteger16 		calibrationPatternLen;
-  //tmp
-  UInteger8		overrideClockIdentity;
-  
+	Integer8	announceInterval;
+	Integer8	syncInterval;
+	ClockQuality	clockQuality;
+	UInteger8	priority1;
+	UInteger8	priority2;
+	UInteger8	domainNumber;
+	Boolean		slaveOnly;
+	Integer16	currentUtcOffset;
+	Octet		ifaceName[MAX_PORT_NUMBER][IFACE_NAME_LENGTH];
+	Boolean		noResetClock;
+	Boolean		noAdjust;
+	Boolean		displayStats;
+	Boolean		csvStats;
+	Octet		unicastAddress[NET_ADDRESS_LENGTH];
+	Integer16	ap, ai;
+	Integer16	s;
+	TimeInternal	inboundLatency, outboundLatency;
+	Integer1	max_foreign_records;
+	Boolean		ethernet_mode;
+	Boolean		E2E_mode;
+	Boolean		offset_first_updated;
+
+	/********* White Rabbit ********/
+	UInteger16	portNumber;
+	Enumeration8	wrNodeMode;
+	UInteger32	calibrationPeriod;
+	UInteger32	calibrationPattern;
+	UInteger16	calibrationPatternLen;
+	//tmp
+	UInteger8	overrideClockIdentity;
+
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

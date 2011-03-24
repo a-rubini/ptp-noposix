@@ -20,9 +20,9 @@
 #endif
 
 #ifdef	linux
-#include<netinet/in.h>
-#include<net/if.h>
-#include<net/if_arp.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <net/if_arp.h>
 #define IFACE_NAME_LENGTH         IF_NAMESIZE
 #define NET_ADDRESS_LENGTH        INET_ADDRSTRLEN
 

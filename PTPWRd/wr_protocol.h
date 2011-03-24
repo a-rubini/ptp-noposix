@@ -1,35 +1,35 @@
 #ifndef WR_PROTOCOL_H_
 #define WR_PROTOCOL_H_
 
-#ifndef NEW_SINGLE_WRFSM	    
-    /* 
-      handle actions and events for 'wrPortState' 
+#ifndef NEW_SINGLE_WRFSM
+    /*
+      handle actions and events for 'wrPortState'
     */
     void doWRSlaveState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
-    /* 
-      perform actions required when leaving 'wrPortState' and entering 'state' 
+    /*
+      perform actions required when leaving 'wrPortState' and entering 'state'
     */
     void toWRSlaveState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
     /*
-      handle actions and events for 'wrPortState' 
+      handle actions and events for 'wrPortState'
     */
     void doWRMasterState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
-    /* 
-      perform actions required when leaving 'wrPortState' and entering 'state' 
+    /*
+      perform actions required when leaving 'wrPortState' and entering 'state'
     */
     void toWRMasterState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
 #else
-    /* 
-      handle actions and events for 'wrPortState' 
+    /*
+      handle actions and events for 'wrPortState'
     */
     void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
-    /* 
-      perform actions required when leaving 'wrPortState' and entering 'state' 
+    /*
+      perform actions required when leaving 'wrPortState' and entering 'state'
     */
     void toWRState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
@@ -37,33 +37,35 @@
 
 /*
 returns TRUE if the port is UP (cable connected)
-@return 
-    TRUE  	- link up, 
+@return
+    TRUE  	- link up,
     FALSE	- cable disconnected
 */
 Boolean isPortUp(NetPath *netPath);
 
 /*
-polls HW for TX timestamp 
-@return 
-    TRUE  	- if timestamp read, 
-    FALSE	- otherwise 
+polls HW for TX timestamp
+@return
+    TRUE  	- if timestamp read,
+    FALSE	- otherwise
 */
 Boolean getWRtxTimestamp(RunTimeOpts *rtOpts, PtpClock *ptpClock);
 
 /*
   this function manages WR timeouts, each main state (except IDLE) has timeout
-  timeouts are "automatically" started/stopped on the transition of main states 
+  timeouts are "automatically" started/stopped on the transition of main states
   by this function
-  here we also count the number of attempt on the same state, if the retry number 
+  here we also count the number of attempt on the same state, if the retry number
   exccedded, we exit WR FSM, no WRPTP, sorry
 */
-void wrTimetoutManage(UInteger8,UInteger8, RunTimeOpts *rtOpts, PtpClock *ptpClock);
+void wrTimetoutManage(UInteger8,UInteger8, RunTimeOpts *rtOpts,
+		      PtpClock *ptpClock);
 
 /*
   this function checks if wr timer has expired for a current WR state
 */
-void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpClock, Enumeration8 wrNodeMode);
+void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts,
+		    PtpClock *ptpClock, Enumeration8 wrNodeMode);
 
 /*
   this function comes as a consequence of implementing substates.
@@ -80,11 +82,9 @@ we wait here as long as it takes to calibrate Tx !!!!!!
 return:
   TRUE 	- calibration OK
   FALSE - sth wrong
-  
+
 */
 Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock );
-
-
 
 char *printf_bits(UInteger32 bits);
 

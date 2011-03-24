@@ -50,53 +50,55 @@ typedef struct {
 * \brief Struct used to average the offset from master
 * 
 * The FIR filtering of the offset from master input is a simple, two-sample average
- */
+*/
 typedef struct {
-  Integer32  nsec_prev, y;
+	Integer32  nsec_prev, y;
 } offset_from_master_filter;
 
 /** 
-* \brief Struct used to average the one way delay
-* 
-* It is a variable cutoff/delay low-pass, infinite impulse response (IIR) filter.
-* 
-*  The one-way delay filter has the difference equation: s*y[n] - (s-1)*y[n-1] = x[n]/2 + x[n-1]/2, where increasing the stiffness (s) lowers the cutoff and increases the delay. 
+ * \brief Struct used to average the one way delay
+ * 
+ * It is a variable cutoff/delay low-pass, infinite impulse response (IIR) filter.
+ * 
+ *  The one-way delay filter has the difference equation:
+ * s*y[n] - (s-1)*y[n-1] = x[n]/2 + x[n-1]/2,
+ * where increasing the stiffness (s) lowers the cutoff and increases the delay. 
  */
 typedef struct {
-  Integer32  nsec_prev, y;
-  Integer32  s_exp;
+	Integer32  nsec_prev, y;
+	Integer32  s_exp;
 } one_way_delay_filter;
 
 /** 
-* \brief Struct used to store network datas
+ * \brief Struct used to store network datas
  */
 
 typedef struct {
-  wr_socket_t *wrSock;
-  char ifaceName[IFACE_NAME_LENGTH];
-  wr_sockaddr_t multicastAddr, peerMulticastAddr,unicastAddr;
+	wr_socket_t *wrSock;
+	char ifaceName[IFACE_NAME_LENGTH];
+	wr_sockaddr_t multicastAddr, peerMulticastAddr,unicastAddr;
 } NetPath;
 
 typedef struct {
-  char if_name[16];
-  int state;
-  int next_state;
+	char if_name[16];
+	int state;
+	int next_state;
 
-  wr_timestamp_t prev_t4;
-  wr_timestamp_t mu;
-  wr_timestamp_t nsec_offset;
-  
-  int32_t delta_tx_m;
-  int32_t delta_rx_m;
-  int32_t delta_tx_s;
-  int32_t delta_rx_s;
+	wr_timestamp_t prev_t4;
+	wr_timestamp_t mu;
+	wr_timestamp_t nsec_offset;
 
-  int32_t cur_setpoint;
+	int32_t delta_tx_m;
+	int32_t delta_rx_m;
+	int32_t delta_tx_s;
+	int32_t delta_rx_s;
 
-  int64_t delta_ms;
-  int64_t delta_ms_prev;
+	int32_t cur_setpoint;
 
-  wr_timestamp_t t1, t2, t3, t4;
+	int64_t delta_ms;
+	int64_t delta_ms_prev;
+
+	wr_timestamp_t t1, t2, t3, t4;
 
 	uint64_t last_tics;
 
