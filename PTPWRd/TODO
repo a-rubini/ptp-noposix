@@ -1,0 +1,20 @@
+TODO High Priority
+
+
+TODO:
+- flipping bits in msg.c !!!!!!!
+- check that all values are passed properly (especially deltas, calibaration)
+
+
+- test with standard PTP
+- test multiport
+
+- move writing time to netRecvMsg, protocol.c 619 line
+- set calibration period as timeout in *_CALIBRATE state
+- convert HW timestamps into SW
+- test multiport
+- implement synchronization of calibratin between different ports
+
+
+
+date -s "2010-08-24 14:23" -u

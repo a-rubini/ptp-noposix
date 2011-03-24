@@ -1,0 +1,84 @@
+Author: Maciej Lipinski
+email : maciej.lipinski@cern.ch
+info  : implementatin of White Rabbit extension
+
+
+
+1)defines:
+- IRQ_LESS_TIMER
+   if this defined, WR uses new implementation of timeouts (not using interrupt)
+
+2)compilation flags:
+- DPTPD_NO_DAEMON - original PTPd flag, for WR not tested yet without this
+- DPTPD_DBGMSG    - debugging of messages, it prints msgPack*() and msgUnpack*() functions
+- DPTPD_DBG       - most of debugging added by ML
+- DPTPD_DBG_S_FUN  - if defined along with DPTPD_DBG, info about calling function displayed
+- DPTPD_DBGV      - original detailed debugging, to detailed to be redeable
+- DPTPD_DBGWR     - meant to be White Rabbit debugging, but not really used :( 
+
+2) compilation
+    ./build_t.sh run T=192.168.1.5   // this builds and runs ptpwrd on target, but without params, useless, kill it, ptpwrd will automaticly build for PC
+    
+3) runnig
+- WR slave with one port on interface eth2
+    ./ptpv2d -b eth2 -S
+- WR master with one port on interface wru1
+    ./ptpv2d -b wru1 -M
+- WR multi-node, with slave port on wru1, master ports on wrd0 & wrd1 
+  (when run with -S, WR slave is always port 1, the other ports are WR masters)
+    ./ptpv2d -1 wru1 -2 wrd0 -3 wrd1 -S
+
+4)Files:
+
+    PTPWRd
+    |-- arith.c --------------------- no WR changes
+    |-- bmc.c ----------------------- WR changed: a lot of WR here: 
+    |					
+    |-- build_p.sh ------------------ WR only:this builds PTPWR for standard PC
+    |-- build_t.sh ------------------ WR only:this builds PTPWR for the target and standard PC 
+    |				  (just for convenience, I always need both :)
+    |-- clean.sh -------------------- ML: I used it for cleaning before commiting, I use Kate 
+    |				  and it produces tmp files ~
+    |-- constants.h ----------------- WR changed: constants and enums used in WR are here
+    |-- datatypes.h ----------------- WR changed: here we have defined PtpClock, so all the WRPTP 
+    |				  variables that are added to it + FixedDelta typedef
+    |-- dep
+    |   |-- constants_dep.h --------- WR changed: no significant WR-related changes here
+    |   |-- datatypes_dep.h --------- WR changed: here is NetPath typedef defined, and all the types 
+    |   | 				  used in the daemon
+    |   |-- msg.c ------------------- WR changed: White Rabbit management facilities + announce suffix + 
+    |   | 				  other method of flipping bits (original one did not work for 
+    |   | 				  32 bits, aligment problems)
+    |   |-- net.c ------------------- WR changed: Absolutelly, thoroughly changed by White Rabbit to 
+    |   | 				  adapt to ptpd_netif interface
+    |   |-- ptpd_dep.h -------------- WR changed: some custiom WR DBG facilities are defined here + 
+    |   | 				  definitions of functions in /dep folder
+    |   |-- ptpd_netif 
+    |   |   |-- ptpd_netif.h -------- WR only: does what header should
+    |   |   |-- ptpd_netif_mch.c ---- WR only: network interface implemented here + interface to 
+    |   | 				  HAL (calibration, locking) + HW timestamps
+    |   |-- PTPWR_INFO
+    |   |-- servo.c ----------------- WR changed: to be implemetned !!!!!!!!!
+    |   |-- startup.c --------------- WR changed: defined new startup parametrs, implementation of multi-port 
+    |   | 				  [allocate/free memory for many ports, done here in ptpdStartup()/ptpShutDown()]
+    |   |-- sys.c ------------------- WR changed: here adjtimex() is commented not to mess around with the clock,
+    |				  we do it differently
+    |   `-- timer.c ----------------- WR changed: Here WR implements interrupt-less timing (in original ptp daemon irq was used)
+    |-- display.c ------------------- not used in WR
+    |-- Doxyfile
+    |-- Makefile
+    |-- protocol.c ------------------ WR changed: WR does here a lot: 
+    |				    1) modifies UNCALIBRATED state 
+    |				    2) adds HW timestamping 
+    |				    3) messge issue/handle WR management (see handleManagement() and issueWRManagement())
+    |				    4) implement multi-port
+    |-- ptpd.8
+    |-- ptpd.c ---------------------- WR changed: here we set some default WR params and decide if we want single- or multi-port mode
+    |-- ptpd.h ---------------------- no significant WR-related changes here
+    |-- TODO ------------------------ :)
+    |-- wr_protocol.c --------------- WR only: WR FSMs, HW timestamping, and other WR magic is implemented
+    `-- wr_protocol.h --------------- WR only: just definitions of WR functions
+
+
+
+    
