@@ -12,9 +12,9 @@ It's not entirely necessary, it is a consequence of the fact that PTPd was adapt
 
 #include "ptpd_netif.h"
 #include "hal_exports.h"
-const mac_addr_t PTP_MULTICAST_ADDR[6] = {0x01, 0x1b, 0x19, 0 , 0, 0};
-const mac_addr_t PTP_UNICAST_ADDR[6]   = {0x01, 0x1b, 0x19, 0 , 0, 0};
-const mac_addr_t ZERO_ADDR[6]          = {0x00, 0x00, 0x00, 0x00, 0x001, 0x00};
+const mac_addr_t PTP_MULTICAST_ADDR = {0x01, 0x1b, 0x19, 0 , 0, 0};
+const mac_addr_t PTP_UNICAST_ADDR   = {0x01, 0x1b, 0x19, 0 , 0, 0};
+const mac_addr_t ZERO_ADDR          = {0x00, 0x00, 0x00, 0x00, 0x001, 0x00};
 
 /* shut down the UDP stuff */
 Boolean netShutdown(NetPath *netPath)
@@ -143,7 +143,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type
   bindaddr.ethertype = 0x88f7; 	        // PTPv2
-  memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, 6);
+  memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, sizeof(mac_addr_t));
 
   // Create one socket for event and general messages (WR lower level layer requires that
   netPath->wrSock = ptpd_netif_create_socket(PTPD_SOCK_RAW_ETHERNET, 0, &bindaddr);
@@ -157,13 +157,13 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   /* send a uni-cast address if specified (useful for testing) */
   if(rtOpts->unicastAddress[0])
   {
-    memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR, 6);
+    memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR,  sizeof(mac_addr_t));
   }
   else
-    memcpy(netPath->unicastAddr.mac, ZERO_ADDR, 6);
+    memcpy(netPath->unicastAddr.mac, ZERO_ADDR,  sizeof(mac_addr_t));
 
-  memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR, 6);
-  memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR, 6);
+  memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
+  memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
 
   netPath->unicastAddr.ethertype = 0x88f7;
   netPath->multicastAddr.ethertype = 0x88f7;
