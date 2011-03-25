@@ -467,7 +467,7 @@ static inline int serialize_string(uint32_t *buffer, int current_pos,
 	int len;
 	int num_words;
 
-	len = strlen(str);
+	len = __strlen(str);
 	num_words = 1 + ((len + 4) >> 2);
 
 	if(current_pos + num_words >= max_pos) return -ENOMEM;
@@ -576,7 +576,7 @@ static int handle_call(struct wripc_server_context *srv,
 
 	num_args = buf[2];
 
-	current_pos = 3 + 1+ ((strlen(func_name)+4)>>2);
+	current_pos = 3 + 1+ ((__strlen(func_name)+4)>>2);
 
 	DBG("conn %x call %s nargs = %d\n", conn, func_name, num_args);
 
@@ -872,7 +872,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 	if(num_args > WRIPC_MAX_ARGS)
 		return WRIPC_ERROR_INVALID_ARG;
 
-	name_len = strlen(name);
+	name_len = __strlen(name);
 	if(name_len > 128)
 		return WRIPC_ERROR_INVALID_ARG;
 

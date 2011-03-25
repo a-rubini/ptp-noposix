@@ -20,7 +20,7 @@ static inline void *__calloc(int nmemb, int size)
 	return ret;
 }
 
-int __strlen(const char * s)
+static inline int __strlen(const char * s)
 {
 	const char *sc;
 
