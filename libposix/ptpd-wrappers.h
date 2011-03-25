@@ -20,5 +20,13 @@ static inline void *__calloc(int nmemb, int size)
 	return ret;
 }
 
+int __strlen(const char * s)
+{
+	const char *sc;
+
+	for (sc = s; *sc != '\0'; ++sc)
+		;
+	return sc - s;
+}
 
 #endif /* __PTPD_WRAPPERS_H__ */
