@@ -159,7 +159,7 @@ static void *safe_zmalloc(size_t howmuch)
 {
 	void *p;
 
-	p = malloc(howmuch);
+	p = ptpd_wrap_malloc(howmuch);
 	if(!p)
 	{
 		DBG("FATAL: not enough memory\n");
@@ -258,7 +258,7 @@ wripc_handle_t wripc_connect(const char *name)
 	if(handle < 0)
 		return -ENOMEM;
 
-	cli = malloc(sizeof(struct wripc_client_context));
+	cli = ptpd_wrap_malloc(sizeof(struct wripc_client_context));
 	if(!cli)
 		return -ENOMEM;
 
@@ -397,7 +397,7 @@ static void reply_error(struct wripc_connection *conn, int err_val)
 static char *extract_string(uint32_t *ptr)
 {
 	int len = *ptr++;
-	char * buf = malloc(len + 1);
+	char * buf = ptpd_wrap_malloc(len + 1);
 	memcpy(buf, ptr, len);
 	buf[len] = 0;
 	return buf;
