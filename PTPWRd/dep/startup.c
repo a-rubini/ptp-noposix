@@ -283,7 +283,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     }
   }
 
-  ptpClock = (PtpClock*)calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
+  ptpClock = (PtpClock*)__calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
 
   PtpClock * currentPtpdClockData;
 
@@ -303,7 +303,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     for(i = 0; i < MAX_PORT_NUMBER; i++)
     {
 	currentPtpdClockData->portIdentity.portNumber = i + 1;
-	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
+	currentPtpdClockData->foreign = (ForeignMasterRecord*)__calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
 	if(!currentPtpdClockData->foreign)
 	{
 	    PERROR("failed to allocate memory for foreign master data");
