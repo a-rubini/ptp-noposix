@@ -19,3 +19,13 @@ unsigned int ptpd_wrap_sleep(unsigned int seconds)
 {
 	return sleep(seconds);
 }
+
+char *ptpd_wrap_strcpy(char *dest, const char *src)
+{
+	return strcpy(dest, src);
+}
+
+char *ptpd_wrap_strncpy(char *dest, const char *src, int n)
+{
+	return strncpy(dest, src, n);
+}
