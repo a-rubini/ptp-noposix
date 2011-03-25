@@ -225,7 +225,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	sll.sll_protocol = htons(bind_addr->ethertype);
 	sll.sll_halen = 6;
 
-	memcpy(sll.sll_addr, bind_addr->mac, 6);
+	ptpd_wrap_memcpy(sll.sll_addr, bind_addr->mac, 6);
 
 	if(bind(fd, (struct sockaddr *)&sll, sizeof(struct sockaddr_ll)) < 0)
 	{
@@ -272,8 +272,8 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 		perror("ioctl()"); return NULL;
 	}
 
-	memcpy(s->local_mac, f.ifr_hwaddr.sa_data, 6);
-	memcpy(&s->bind_addr, bind_addr, sizeof(wr_sockaddr_t));
+	ptpd_wrap_memcpy(s->local_mac, f.ifr_hwaddr.sa_data, 6);
+	ptpd_wrap_memcpy(&s->bind_addr, bind_addr, sizeof(wr_sockaddr_t));
 
 	s->fd = fd;
 
@@ -305,11 +305,11 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
 	ptpd_wrap_memset(&pkt, 0, sizeof(struct etherpacket));
 
-	memcpy(pkt.ether.h_dest, to->mac, 6);
-	memcpy(pkt.ether.h_source, s->local_mac, 6);
+	ptpd_wrap_memcpy(pkt.ether.h_dest, to->mac, 6);
+	ptpd_wrap_memcpy(pkt.ether.h_source, s->local_mac, 6);
 	pkt.ether.h_proto =htons(to->ethertype);
 
-	memcpy(pkt.data, data, data_length);
+	ptpd_wrap_memcpy(pkt.data, data, data_length);
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
@@ -335,7 +335,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 		//	mdump_timestamp("Polled", ts);
 		if(tx_ts)
 		{
-			memcpy(tx_ts, &ts, sizeof(wr_timestamp_t));
+			ptpd_wrap_memcpy(tx_ts, &ts, sizeof(wr_timestamp_t));
 		}
 		return rval;
 	}
@@ -390,7 +390,7 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 
 	if(res >= 0)
 	{
-		memcpy(&rtag, data+res-4, 4);
+		ptpd_wrap_memcpy(&rtag, data+res-4, 4);
 
 		for (cmsg = CMSG_FIRSTHDR(&msg);
 		     cmsg;
@@ -463,11 +463,11 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 	if(ret <= 0) return ret;
 
-	memcpy(data, pkt.data, ret - sizeof(struct ethhdr));
+	ptpd_wrap_memcpy(data, pkt.data, ret - sizeof(struct ethhdr));
 
 	from->ethertype = ntohs(pkt.ether.h_proto);
-	memcpy(from->mac, pkt.ether.h_source, 6);
-	memcpy(from->mac_dest, pkt.ether.h_dest, 6);
+	ptpd_wrap_memcpy(from->mac, pkt.ether.h_source, 6);
+	ptpd_wrap_memcpy(from->mac_dest, pkt.ether.h_dest, 6);
 
 	//fnetif_dbg(stderr, "recvmsg: ret %d\n", ret);
 
@@ -831,7 +831,7 @@ int ptpd_netif_select( wr_socket_t *wrSock)
 int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac)
 {
 	struct my_socket *s = (struct my_socket *)sock;
-	memcpy(mac, s->local_mac, 6);
+	ptpd_wrap_memcpy(mac, s->local_mac, 6);
 	return 0;
 }
 

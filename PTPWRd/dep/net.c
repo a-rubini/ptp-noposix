@@ -143,7 +143,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type
   bindaddr.ethertype = 0x88f7; 	        // PTPv2
-  memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, sizeof(mac_addr_t));
+  ptpd_wrap_memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, sizeof(mac_addr_t));
 
   // Create one socket for event and general messages (WR lower level layer requires that
   netPath->wrSock = ptpd_netif_create_socket(PTPD_SOCK_RAW_ETHERNET, 0, &bindaddr);
@@ -157,13 +157,13 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   /* send a uni-cast address if specified (useful for testing) */
   if(rtOpts->unicastAddress[0])
   {
-    memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR,  sizeof(mac_addr_t));
+    ptpd_wrap_memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR,  sizeof(mac_addr_t));
   }
   else
-    memcpy(netPath->unicastAddr.mac, ZERO_ADDR,  sizeof(mac_addr_t));
+    ptpd_wrap_memcpy(netPath->unicastAddr.mac, ZERO_ADDR,  sizeof(mac_addr_t));
 
-  memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
-  memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
+  ptpd_wrap_memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
+  ptpd_wrap_memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
 
   netPath->unicastAddr.ethertype = 0x88f7;
   netPath->multicastAddr.ethertype = 0x88f7;
@@ -172,7 +172,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   ptpd_netif_get_hw_addr(netPath->wrSock, portMacAddress);
 
   /* copy mac part to uuid */
-  memcpy(ptpClock->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
+  ptpd_wrap_memcpy(ptpClock->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
 
   DBG("[%s] mac: %x:%x:%x:%x:%x:%x\n",__func__,\
     ptpClock->port_uuid_field[0],\

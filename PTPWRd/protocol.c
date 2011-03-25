@@ -2109,7 +2109,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 		j = ptpClock->foreign_record_i;
 
 		/*Copy new foreign master data set from Announce message*/
-		memcpy(ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+		ptpd_wrap_memcpy(ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 		ptpClock->foreign[j].foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
 		ptpClock->foreign[j].foreignMasterAnnounceMessages = 0;
 

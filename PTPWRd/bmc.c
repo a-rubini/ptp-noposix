@@ -56,7 +56,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /*Port configuration data set */
 
 	/*PortIdentity Init (portNumber = 1 for an ardinary clock spec 7.5.2.3)*/
-	memcpy(ptpClock->portIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(ptpClock->portIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 
 	ptpClock->logMinDelayReqInterval = DEFAULT_DELAYREQ_INTERVAL;
 	ptpClock->peerMeanPathDelay.seconds = 0;
@@ -175,12 +175,12 @@ void m1(PtpClock *ptpClock)
 	ptpClock->meanPathDelay.seconds = 0;
 
 	/*Parent data set*/
-	memcpy(ptpClock->parentPortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(ptpClock->parentPortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpClock->parentPortIdentity.portNumber = 0;
 	ptpClock->parentStats = DEFAULT_PARENTS_STATS;
 	ptpClock->observedParentClockPhaseChangeRate = 0;
 	ptpClock->observedParentOffsetScaledLogVariance = 0;
-	memcpy(ptpClock->grandmasterIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(ptpClock->grandmasterIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpClock->grandmasterClockQuality.clockAccuracy = ptpClock->clockQuality.clockAccuracy;
 	ptpClock->grandmasterClockQuality.clockClass = ptpClock->clockQuality.clockClass;
 	ptpClock->grandmasterClockQuality.offsetScaledLogVariance = ptpClock->clockQuality.offsetScaledLogVariance;
@@ -206,9 +206,9 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 
 	/*Parent DS*/
 
-	memcpy(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpClock->parentPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
-	memcpy(ptpClock->grandmasterIdentity,announce->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(ptpClock->grandmasterIdentity,announce->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpClock->grandmasterClockQuality.clockAccuracy = announce->grandmasterClockQuality.clockAccuracy;
 	ptpClock->grandmasterClockQuality.clockClass = announce->grandmasterClockQuality.clockClass;
 	ptpClock->grandmasterClockQuality.offsetScaledLogVariance = announce->grandmasterClockQuality.offsetScaledLogVariance;
@@ -238,13 +238,13 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 {
   	announce->grandmasterPriority1 = ptpClock->priority1;
-	memcpy(announce->grandmasterIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(announce->grandmasterIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	announce->grandmasterClockQuality.clockClass = ptpClock->clockQuality.clockClass;
 	announce->grandmasterClockQuality.clockAccuracy = ptpClock->clockQuality.clockAccuracy;
 	announce->grandmasterClockQuality.offsetScaledLogVariance = ptpClock->clockQuality.offsetScaledLogVariance;
 	announce->grandmasterPriority2 = ptpClock->priority2;
 	announce->stepsRemoved = 0;
-	memcpy(header->sourcePortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpd_wrap_memcpy(header->sourcePortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 
 	/*White Rabbit*/
 	announce->wr_flags = (announce->wr_flags | ptpClock->wrNodeMode) & WR_NODE_MODE  ;
