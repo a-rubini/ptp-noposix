@@ -29,3 +29,8 @@ char *ptpd_wrap_strncpy(char *dest, const char *src, int n)
 {
 	return strncpy(dest, src, n);
 }
+
+void *ptpd_wrap_memcpy(void *dest, const void *src, int n)
+{
+	return memcpy(dest, src, n);
+}
