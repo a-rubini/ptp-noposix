@@ -13,8 +13,11 @@ OBJDUMP         = $(CROSS_COMPILE)objdump
 TOPDIR=$(shell /bin/pwd)
 CFLAGS = -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libwripc \
 	-I$(TOPDIR)/libptpnetif -I$(TOPDIR)/PTPWRd -I$(LINUX)/include \
-	-include compat.h
-LDFLAGS = -L. -lwripc -lptpnetif
+	-include compat.h -include libposix/ptpd-wrappers.h
+# These are lifted in the ptp.o temporary object file, for me to see the size
+CORELIBS= libwripc.a libptpnetif.a
+
+LDFLAGS = #-L. -lwripc -lptpnetif
 
 # Flags from the original Makefiles
 CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM
@@ -27,29 +30,27 @@ all: check libs ptpd
 
 # The objects are all from the ptp directory
 D = PTPWRd
-# These have no warnings
 OBJS = $D/ptpd.o
-OBJS += $D/bmc.o
-OBJS += $D/dep/servo.o
-OBJS += $D/dep/sys.o
-
-# The following ones have header problems (warning: implicit declaration)
-OBJS += $D/protocol.o
-OBJS += $D/wr_protocol.o
-OBJS += $D/dep/net.o
-OBJS += $D/ptpd_exports.o
-
-# Other warnings
 OBJS += $D/arith.o
-OBJS += $D/display.o
+OBJS += $D/bmc.o
 OBJS += $D/dep/msg.o
+OBJS += $D/dep/net.o
+OBJS += $D/dep/servo.o
 OBJS += $D/dep/startup.o
+OBJS += $D/dep/sys.o
 OBJS += $D/dep/timer.o
 OBJS += $D/dep/wr_servo.o
+OBJS += $D/display.o
+OBJS += $D/protocol.o
+OBJS += $D/ptpd_exports.o
+OBJS += $D/wr_protocol.o
 
 # Temporarily, add this one, until I get rid of this assembly
 OBJS += ./libwripc/helper_arm.o
 
+# This is the compatilibity library, to hide posix stuff in a single place
+OBJS += ./libposix/posix-wrapper.o
+#OBJS += ./libcompat/freestanding-wrapper.o
 
 
 # we only support cross-compilation (if you want force CROSS_COMPILE to " ")
@@ -72,7 +73,8 @@ libptpnetif.a: libptpnetif/hal_client.o libptpnetif/ptpd_netif.o
 
 # the binary is just a collection of object files
 ptpd: check libs $(OBJS)
-	$(CC) $(OBJS) $(LDFLAGS) -o ptpd
+	$(LD) -r $(OBJS) $(CORELIBS) -o ptpd.o
+	$(CC) $(CFLAGS) ptpd.o $(LDFLAGS) -o ptpd
 
 
 # clean and so on.
