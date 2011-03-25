@@ -705,7 +705,7 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   /*Spec 9.5.2.2*/
   isFromSelf = (ptpClock->portIdentity.portNumber == ptpClock->msgTmpHeader.sourcePortIdentity.portNumber
-    && !memcmp(ptpClock->msgTmpHeader.sourcePortIdentity.clockIdentity, ptpClock->portIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH));
+    && !ptpd_wrap_memcmp(ptpClock->msgTmpHeader.sourcePortIdentity.clockIdentity, ptpClock->portIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH));
 
   /* subtract the inbound latency adjustment if it is not a loop back and the
      time stamp seems reasonable */
@@ -827,7 +827,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 
 
-		isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+		isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 	   switch (isFromCurrentParent)
@@ -925,7 +925,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				return;
 			}
 
-			isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+			isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 			if (isFromCurrentParent)
@@ -1038,7 +1038,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		case PTP_SLAVE:
 
-//		isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+//		isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 //							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 		DBG("comparing parent and source portID: \n");
@@ -1048,7 +1048,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		      header->sourcePortIdentity.portNumber);
 
 
-		if ((memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0 )
+		if ((ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0 )
 			&& (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
 		    isFromCurrentParent = TRUE;
 
@@ -1233,20 +1233,20 @@ if (rtOpts->E2E_mode)
 				(unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);
 
 
-//				isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+//				isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 //								  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
-				if ((memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0 )
+				if ((ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0 )
 					&& (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
 				    isFromCurrentParent = TRUE;
 
 
 //			  if (!   ((ptpClock->sentDelayReqSequenceId == header->sequenceId)
-//				   && (!memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.resp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+//				   && (!ptpd_wrap_memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.resp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 //				   && ( ptpClock->portIdentity.portNumber == ptpClock->msgTmp.resp.requestingPortIdentity.portNumber))
 //				   && isFromCurrentParent)
 
-				if ((memcmp(ptpClock->portIdentity.clockIdentity, ptpClock->msgTmp.resp.requestingPortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0)
+				if ((ptpd_wrap_memcmp(ptpClock->portIdentity.clockIdentity, ptpClock->msgTmp.resp.requestingPortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0)
 				   && ((ptpClock->sentDelayReqSequenceId - 1) == header->sequenceId)
 				   && (ptpClock->portIdentity.portNumber == ptpClock->msgTmp.resp.requestingPortIdentity.portNumber)
 				   && isFromCurrentParent)
@@ -1401,11 +1401,11 @@ if (!rtOpts->E2E_mode)
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
-			isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+			isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 			if (!   ((ptpClock->sentPDelayReqSequenceId == header->sequenceId)
-			   && (!memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+			   && (!ptpd_wrap_memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 			   && ( ptpClock->portIdentity.portNumber == ptpClock->msgTmp.presp.requestingPortIdentity.portNumber)))
 
 			{
@@ -1477,11 +1477,11 @@ if (!rtOpts->E2E_mode)
 				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
 
-				isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+				isFromCurrentParent = !ptpd_wrap_memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 				if (!   ((ptpClock->sentPDelayReqSequenceId == header->sequenceId)
-					&& (!memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+					&& (!ptpd_wrap_memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 					&& ( ptpClock->portIdentity.portNumber == ptpClock->msgTmp.presp.requestingPortIdentity.portNumber)))
 
 				{
@@ -2081,7 +2081,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 	/*Check if Foreign master is already known*/
 	for (i=0;i<ptpClock->number_foreign_records;i++)
 	{
-		if (!memcmp(header->sourcePortIdentity.clockIdentity,ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+		if (!ptpd_wrap_memcmp(header->sourcePortIdentity.clockIdentity,ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 			&& (header->sourcePortIdentity.portNumber == ptpClock->foreign[j].foreignMasterPortIdentity.portNumber))
 			{
 				/*Foreign Master is already in Foreignmaster data set*/

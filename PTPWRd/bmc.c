@@ -290,7 +290,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 	}
 
 	/*Identity comparison*/
-	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH))
+	if (!ptpd_wrap_memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH))
 	{
 		//Algorithm part2 Fig 28
 		if (announceA->stepsRemoved > announceB->stepsRemoved+1)
@@ -305,7 +305,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 		{
 			if (announceA->stepsRemoved > announceB->stepsRemoved)
 			{
-				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!ptpd_wrap_memcmp(headerA->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
 				    DBG("Sender=Receiver : Error -1");
 				    return 0;
@@ -318,7 +318,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			}
 			else if (announceB->stepsRemoved > announceA->stepsRemoved)
 			{
-				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!ptpd_wrap_memcmp(headerB->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
 				  	DBG("Sender=Receiver : Error -1");
 					return 0;
@@ -330,12 +330,12 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			}
 			else // steps removed A = steps removed B
 			{
-				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!ptpd_wrap_memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
 					DBG("Sender=Receiver : Error -2");
 					return 0;
 				}
-				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
+				else if ((ptpd_wrap_memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{
 					return -1;
 				}
@@ -363,7 +363,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 					{
 						if (announceA->grandmasterPriority2 == announceB->grandmasterPriority2)
 						{
-							comp = memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
+							comp = ptpd_wrap_memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
 							if (comp < 0)
 							{
 								return -1;
@@ -379,7 +379,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 						}
 						else //Priority2 are not identical
 						{
-							comp =memcmp(&announceA->grandmasterPriority2,&announceB->grandmasterPriority2,1);
+							comp =ptpd_wrap_memcmp(&announceA->grandmasterPriority2,&announceB->grandmasterPriority2,1);
 							if (comp < 0)
 							{
 								return -1;
@@ -397,7 +397,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 
 					else //offsetScaledLogVariance are not identical
 					{
-						comp= memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
+						comp= ptpd_wrap_memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
 						if (comp < 0)
 						{
 							return -1;
@@ -416,7 +416,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 
 				else // Accuracy are not identitcal
 				{
-					comp = memcmp(&announceA->grandmasterClockQuality.clockAccuracy,&announceB->grandmasterClockQuality.clockAccuracy,1);
+					comp = ptpd_wrap_memcmp(&announceA->grandmasterClockQuality.clockAccuracy,&announceB->grandmasterClockQuality.clockAccuracy,1);
 					if (comp < 0)
 					{
 						return -1;
@@ -435,7 +435,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 
 			else //ClockClass are not identical
 			{
-				comp =  memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
+				comp =  ptpd_wrap_memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
 				if (comp < 0)
 				{
 					return -1;
@@ -453,7 +453,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 
 		else // Priority1 are not identical
 		{
-			comp =  memcmp(&announceA->grandmasterPriority1,&announceB->grandmasterPriority1,1);
+			comp =  ptpd_wrap_memcmp(&announceA->grandmasterPriority1,&announceB->grandmasterPriority1,1);
 			if (comp < 0)
 			{
 				return -1;
