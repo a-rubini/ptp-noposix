@@ -29,4 +29,9 @@ static inline int __strlen(const char * s)
 	return sc - s;
 }
 
+static inline char *__strdup(const char *s)
+{
+	return ptpd_wrap_malloc(__strlen(s));
+}
+
 #endif /* __PTPD_WRAPPERS_H__ */
