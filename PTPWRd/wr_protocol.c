@@ -1185,7 +1185,7 @@ char *printf_bits(UInteger32 bits)
 
   buf[i]='\0';
 
-  return strdup(buf);
+  return __strdup(buf);
 }
 
 
@@ -1197,7 +1197,7 @@ char *format_wr_timestamp(wr_timestamp_t ts)
   snprintf(buf,64, "sec: %lld nsec: %ld ", (long long)ts.utc,
 	   (long) ts.nsec);
 
-  return strdup(buf);
+  return __strdup(buf);
 }
 
 
