@@ -358,7 +358,7 @@ void displayOthers (PtpClock *ptpClock){
 int i ;
 
 //Usefull to display name of timers
-char timer[][26] = {
+static const char timer[][26] = {
 "PDELAYREQ_INTERVAL_TIMER",
 "SYNC_INTERVAL_TIMER",
 "ANNOUNCE_RECEIPT_TIMER",

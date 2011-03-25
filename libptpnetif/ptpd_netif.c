@@ -263,8 +263,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 		return NULL;
 	}
 
-	s=malloc(sizeof(struct my_socket));
-	memset(s, 0, sizeof(struct my_socket));
+	s=__calloc(sizeof(struct my_socket), 1);
 
 	s->if_index = f.ifr_ifindex;
 
@@ -304,7 +303,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
 	if(data_length > ETHER_MTU-8) return -EINVAL;
 
-	memset(&pkt, 0, sizeof(struct etherpacket));
+	ptpd_wrap_memset(&pkt, 0, sizeof(struct etherpacket));
 
 	memcpy(pkt.ether.h_dest, to->mac, 6);
 	memcpy(pkt.ether.h_source, s->local_mac, 6);
@@ -317,7 +316,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 	if(len < 72)
 		len = 72;
 
-	memset(&sll, 0, sizeof(struct sockaddr_ll));
+	ptpd_wrap_memset(&sll, 0, sizeof(struct sockaddr_ll));
 
 	sll.sll_ifindex = s->if_index;
 	sll.sll_family = AF_PACKET;
@@ -375,7 +374,7 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 	struct sock_extended_err *serr = NULL;
 	struct scm_timestamping *sts = NULL;
 
-	memset(&msg, 0, sizeof(msg));
+	ptpd_wrap_memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = &entry;
 	msg.msg_iovlen = 1;
 	entry.iov_base = data;
@@ -447,7 +446,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
-	memset(&msg, 0, sizeof(msg));
+	ptpd_wrap_memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = &entry;
 	msg.msg_iovlen = 1;
 	entry.iov_base = &pkt;

@@ -165,7 +165,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
       break;
 
     case 'b':
-      memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+      ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
@@ -259,19 +259,19 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	   DBGNPI("WR Master\n");
 	   break;
     case '1':
-      memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+      ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
 
     case '2':
-      memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
+      ptpd_wrap_memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 2;
       break;
 
     case '3':
-      memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
+      ptpd_wrap_memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber  = 3;
       break;
@@ -318,8 +318,8 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	    /*Init to 0 net buffer*/
 
 	}
-	memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
-	memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
+	ptpd_wrap_memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
+	ptpd_wrap_memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
 
 	currentPtpdClockData++;
     }

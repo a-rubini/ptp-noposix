@@ -166,7 +166,7 @@ static void *safe_zmalloc(size_t howmuch)
 		exit(-1);
 	}
 
-	memset(p, 0, howmuch);
+	ptpd_wrap_memset(p, 0, howmuch);
 	return p;
 }
 
@@ -1030,6 +1030,6 @@ int wripc_subscribe_event(wripc_handle_t handle, int event_id)
 __attribute__((constructor)) int wripc_init()
 {
 	//DBG("\n");
-	memset(handle_map, 0, sizeof(handle_map));
+	ptpd_wrap_memset(handle_map, 0, sizeof(handle_map));
 	return 0;
 }

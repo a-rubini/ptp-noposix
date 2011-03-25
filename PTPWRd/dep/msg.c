@@ -98,7 +98,7 @@ void msgPackHeader(void *buf, PtpClock *ptpClock)
 	if (ptpClock->twoStepFlag)
 		*(UInteger8*)(buf+6)            = TWO_STEP_FLAG;
 
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 	memcpy((buf+20),ptpClock->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 
 	put_be16(buf+28,ptpClock->portIdentity.portNumber);
@@ -134,7 +134,7 @@ void msgPackSync(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	*(UInteger16*)(buf+30)=flip16(ptpClock->sentSyncSequenceId);
 	*(UInteger8*)(buf+32)=0x00; //Table 23
 	*(Integer8*)(buf+33) = ptpClock->logSyncInterval;
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 
 	/*Sync message*/
 	*(UInteger16*)(buf+34) = flip16(originTimestamp->secondsField.msb);
@@ -191,7 +191,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	*(Integer8*)(buf+33) = ptpClock->logAnnounceInterval;
 
 	/*Announce message*/
-	memset((buf+34),0,10);
+	ptpd_wrap_memset((buf+34),0,10);
 	*(Integer16*)(buf+44)=flip16(ptpClock->currentUtcOffset);
 
 	*(UInteger8*)(buf+47)=ptpClock->grandmasterPriority1;
@@ -376,14 +376,14 @@ void msgPackPDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	*(UInteger16*)(buf+30)= flip16(ptpClock->sentPDelayReqSequenceId);
 	*(UInteger8*)(buf+32) = 0x05; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 
 	/*Pdelay_req message*/
 	*(UInteger16*)(buf+34) = flip16(originTimestamp->secondsField.msb);
 	*(UInteger32*)(buf+36) = flip32(originTimestamp->secondsField.lsb);
 	*(UInteger32*)(buf+40) = flip32(originTimestamp->nanosecondsField);
 
-	memset((buf+44),0,10); // RAZ reserved octets
+	ptpd_wrap_memset((buf+44),0,10); // RAZ reserved octets
 }
 
 /*pack delayReq message into OUT buffer of ptpClock*/
@@ -396,7 +396,7 @@ void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	*(UInteger16*)(buf+30)= flip16(ptpClock->sentDelayReqSequenceId);
 	*(UInteger8*)(buf+32) = 0x01; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 
 	/*delay_req message*/
 	*(UInteger16*)(buf+34) = flip16(originTimestamp->secondsField.msb);
@@ -421,7 +421,7 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x09; //Table 19
 	put_be16(buf + 2, DELAY_RESP_LENGTH);
 	*(UInteger8*)(buf+4) = header->domainNumber;
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 
 	/*Copy correctionField of PdelayReqMessage*/
 	put_be32(buf+8, header->correctionfield.msb);
@@ -475,7 +475,7 @@ void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTime
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x03; //Table 19
 	put_be16(buf + 2, PDELAY_RESP_LENGTH);
 	*(UInteger8*)(buf+4) = header->domainNumber;
-	memset((buf+8),0,8);
+	ptpd_wrap_memset((buf+8),0,8);
 
 
 	*(UInteger16*)(buf+30)= flip16(header->sequenceId);

@@ -16,7 +16,7 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
     fflush(stdout);
   }
 
-  memset(sbuf, ' ', SCREEN_BUFSZ);
+  ptpd_wrap_memset(sbuf, ' ', SCREEN_BUFSZ);
 
   switch(ptpClock->portState)
   {
