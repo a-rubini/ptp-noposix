@@ -6,6 +6,7 @@
 
 extern void *ptpd_wrap_malloc(int size);
 extern void *ptpd_wrap_memset(void *s, int c, int n);
+unsigned int ptpd_wrap_sleep(unsigned int seconds);
 
 static inline void *__calloc(int nmemb, int size)
 {

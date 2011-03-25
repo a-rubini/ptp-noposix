@@ -347,9 +347,9 @@ void send_test(PtpClock *clock)
 
       netSendEvent(buf, 48, &clock->netPath, &ts);
       netSendGeneral(buf, 64, &clock->netPath);
-      sleep(1);
+      ptpd_wrap_sleep(1);
       netSendGeneral(buf, 64, &clock->netPath);
-      sleep(1);
+      ptpd_wrap_sleep(1);
     }
 }
 
