@@ -34,3 +34,8 @@ void *ptpd_wrap_memcpy(void *dest, const void *src, int n)
 {
 	return memcpy(dest, src, n);
 }
+
+int ptpd_wrap_memcmp(const void *s1, const void *s2, int n)
+{
+	return memcmp(s1, s2, n);
+}
