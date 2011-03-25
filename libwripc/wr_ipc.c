@@ -190,7 +190,7 @@ wripc_handle_t wripc_create_server(const char *name)
 		return fd;
 
 	sun.sun_family = AF_UNIX;
-	strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
+	ptpd_wrap_strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
 	strncat(sun.sun_path, name, sizeof(sun.sun_path));
 
 	unlink(sun.sun_path);
@@ -269,7 +269,7 @@ wripc_handle_t wripc_connect(const char *name)
 		return fd;
 
 	sun.sun_family = AF_UNIX;
-	strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
+	ptpd_wrap_strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
 	strncat(sun.sun_path, name, sizeof(sun.sun_path));
 
 	//unlink(sun.sun_path);

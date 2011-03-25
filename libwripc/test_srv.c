@@ -34,7 +34,7 @@ void get_state(struct state_struct *rval, int request)
 	printf("Call get_state: request =  %d\n", request);
 	
 	rval->t = 123.0;
-	strcpy(rval->state_name, "SomeState");
+	ptpd_wrap_strcpy(rval->state_name, "SomeState");
 	rval->x = request;
 }
 

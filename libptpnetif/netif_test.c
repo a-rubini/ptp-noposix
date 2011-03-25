@@ -156,7 +156,7 @@ void master_fsm(char *if_name)
   int seq = 0;
   int link_up = 0;
 	
-  strcpy(sock_addr.if_name, if_name);
+  ptpd_wrap_strcpy(sock_addr.if_name, if_name);
   sock_addr.family = PTPD_SOCK_RAW_ETHERNET; // socket type
   sock_addr.ethertype = OUR_ETHERTYPE;
   memset(sock_addr.mac, 0, 6); 
@@ -526,7 +526,7 @@ FILE *log_file = NULL;
 void slave_servo_init(wr_servo_state_t *s, const char *if_name, 
 		      int32_t delta_tx_m, int32_t delta_rx_m, int32_t delta_tx_s, int32_t delta_rx_s)
 {
-  strncpy(s->if_name, if_name, 16);
+  ptpd_wrap_strncpy(s->if_name, if_name, 16);
 
   fprintf(stderr,"[slave] initializing clock servo\n");
 
@@ -590,7 +590,7 @@ void slave_update_clock(wr_servo_state_t *s, wr_timestamp_t t1, wr_timestamp_t t
   switch(s->state)
     {
     case WR_WAIT_SYNC_IDLE:
-      strcpy(adjust.port_name, s->if_name); 
+      ptpd_wrap_strcpy(adjust.port_name, s->if_name); 
 
       if(!halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &adjust))
 	{
@@ -602,7 +602,7 @@ void slave_update_clock(wr_servo_state_t *s, wr_timestamp_t t1, wr_timestamp_t t
     case WR_SYNC_TAI:
       if(ts_offset_hw.utc != 0)
 	{
-	  strcpy(adjust.port_name, s->if_name); 
+	  ptpd_wrap_strcpy(adjust.port_name, s->if_name); 
 	  adjust.adjust_utc = ts_offset_hw.utc;
 
 	  fprintf(stderr,"[slave] Adjusting UTC counter\n");
@@ -616,7 +616,7 @@ void slave_update_clock(wr_servo_state_t *s, wr_timestamp_t t1, wr_timestamp_t t
     case WR_SYNC_NSEC:
       if(ts_offset_hw.nsec != 0)
 	{
-	  strcpy(adjust.port_name, s->if_name); 
+	  ptpd_wrap_strcpy(adjust.port_name, s->if_name); 
 	  adjust.adjust_nsec = ts_offset_hw.nsec;
 
 	  fprintf(stderr,"[slave] Adjusting NSEC counter\n");
@@ -631,7 +631,7 @@ void slave_update_clock(wr_servo_state_t *s, wr_timestamp_t t1, wr_timestamp_t t
 
       s->cur_setpoint = -ts_offset_hw.phase;
 
-      strcpy(adjust.port_name, s->if_name); 
+      ptpd_wrap_strcpy(adjust.port_name, s->if_name); 
       adjust.adjust_phase_shift = s->cur_setpoint;
       halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
@@ -647,7 +647,7 @@ void slave_update_clock(wr_servo_state_t *s, wr_timestamp_t t1, wr_timestamp_t t
       // just follow the changes of deltaMS
       s->cur_setpoint -= (s->delta_ms - s->delta_ms_prev);
       
-      strcpy(adjust.port_name, s->if_name); 
+      ptpd_wrap_strcpy(adjust.port_name, s->if_name); 
       adjust.adjust_phase_shift = s->cur_setpoint;
       halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
@@ -682,7 +682,7 @@ void slave_fsm(char *if_name)
 
   FILE *f_phlog = fopen("/tmp/phase_log_slave", "wb");
 	
-  strcpy(sock_addr.if_name, if_name);
+  ptpd_wrap_strcpy(sock_addr.if_name, if_name);
   sock_addr.family = PTPD_SOCK_RAW_ETHERNET; // socket type
   sock_addr.ethertype = OUR_ETHERTYPE;
   memset(sock_addr.mac, 0, 6); 

@@ -166,12 +166,12 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
     case 'b':
       ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
-      strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+      ptpd_wrap_strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
 
     case 'u':
-      strncpy(rtOpts->unicastAddress, optarg, NET_ADDRESS_LENGTH);
+      ptpd_wrap_strncpy(rtOpts->unicastAddress, optarg, NET_ADDRESS_LENGTH);
       break;
 
     case 'l':
@@ -260,19 +260,19 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	   break;
     case '1':
       ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
-      strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+      ptpd_wrap_strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
 
     case '2':
       ptpd_wrap_memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
-      strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
+      ptpd_wrap_strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 2;
       break;
 
     case '3':
       ptpd_wrap_memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
-      strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
+      ptpd_wrap_strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber  = 3;
       break;
 

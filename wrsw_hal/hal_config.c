@@ -62,7 +62,7 @@ int hal_config_get_string(const char *name, char *value, int max_len)
 {
 	if(global_get_var(name) < 0) return -1;
 	if(!lua_isstring(cfg_file, -1)) return -1;
-	strncpy(value, lua_tostring(cfg_file, -1), max_len);
+	ptpd_wrap_strncpy(value, lua_tostring(cfg_file, -1), max_len);
 	return 0;
 }
 
@@ -78,7 +78,7 @@ int hal_config_iterate(const char *section, int index, char *subsection, int max
 
 			if(!strcmp(key_type, "table") && i == index)
 			{
-				strncpy(subsection, lua_tostring(cfg_file, -2), max_len);
+				ptpd_wrap_strncpy(subsection, lua_tostring(cfg_file, -2), max_len);
 				return 1;
 			}
 			i++;

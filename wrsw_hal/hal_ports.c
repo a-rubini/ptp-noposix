@@ -112,7 +112,7 @@ static int get_mac_address(const char *if_name, uint8_t *mac_addr)
 	idx = (if_name[2] == 'u' ? 32 : 0) + (if_name[3] - '0');
 	
 	
-	strncpy(ifr.ifr_name, "eth0", sizeof(ifr.ifr_name));
+	ptpd_wrap_strncpy(ifr.ifr_name, "eth0", sizeof(ifr.ifr_name));
 	
 	if(ioctl(fd_raw, SIOCGIFHWADDR, &ifr) < 0)
 		return -1;	
@@ -158,7 +158,7 @@ static int check_port_presence(const char *if_name)
 {
 	struct ifreq ifr;
 
-	strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	ptpd_wrap_strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 	
 	if(ioctl(fd_raw, SIOCGIFHWADDR, &ifr) < 0)
 		return -1;	
@@ -191,7 +191,7 @@ int hal_init_port(const char *name, int index)
 
 	TRACE(TRACE_INFO,"Initializing port '%s' [%02x:%02x:%02x:%02x:%02x:%02x]", name, mac_addr[0],  mac_addr[1],  mac_addr[2],  mac_addr[3],  mac_addr[4],  mac_addr[5] );
 	
-	strncpy(p->name, name, 16);
+	ptpd_wrap_strncpy(p->name, name, 16);
 	memcpy(p->hw_addr, mac_addr, 6);
 	
 	snprintf(cmd, sizeof(cmd), "/sbin/ifconfig %s hw ether %02x:%02x:%02x:%02x:%02x:%02x", name, mac_addr[0],  mac_addr[1],  mac_addr[2],  mac_addr[3],  mac_addr[4],  mac_addr[5] );
@@ -280,7 +280,7 @@ static int check_link_up(const char *if_name)
 {
 	struct ifreq ifr;
 	
-	strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
+	ptpd_wrap_strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name));
 
   if(ioctl(fd_raw, SIOCGIFFLAGS, &ifr) > 0) return -1;
   
@@ -665,7 +665,7 @@ int halexp_query_ports(hexp_port_list_t *list)
   for(i=0; i<MAX_PORTS;i++)
     {
       if(ports[i].in_use)
-		  strcpy(list->port_names[n++], ports[i].name);
+		  ptpd_wrap_strcpy(list->port_names[n++], ports[i].name);
     }
 
   list->num_ports = n;

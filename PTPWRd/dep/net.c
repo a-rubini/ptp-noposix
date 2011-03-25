@@ -119,7 +119,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   if(rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1][0] != '\0')
   {
     /*interface specified at PTPd start*/
-    strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]);		// TODO: network intarface
+    ptpd_wrap_strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]);		// TODO: network intarface
 
     DBG("Network interface : %s\n",rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]  );
   }
@@ -130,14 +130,14 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     if(  ptpd_netif_get_ifName(bindaddr.if_name,ptpClock->portIdentity.portNumber ) == PTPD_NETIF_ERROR )
     {
-      strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
+      ptpd_wrap_strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
       DBG("Network interface forced to be wru1, but none of the WR ports seems to be up \n");
     }
     else
       DBG("Network interface retrieved automatically by ptpd_netif: %s\n",bindaddr.if_name);
   }
 
-  strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
+  ptpd_wrap_strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
 
   DBG("Network interface : %s\n",netPath->ifaceName);
 

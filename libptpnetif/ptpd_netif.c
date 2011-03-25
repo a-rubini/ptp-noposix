@@ -210,13 +210,13 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	// Put the controller in promiscious mode, so it receives everything
-	strcpy(f.ifr_name, bind_addr->if_name);
+	ptpd_wrap_strcpy(f.ifr_name, bind_addr->if_name);
 	if(ioctl(fd, SIOCGIFFLAGS,&f) < 0) { perror("ioctl()"); return NULL; }
 	f.ifr_flags |= IFF_PROMISC;
 	if(ioctl(fd, SIOCSIFFLAGS,&f) < 0) { perror("ioctl()"); return NULL; }
 
 	// Find the inteface index
-	strcpy(f.ifr_name, bind_addr->if_name);
+	ptpd_wrap_strcpy(f.ifr_name, bind_addr->if_name);
 	ioctl(fd, SIOCGIFINDEX, &f);
 
 
@@ -243,7 +243,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	struct ifreq ifr;
 	struct hwtstamp_config hwconfig;
 
-	strncpy(ifr.ifr_name, bind_addr->if_name, sizeof(ifr.ifr_name));
+	ptpd_wrap_strncpy(ifr.ifr_name, bind_addr->if_name, sizeof(ifr.ifr_name));
 
 	hwconfig.tx_type = HWTSTAMP_TX_ON;
 	hwconfig.rx_filter = HWTSTAMP_FILTER_PTP_V2_L2_EVENT;
@@ -875,7 +875,7 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 	{
 		if(j == number)
 		{
-			strcpy(ifname,list.port_names[i]);
+			ptpd_wrap_strcpy(ifname,list.port_names[i]);
 			return PTPD_NETIF_OK;
 		}
 		else

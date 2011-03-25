@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+//#include <string.h>
 
 #include <math.h>
 
@@ -188,7 +188,7 @@ int wr_servo_init(PtpClock *clock)
 
   fprintf(stderr,"[slave] initializing clock servo\n");
 
-  strncpy(s->if_name, clock->netPath.ifaceName, 16);
+  ptpd_wrap_strncpy(s->if_name, clock->netPath.ifaceName, 16);
 
   s->state = WR_SYNC_TAI;
   s->cur_setpoint = 0;
@@ -205,8 +205,8 @@ int wr_servo_init(PtpClock *clock)
 	cur_servo_state.delta_rx_s = (double)s->delta_rx_s;
 
 
-	strncpy(cur_servo_state.sync_source, clock->netPath.ifaceName, 16);//fixme
-	strncpy(cur_servo_state.slave_servo_state, "Uninitialized", 32);
+	ptpd_wrap_strncpy(cur_servo_state.sync_source, clock->netPath.ifaceName, 16);//fixme
+	ptpd_wrap_strncpy(cur_servo_state.slave_servo_state, "Uninitialized", 32);
 	servo_state_valid = 1;
 	cur_servo_state.valid = 1;
 	return 0;
@@ -319,7 +319,7 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
     {
 
     case WR_WAIT_SYNC_IDLE:
-      strcpy(adjust.port_name, s->if_name);
+      ptpd_wrap_strcpy(adjust.port_name, s->if_name);
 
       if(!halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &adjust) && (get_tics() - s->last_tics) > 2000000ULL)
 			s->state = s->next_state;
@@ -329,9 +329,9 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
     case WR_SYNC_TAI:
       if(ts_offset_hw.utc != 0)
 	{
-			strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
+	  ptpd_wrap_strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
 
-	  strcpy(adjust.port_name, s->if_name);
+	  ptpd_wrap_strcpy(adjust.port_name, s->if_name);
 	  adjust.adjust_utc = ts_offset_hw.utc;
 
 	//  fprintf(stderr,"[slave] Adjusting UTC counter\n");
@@ -346,12 +346,12 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
       break;
 
     case WR_SYNC_NSEC:
-			strcpy(cur_servo_state.slave_servo_state, "SYNC_NSEC");
+	ptpd_wrap_strcpy(cur_servo_state.slave_servo_state, "SYNC_NSEC");
 
       if(ts_offset_hw.nsec != 0)
 	{
 
-	  strcpy(adjust.port_name, s->if_name);
+	  ptpd_wrap_strcpy(adjust.port_name, s->if_name);
 	  adjust.adjust_nsec = ts_offset_hw.nsec;
 
 	  fprintf(stderr,"[slave] Adjusting NSEC counter\n");
@@ -365,11 +365,11 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
       break;
 
     case WR_SYNC_PHASE:
-			strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
+	ptpd_wrap_strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
 
       s->cur_setpoint = -ts_offset_hw.phase;
 
-      strcpy(adjust.port_name, s->if_name);
+      ptpd_wrap_strcpy(adjust.port_name, s->if_name);
       adjust.adjust_phase_shift = s->cur_setpoint;
       halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
@@ -383,18 +383,18 @@ printf("delta_RX_S = %d\n", s->delta_rx_s);
 
 
     case WR_TRACK_PHASE:
-			strcpy(cur_servo_state.slave_servo_state, "TRACK_PHASE");
+	ptpd_wrap_strcpy(cur_servo_state.slave_servo_state, "TRACK_PHASE");
 
-			cur_servo_state.cur_setpoint = s->cur_setpoint;
-			cur_servo_state.cur_skew = s->delta_ms - s->delta_ms_prev;
+	cur_servo_state.cur_setpoint = s->cur_setpoint;
+	cur_servo_state.cur_skew = s->delta_ms - s->delta_ms_prev;
 
-			if(tracking_enabled)
-			{
+	if(tracking_enabled)
+	{
 
 	      // just follow the changes of deltaMS
 	      s->cur_setpoint -= (s->delta_ms - s->delta_ms_prev);
 
-	      strcpy(adjust.port_name, s->if_name);
+	      ptpd_wrap_strcpy(adjust.port_name, s->if_name);
 	      adjust.adjust_phase_shift = s->cur_setpoint;
 	      halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
 
