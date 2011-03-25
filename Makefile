@@ -49,7 +49,7 @@ OBJS += $D/wr_protocol.o
 OBJS += ./libwripc/helper_arm.o
 
 # This is the compatilibity library, to hide posix stuff in a single place
-OBJS += ./libposix/posix-wrapper.o
+LATE_OBJS = ./libposix/posix-wrapper.o
 #OBJS += ./libcompat/freestanding-wrapper.o
 
 
@@ -72,9 +72,9 @@ libptpnetif.a: libptpnetif/hal_client.o libptpnetif/ptpd_netif.o
 	$(AR) r $@ $^
 
 # the binary is just a collection of object files
-ptpd: check libs $(OBJS)
+ptpd: check libs $(OBJS) $(LATE_OBJS)
 	$(LD) -r $(OBJS) $(CORELIBS) -o ptpd.o
-	$(CC) $(CFLAGS) ptpd.o $(LDFLAGS) -o ptpd
+	$(CC) $(CFLAGS) ptpd.o $(LATE_OBJS) $(LDFLAGS) -o ptpd
 
 
 # clean and so on.
