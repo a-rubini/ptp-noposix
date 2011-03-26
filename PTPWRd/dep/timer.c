@@ -107,17 +107,18 @@ void timerStop(UInteger16 index, IntervalTimer *itimer)
   itimer[index].interval = 0;
 }
 
-void timerStart(UInteger16 index, float interval, IntervalTimer *itimer)
+/* interval used to be seconds as float value, it is now milliseconds */
+void timerStart(UInteger16 index, int interval, IntervalTimer *itimer)
 {
   if(index >= TIMER_ARRAY_SIZE)
     return;
 
   itimer[index].expire = FALSE;
-  itimer[index].left = interval*1000; //Factor 1000 used because resolution time is ms for the variable "elasped"
+  itimer[index].left = interval; // even "elapsed" values are milliseconds
 
   itimer[index].interval = itimer[index].left;
 
-  DBGNPI("timerStart: set timer %s to %f\n", timerNames[index], interval);
+  DBGNPI("timerStart: set timer %s to %i\n", timerNames[index], interval);
 
 }
 

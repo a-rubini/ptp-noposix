@@ -226,7 +226,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   case PTP_LISTENING:
     DBG("state PTP_LISTENING\n");
-    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout)
+    timerStart(ANNOUNCE_RECEIPT_TIMER, ptpClock->announceReceiptTimeout * 1000
 	       * (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
     ptpClock->portState = PTP_LISTENING;
     break;
@@ -234,12 +234,12 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    case PTP_MASTER:
     DBG("state PTP_MASTER\n");
     timerStart(SYNC_INTERVAL_TIMER,
-	       pow_2(ptpClock->logSyncInterval), ptpClock->itimer);
+	       1000 * pow_2(ptpClock->logSyncInterval), ptpClock->itimer);
     DBG("SYNC INTERVAL TIMER : %f \n",pow_int(2, ptpClock->logSyncInterval));
     timerStart(ANNOUNCE_INTERVAL_TIMER,
-	       pow_2(ptpClock->logAnnounceInterval), ptpClock->itimer);
+	       1000 * pow_2(ptpClock->logAnnounceInterval), ptpClock->itimer);
     timerStart(PDELAYREQ_INTERVAL_TIMER,
-	       pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+	       1000 * pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
     ptpClock->portState = PTP_MASTER;
     break;
 
@@ -247,9 +247,9 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   case PTP_PASSIVE:
     DBG("state PTP_PASSIVE\n");
     timerStart(PDELAYREQ_INTERVAL_TIMER,
-	       pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
-    timerStart(ANNOUNCE_RECEIPT_TIMER, (ptpClock->announceReceiptTimeout) *
-	       (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
+	       1000 * pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+    timerStart(ANNOUNCE_RECEIPT_TIMER, ptpClock->announceReceiptTimeout * 1000
+	       * pow_2(ptpClock->logAnnounceInterval), ptpClock->itimer);
     ptpClock->portState = PTP_PASSIVE;
     break;
 
@@ -316,14 +316,14 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     ptpClock->pdelay_resp_receive_time.nanoseconds = 0;
 
     timerStart(ANNOUNCE_RECEIPT_TIMER,(ptpClock->announceReceiptTimeout) *
-	       (pow_2(ptpClock->logAnnounceInterval)), ptpClock->itimer);
+	       1000 * pow_2(ptpClock->logAnnounceInterval), ptpClock->itimer);
 
     if (rtOpts->E2E_mode)
       timerStart(DELAYREQ_INTERVAL_TIMER,
-		 pow_2(ptpClock->logMinDelayReqInterval), ptpClock->itimer);
+		 1000 * pow_2(ptpClock->logMinDelayReqInterval), ptpClock->itimer);
     else
       timerStart(PDELAYREQ_INTERVAL_TIMER,
-		 pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
+		 1000 * pow_2(ptpClock->logMinPdelayReqInterval), ptpClock->itimer);
 
     ptpClock->portState = PTP_SLAVE;
     break;
@@ -843,7 +843,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 			/*Reset Timer handling Announce receipt timeout*/
 			timerStart(ANNOUNCE_RECEIPT_TIMER,
-				   (ptpClock->announceReceiptTimeout) *
+				   ptpClock->announceReceiptTimeout * 1000 *
 				   (pow_2(ptpClock->logAnnounceInterval)),
 				   ptpClock->itimer);
 			break;
@@ -855,7 +855,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 			/*Reset Timer handling Announce receipt timeout*/
 			timerStart(ANNOUNCE_RECEIPT_TIMER,
-				   (ptpClock->announceReceiptTimeout) *
+				   ptpClock->announceReceiptTimeout * 1000 *
 				   (pow_2(ptpClock->logAnnounceInterval)),
 				   ptpClock->itimer);
 			break;

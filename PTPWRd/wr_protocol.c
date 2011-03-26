@@ -337,7 +337,9 @@ void doWRSlaveState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
 	    {
 	      //reset timeout [??????????//]
-	      timerStart(PTPWR_S_CALIBRATE,(float)ptpClock->wrTimeouts[PTPWR_S_CALIBRATE]/1000,ptpClock->wrtimer);
+	      timerStart(PTPWR_S_CALIBRATE,
+			 ptpClock->wrTimeouts[PTPWR_S_CALIBRATE],
+			 ptpClock->wrtimer);
 	      issueWRManagement(SLAVE_CALIBRATE,rtOpts, ptpClock);
 	      ptpClock->wrPortState = PTPWR_S_CALIBRATE_1;
 	    }
@@ -1029,14 +1031,16 @@ void wrTimetoutManage(UInteger8 enteringState, UInteger8 exitingState, RunTimeOp
 
   /*start timer in the state you are entering (except IDLE) */
   if(enteringState != WRS_IDLE)
-    timerStart(enteringState,(float)ptpClock->wrTimeouts[enteringState]/1000,ptpClock->wrtimer);
+    timerStart(enteringState,
+	       ptpClock->wrTimeouts[enteringState], ptpClock->wrtimer);
 #else
   if(exitingState != PTPWR_IDLE)
     timerStop(exitingState,ptpClock->wrtimer);
 
   /*start timer in the state you are entering (except IDLE) */
   if(enteringState != PTPWR_IDLE)
-    timerStart(enteringState,(float)ptpClock->wrTimeouts[enteringState]/1000,ptpClock->wrtimer);
+    timerStart(enteringState,
+	       ptpClock->wrTimeouts[enteringState], ptpClock->wrtimer);
 
 #endif
 
@@ -1306,7 +1310,9 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
 	    {
 	      //reset timeout [??????????//]
-	      timerStart(WRS_REQ_CALIBRATION,(float)ptpClock->wrTimeouts[WRS_REQ_CALIBRATION]/1000,ptpClock->wrtimer);
+	      timerStart(WRS_REQ_CALIBRATION,
+			 ptpClock->wrTimeouts[WRS_REQ_CALIBRATION],
+			 ptpClock->wrtimer);
 	      issueWRManagement(CALIBRATE,rtOpts, ptpClock);
 	      ptpClock->wrPortState = WRS_REQ_CALIBRATION_1;
 	    }
