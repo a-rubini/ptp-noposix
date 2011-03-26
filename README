@@ -8,8 +8,9 @@ that.
 
 I planned to change the Makefiles to have no external dependencies (like
 ../../Makedefs), but I finally chose to write a new top-level Makefile
-and use that instead.  So the internal Makefiles are still there,
-but are not meant to be used here.
+and use that instead. Other Makefiles have been removed, so you don't
+get strange errors if issuing "make" inside (you'll get "no Makefile"
+which I see as a better error).
 
 WARNING: The is no dependencies support, so if you touch headers you should
 "make clean" and again "make".
@@ -52,7 +53,7 @@ for the freestanding version (e.g.: startup.c) and wrap-management
 files (like implementing internal function names by calling system ones).
 
 * the same ptpd.o is linked with other objects (from libposix, which
-is probably misnamed) to ma the freestanding object file.  Such
+is probably misnamed) to make the freestanding object file.  Such
 objects include rewriting of posix-heavy thing (e.g., startup.c),
 no-op IPC library files and wrap-management files.
 
@@ -65,42 +66,28 @@ not ready yet).  You can "make ptpd-freestanding" if you want.
      How portability is accomplished
      -------------------------------
 
-During development, calls to system library functions are being renamed,
-so the actual reference to system libraries is made in the final linking
-steps, and ptpd.o remains clean.  Such functions are immediately
-implemented in the posix-side of compilation (so I can test the binary
-is still working as expected); later on I implement the same function
-in the freestanding-related source files, in order to get nearer
-to a clean and complete compilation of a freestanding ptpd.
+The command-line of $(CROSS_COMPILE)gcc has the option
 
-Some functions are moved to the dual implementation as a whole (for
-example, opening a socket and configuring it with system calls),
-because the whole body of the functions makes no sense in a
-freestanding environment.  Most of these are already library
-functions.  Other functions are just being renamed, so a local
-implemantation is called (the posix one calls libc, the freestanding
-one is standalone).
+    -include libposix/ptpd-wrappers.h
 
-Similarly, inclusion of system headers is removed when each header is not
-needed any more.
+The header does all the magic by selecting whether the compilation
+is freestanding or not.
+
+If the compilation is not freestanding, the header includes headers that
+can't be included otherwise (because they are missing in the zpu
+installation, and probably in other freestanding implementation).
+
+If the compilation is freestanding, what is missing is defined or
+declared.
 
 
+In this way, the original sources are minimally affected and I hope to
+fill the missing bits easily. In any case, I removed the inclusion of
+system headers where they were not needed, and sometimes I added
+"#ifdeffed" inclusions when headers were only needed in one place
+(to avoid including it in ptpd-wrappers if it's too specific).
 
-Functions wrapped or rewritten:
-
-calloc:
-	rename to __calloc, based on malloc and memset
-malloc:
-	rename to ptpd_wrap_malloc
-memset:
-	rename to ptpd_wrap_memset
-sleep:
-	rename to ptpd_wrap_sleep
-
-stcpy, strncpy, memcpy, memcmp: same
-
-strlen: rename to __strlen, implemented trivially
-strdup: rename to __strdup, based on malloc and strlen
+Sometimes, inclusion of system headers is removed when it was not needed.
 
      List of issues I am facing
      --------------------------
@@ -113,8 +100,8 @@ that some of the size comes from the libraries, but it's still big:
 
    tornado$ size ptpd.o ptpd
       text    data     bss     dec     hex filename
-     76708      36     400   77144   12d58 ptpd.o
-     89428     564    1220   91212   1644c ptpd
+     52272      32     140   52444    ccdc ptpd.o
+     88896     564    1216   90676   16234 ptpd
 
 The biggest files are the following 4:
 
@@ -125,22 +112,8 @@ The biggest files are the following 4:
       13700       0       0   13700    3584 ./PTPWRd/protocol.o
 
 
-* The program is built over floating point. From a cursory look it
-seems zpu is supporting floating point, but I'd better use fixed point
-if at all possible (I still have to check all uses of floating point.
-Actually, par of the program size comes from libgcc functions.
+* The program is built over floating point. Float stuff is being
+removed as it would be a problem with zpu
 
-* The IPC engine must be removed, and library calls should
-be made instead. The following functions are RPC-called by wr_ptpd:
-
-./libptpnetif/ptpd_netif.o: halexp_calibration_cmd
-./libptpnetif/ptpd_netif.o: halexp_client_init
-./libptpnetif/ptpd_netif.o: halexp_get_port_state
-./libptpnetif/ptpd_netif.o: halexp_lock_cmd
-./libptpnetif/ptpd_netif.o: halexp_query_ports
-./PTPWRd/dep/wr_servo.o:    halexp_pps_cmd
-./PTPWRd/dep/net.o:         halexp_get_port_state
-
-* The list of headers and external functions is noticeable. At this
-point (no porting started yet) it's 63 library functions and around
-50 external headers.
+* Other issues are being worked on, I don't have documentation at
+this point, though
