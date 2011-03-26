@@ -34,15 +34,87 @@ The current situation is working. It means that this new ptpd
 can work on a White Rabbit Switch like the original one, when compiled
 for ARM.
 
+The freestanding one is not working, yet.
+
+     The compilation steps
+     ---------------------
+
+The package (which only exists to make ptpd a freestanding thing
+with a goal of short-term maintainability) is designed as follows:
+
+* all objects from ptpd are linked into ptpd.o . This is where
+I look for undefined symbols that must be dealt with.
+
+* wr-specific libraries and special "late objects" are linked
+later, to make the normal linux-hosted ptpd that runs on the switch.
+Late objects are ptpd-internal files that need to be rewritten
+for the freestanding version (e.g.: startup.c) and wrap-management
+files (like implementing internal function names by calling system ones).
+
+* the same ptpd.o is linked with other objects (from libposix, which
+is probably misnamed) to ma the freestanding object file.  Such
+objects include rewriting of posix-heavy thing (e.g., startup.c),
+no-op IPC library files and wrap-management files.
+
+* this "ptpd-freestanding.o" may be linked in a full-fledged
+executable, but this is not the default when running "make", so I don't
+have a zillion errors during development (e.g., libposix files are
+not ready yet).  You can "make ptpd-freestanding" if you want.
+
+
+     How portability is accomplished
+     -------------------------------
+
+During development, calls to system library functions are being renamed,
+so the actual reference to system libraries is made in the final linking
+steps, and ptpd.o remains clean.  Such functions are immediately
+implemented in the posix-side of compilation (so I can test the binary
+is still working as expected); later on I implement the same function
+in the freestanding-related source files, in order to get nearer
+to a clean and complete compilation of a freestanding ptpd.
+
+Some functions are moved to the dual implementation as a whole (for
+example, opening a socket and configuring it with system calls),
+because the whole body of the functions makes no sense in a
+freestanding environment.  Most of these are already library
+functions.  Other functions are just being renamed, so a local
+implemantation is called (the posix one calls libc, the freestanding
+one is standalone).
+
+Similarly, inclusion of system headers is removed when each header is not
+needed any more.
+
+
+
+Functions wrapped or rewritten:
+
+calloc:
+	rename to __calloc, based on malloc and memset
+malloc:
+	rename to ptpd_wrap_malloc
+memset:
+	rename to ptpd_wrap_memset
+sleep:
+	rename to ptpd_wrap_sleep
+
+stcpy, strncpy, memcpy, memcmp: same
+
+strlen: rename to __strlen, implemented trivially
+strdup: rename to __strdup, based on malloc and strlen
 
      List of issues I am facing
      --------------------------
 
-* This binary is horribly big:
+* This binary is horribly big.
 
-   tornado$ size ptpd
+I changed the Makefile to create a ptpd.o with all the objects,
+before linking to the full-fledged executable ptpd.  This shows
+that some of the size comes from the libraries, but it's still big:
+
+   tornado$ size ptpd.o ptpd
       text    data     bss     dec     hex filename
-     89420     564    1216   91200   16440 ptpd
+     76708      36     400   77144   12d58 ptpd.o
+     89428     564    1220   91212   1644c ptpd
 
 The biggest files are the following 4:
 
