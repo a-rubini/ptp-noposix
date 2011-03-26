@@ -94,6 +94,16 @@ ptpd-freestanding: ptpd-freestanding.o
 ptpd.o: $(OBJS)
 	$(LD) -r $(OBJS) -o $@
 
+# This is a target for me: print all headers included by this tree
+printh:
+	grep -h '^#include' $(OBJS:.o=.c) $$(find . -name \*.h) | \
+		sort | uniq -c
+
+printhf:
+	grep '^#include' $(OBJS:.o=.c) $$(find . -name \*.h) | \
+		sort -k 2
+
+
 # clean and so on.
 clean:
 	rm -f *.a */*.o */dep/*.o *~ */*~
@@ -102,4 +112,4 @@ distclean:
 	git clean -f -d
 
 # even if there are files with these names, ignore them
-.PHONY: all check libs clean distclean
+.PHONY: all check libs clean distclean printh printhf
