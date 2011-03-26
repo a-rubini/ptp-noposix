@@ -170,13 +170,13 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
       break;
 
     case 'b':
-      ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
-      ptpd_wrap_strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+      memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+      strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
 
     case 'u':
-      ptpd_wrap_strncpy(rtOpts->unicastAddress, optarg, NET_ADDRESS_LENGTH);
+      strncpy(rtOpts->unicastAddress, optarg, NET_ADDRESS_LENGTH);
       break;
 
     case 'l':
@@ -264,20 +264,20 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	   DBGNPI("WR Master\n");
 	   break;
     case '1':
-      ptpd_wrap_memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
-      ptpd_wrap_strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+      memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+      strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
       break;
 
     case '2':
-      ptpd_wrap_memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
-      ptpd_wrap_strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
+      memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
+      strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 2;
       break;
 
     case '3':
-      ptpd_wrap_memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
-      ptpd_wrap_strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
+      memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
+      strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber  = 3;
       break;
 
@@ -288,7 +288,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     }
   }
 
-  ptpClock = (PtpClock*)__calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
+  ptpClock = (PtpClock*)calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
 
   PtpClock * currentPtpdClockData;
 
@@ -308,7 +308,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     for(i = 0; i < MAX_PORT_NUMBER; i++)
     {
 	currentPtpdClockData->portIdentity.portNumber = i + 1;
-	currentPtpdClockData->foreign = (ForeignMasterRecord*)__calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
+	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
 	if(!currentPtpdClockData->foreign)
 	{
 	    PERROR("failed to allocate memory for foreign master data");
@@ -323,8 +323,8 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	    /*Init to 0 net buffer*/
 
 	}
-	ptpd_wrap_memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
-	ptpd_wrap_memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
+	memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
+	memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
 
 	currentPtpdClockData++;
     }

@@ -119,7 +119,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   if(rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1][0] != '\0')
   {
     /*interface specified at PTPd start*/
-    ptpd_wrap_strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]);		// TODO: network intarface
+    strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]);		// TODO: network intarface
 
     DBG("Network interface : %s\n",rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]  );
   }
@@ -130,20 +130,20 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     if(  ptpd_netif_get_ifName(bindaddr.if_name,ptpClock->portIdentity.portNumber ) == PTPD_NETIF_ERROR )
     {
-      ptpd_wrap_strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
+      strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
       DBG("Network interface forced to be wru1, but none of the WR ports seems to be up \n");
     }
     else
       DBG("Network interface retrieved automatically by ptpd_netif: %s\n",bindaddr.if_name);
   }
 
-  ptpd_wrap_strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
+  strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
 
   DBG("Network interface : %s\n",netPath->ifaceName);
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type
   bindaddr.ethertype = 0x88f7; 	        // PTPv2
-  ptpd_wrap_memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, sizeof(mac_addr_t));
+  memcpy(bindaddr.mac, PTP_MULTICAST_ADDR, sizeof(mac_addr_t));
 
   // Create one socket for event and general messages (WR lower level layer requires that
   netPath->wrSock = ptpd_netif_create_socket(PTPD_SOCK_RAW_ETHERNET, 0, &bindaddr);
@@ -157,13 +157,13 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   /* send a uni-cast address if specified (useful for testing) */
   if(rtOpts->unicastAddress[0])
   {
-    ptpd_wrap_memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR,  sizeof(mac_addr_t));
+    memcpy(netPath->unicastAddr.mac, PTP_UNICAST_ADDR,  sizeof(mac_addr_t));
   }
   else
-    ptpd_wrap_memcpy(netPath->unicastAddr.mac, ZERO_ADDR,  sizeof(mac_addr_t));
+    memcpy(netPath->unicastAddr.mac, ZERO_ADDR,  sizeof(mac_addr_t));
 
-  ptpd_wrap_memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
-  ptpd_wrap_memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
+  memcpy(netPath->multicastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
+  memcpy(netPath->peerMulticastAddr.mac, PTP_MULTICAST_ADDR,  sizeof(mac_addr_t));
 
   netPath->unicastAddr.ethertype = 0x88f7;
   netPath->multicastAddr.ethertype = 0x88f7;
@@ -172,7 +172,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   ptpd_netif_get_hw_addr(netPath->wrSock, portMacAddress);
 
   /* copy mac part to uuid */
-  ptpd_wrap_memcpy(ptpClock->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
+  memcpy(ptpClock->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
 
   DBG("[%s] mac: %x:%x:%x:%x:%x:%x\n",__func__,\
     ptpClock->port_uuid_field[0],\

@@ -31,7 +31,7 @@ main()
 	struct test_struct s2;
 	s2.apples = 10;
 	s2.peas = 15;
-	ptpd_wrap_strcpy(s2.name, "Javier");
+	strcpy(s2.name, "Javier");
 	s2.value = 17.50;
 	
 //	wripc_call(cli, "structure_test", &result, 1, A_STRUCT(s2));

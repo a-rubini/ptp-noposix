@@ -20,7 +20,7 @@ void ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 {
 	if(servo_state_valid)
 	{
-		ptpd_wrap_memcpy(state, &cur_servo_state, sizeof(ptpdexp_sync_state_t));
+		memcpy(state, &cur_servo_state, sizeof(ptpdexp_sync_state_t));
 		state->valid = 1;
 	} else
 		state->valid = 0;

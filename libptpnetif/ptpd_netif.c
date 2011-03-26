@@ -210,13 +210,13 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	// Put the controller in promiscious mode, so it receives everything
-	ptpd_wrap_strcpy(f.ifr_name, bind_addr->if_name);
+	strcpy(f.ifr_name, bind_addr->if_name);
 	if(ioctl(fd, SIOCGIFFLAGS,&f) < 0) { perror("ioctl()"); return NULL; }
 	f.ifr_flags |= IFF_PROMISC;
 	if(ioctl(fd, SIOCSIFFLAGS,&f) < 0) { perror("ioctl()"); return NULL; }
 
 	// Find the inteface index
-	ptpd_wrap_strcpy(f.ifr_name, bind_addr->if_name);
+	strcpy(f.ifr_name, bind_addr->if_name);
 	ioctl(fd, SIOCGIFINDEX, &f);
 
 
@@ -225,7 +225,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	sll.sll_protocol = htons(bind_addr->ethertype);
 	sll.sll_halen = 6;
 
-	ptpd_wrap_memcpy(sll.sll_addr, bind_addr->mac, 6);
+	memcpy(sll.sll_addr, bind_addr->mac, 6);
 
 	if(bind(fd, (struct sockaddr *)&sll, sizeof(struct sockaddr_ll)) < 0)
 	{
@@ -243,7 +243,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	struct ifreq ifr;
 	struct hwtstamp_config hwconfig;
 
-	ptpd_wrap_strncpy(ifr.ifr_name, bind_addr->if_name, sizeof(ifr.ifr_name));
+	strncpy(ifr.ifr_name, bind_addr->if_name, sizeof(ifr.ifr_name));
 
 	hwconfig.tx_type = HWTSTAMP_TX_ON;
 	hwconfig.rx_filter = HWTSTAMP_FILTER_PTP_V2_L2_EVENT;
@@ -263,7 +263,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 		return NULL;
 	}
 
-	s=__calloc(sizeof(struct my_socket), 1);
+	s=calloc(sizeof(struct my_socket), 1);
 
 	s->if_index = f.ifr_ifindex;
 
@@ -272,8 +272,8 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 		perror("ioctl()"); return NULL;
 	}
 
-	ptpd_wrap_memcpy(s->local_mac, f.ifr_hwaddr.sa_data, 6);
-	ptpd_wrap_memcpy(&s->bind_addr, bind_addr, sizeof(wr_sockaddr_t));
+	memcpy(s->local_mac, f.ifr_hwaddr.sa_data, 6);
+	memcpy(&s->bind_addr, bind_addr, sizeof(wr_sockaddr_t));
 
 	s->fd = fd;
 
@@ -303,20 +303,20 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
 	if(data_length > ETHER_MTU-8) return -EINVAL;
 
-	ptpd_wrap_memset(&pkt, 0, sizeof(struct etherpacket));
+	memset(&pkt, 0, sizeof(struct etherpacket));
 
-	ptpd_wrap_memcpy(pkt.ether.h_dest, to->mac, 6);
-	ptpd_wrap_memcpy(pkt.ether.h_source, s->local_mac, 6);
+	memcpy(pkt.ether.h_dest, to->mac, 6);
+	memcpy(pkt.ether.h_source, s->local_mac, 6);
 	pkt.ether.h_proto =htons(to->ethertype);
 
-	ptpd_wrap_memcpy(pkt.data, data, data_length);
+	memcpy(pkt.data, data, data_length);
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
 	if(len < 72)
 		len = 72;
 
-	ptpd_wrap_memset(&sll, 0, sizeof(struct sockaddr_ll));
+	memset(&sll, 0, sizeof(struct sockaddr_ll));
 
 	sll.sll_ifindex = s->if_index;
 	sll.sll_family = AF_PACKET;
@@ -335,7 +335,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 		//	mdump_timestamp("Polled", ts);
 		if(tx_ts)
 		{
-			ptpd_wrap_memcpy(tx_ts, &ts, sizeof(wr_timestamp_t));
+			memcpy(tx_ts, &ts, sizeof(wr_timestamp_t));
 		}
 		return rval;
 	}
@@ -374,7 +374,7 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 	struct sock_extended_err *serr = NULL;
 	struct scm_timestamping *sts = NULL;
 
-	ptpd_wrap_memset(&msg, 0, sizeof(msg));
+	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = &entry;
 	msg.msg_iovlen = 1;
 	entry.iov_base = data;
@@ -390,7 +390,7 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 
 	if(res >= 0)
 	{
-		ptpd_wrap_memcpy(&rtag, data+res-4, 4);
+		memcpy(&rtag, data+res-4, 4);
 
 		for (cmsg = CMSG_FIRSTHDR(&msg);
 		     cmsg;
@@ -446,7 +446,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
-	ptpd_wrap_memset(&msg, 0, sizeof(msg));
+	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = &entry;
 	msg.msg_iovlen = 1;
 	entry.iov_base = &pkt;
@@ -463,11 +463,11 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 	if(ret <= 0) return ret;
 
-	ptpd_wrap_memcpy(data, pkt.data, ret - sizeof(struct ethhdr));
+	memcpy(data, pkt.data, ret - sizeof(struct ethhdr));
 
 	from->ethertype = ntohs(pkt.ether.h_proto);
-	ptpd_wrap_memcpy(from->mac, pkt.ether.h_source, 6);
-	ptpd_wrap_memcpy(from->mac_dest, pkt.ether.h_dest, 6);
+	memcpy(from->mac, pkt.ether.h_source, 6);
+	memcpy(from->mac_dest, pkt.ether.h_dest, 6);
 
 	//fnetif_dbg(stderr, "recvmsg: ret %d\n", ret);
 
@@ -831,7 +831,7 @@ int ptpd_netif_select( wr_socket_t *wrSock)
 int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac)
 {
 	struct my_socket *s = (struct my_socket *)sock;
-	ptpd_wrap_memcpy(mac, s->local_mac, 6);
+	memcpy(mac, s->local_mac, 6);
 	return 0;
 }
 
@@ -875,7 +875,7 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 	{
 		if(j == number)
 		{
-			ptpd_wrap_strcpy(ifname,list.port_names[i]);
+			strcpy(ifname,list.port_names[i]);
 			return PTPD_NETIF_OK;
 		}
 		else

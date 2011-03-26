@@ -4,35 +4,16 @@
 #ifndef __PTPD_WRAPPERS_H__
 #define __PTPD_WRAPPERS_H__
 
-extern void *ptpd_wrap_malloc(int size);
-extern void *ptpd_wrap_memset(void *s, int c, int n);
-extern unsigned int ptpd_wrap_sleep(unsigned int seconds);
-extern char *ptpd_wrap_strcpy(char *dest, const char *src);
-extern char *ptpd_wrap_strncpy(char *dest, const char *src, int n);
-extern void *ptpd_wrap_memcpy(void *dest, const void *src, int n);
-extern int ptpd_wrap_memcmp(const void *s1, const void *s2, int n);
 
+#ifdef __STDC_HOSTED__
+/*
+ * The compiler is _not_ freestanding: we need to include some headers that
+ * are not available in the freestanding compilation, so are missing from
+ * source files.
+ */
+#include <string.h>
 
-static inline void *__calloc(int nmemb, int size)
-{
-	void *ret = ptpd_wrap_malloc(nmemb * size);
-	if (ret)
-		ptpd_wrap_memset(ret, 0, nmemb * size);
-	return ret;
-}
+#endif
 
-static inline int __strlen(const char * s)
-{
-	const char *sc;
-
-	for (sc = s; *sc != '\0'; ++sc)
-		;
-	return sc - s;
-}
-
-static inline char *__strdup(const char *s)
-{
-	return ptpd_wrap_malloc(__strlen(s));
-}
 
 #endif /* __PTPD_WRAPPERS_H__ */

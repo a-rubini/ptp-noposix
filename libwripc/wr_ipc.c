@@ -159,14 +159,14 @@ static void *safe_zmalloc(size_t howmuch)
 {
 	void *p;
 
-	p = ptpd_wrap_malloc(howmuch);
+	p = malloc(howmuch);
 	if(!p)
 	{
 		DBG("FATAL: not enough memory\n");
 		exit(-1);
 	}
 
-	ptpd_wrap_memset(p, 0, howmuch);
+	memset(p, 0, howmuch);
 	return p;
 }
 
@@ -190,7 +190,7 @@ wripc_handle_t wripc_create_server(const char *name)
 		return fd;
 
 	sun.sun_family = AF_UNIX;
-	ptpd_wrap_strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
+	strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
 	strncat(sun.sun_path, name, sizeof(sun.sun_path));
 
 	unlink(sun.sun_path);
@@ -258,7 +258,7 @@ wripc_handle_t wripc_connect(const char *name)
 	if(handle < 0)
 		return -ENOMEM;
 
-	cli = ptpd_wrap_malloc(sizeof(struct wripc_client_context));
+	cli = malloc(sizeof(struct wripc_client_context));
 	if(!cli)
 		return -ENOMEM;
 
@@ -269,7 +269,7 @@ wripc_handle_t wripc_connect(const char *name)
 		return fd;
 
 	sun.sun_family = AF_UNIX;
-	ptpd_wrap_strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
+	strncpy(sun.sun_path, "/tmp/.wripc_", sizeof(sun.sun_path));
 	strncat(sun.sun_path, name, sizeof(sun.sun_path));
 
 	//unlink(sun.sun_path);
@@ -397,7 +397,7 @@ static void reply_error(struct wripc_connection *conn, int err_val)
 static char *extract_string(uint32_t *ptr)
 {
 	int len = *ptr++;
-	char * buf = ptpd_wrap_malloc(len + 1);
+	char * buf = malloc(len + 1);
 	memcpy(buf, ptr, len);
 	buf[len] = 0;
 	return buf;
@@ -467,7 +467,7 @@ static inline int serialize_string(uint32_t *buffer, int current_pos,
 	int len;
 	int num_words;
 
-	len = __strlen(str);
+	len = strlen(str);
 	num_words = 1 + ((len + 4) >> 2);
 
 	if(current_pos + num_words >= max_pos) return -ENOMEM;
@@ -576,7 +576,7 @@ static int handle_call(struct wripc_server_context *srv,
 
 	num_args = buf[2];
 
-	current_pos = 3 + 1+ ((__strlen(func_name)+4)>>2);
+	current_pos = 3 + 1+ ((strlen(func_name)+4)>>2);
 
 	DBG("conn %x call %s nargs = %d\n", conn, func_name, num_args);
 
@@ -872,7 +872,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 	if(num_args > WRIPC_MAX_ARGS)
 		return WRIPC_ERROR_INVALID_ARG;
 
-	name_len = __strlen(name);
+	name_len = strlen(name);
 	if(name_len > 128)
 		return WRIPC_ERROR_INVALID_ARG;
 
@@ -1030,6 +1030,6 @@ int wripc_subscribe_event(wripc_handle_t handle, int event_id)
 __attribute__((constructor)) int wripc_init()
 {
 	//DBG("\n");
-	ptpd_wrap_memset(handle_map, 0, sizeof(handle_map));
+	memset(handle_map, 0, sizeof(handle_map));
 	return 0;
 }
