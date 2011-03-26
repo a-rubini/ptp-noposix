@@ -1,5 +1,10 @@
 /* startup.c */
 
+#include <stdlib.h> /* exit etc */
+#include <unistd.h> /* getopt etc */
+#include <signal.h> /* SIGINT etc */
+#include <fcntl.h> /* creat */
+
 #include "../ptpd.h"
 
 PtpClock *ptpClock;

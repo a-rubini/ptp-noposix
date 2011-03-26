@@ -6,26 +6,26 @@
 * \brief Functions used in ptpdv2 which are platform-dependent
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdlib.h>		/* needed by sys.c, rand and RAND_MAX */
+//#include <stdio.h>
 //#include <string.h>
-#include <unistd.h>
-#include <math.h>
-#include <errno.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <limits.h>
-#include <sys/time.h>
-#include <sys/timex.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <sys/ioctl.h>
-#include <arpa/inet.h>
+#include <unistd.h>		/* sys.c: write, wr_protocol.c: usleep */
+//#include <math.h>
+//#include <errno.h>
+//#include <signal.h>
+//#include <fcntl.h>
+//#include <sys/stat.h>
+#include <time.h>		/* bmc: time, sys.c: nanosleep */
+//#include <limits.h>
+//#include <sys/time.h>
+#include <sys/timex.h>		/* sys.c and timer.c: [ge]ettimeofday */
+//#include <sys/socket.h>
+//#include <sys/select.h>
+//#include <sys/ioctl.h>
+//#include <arpa/inet.h>
 
 
-#include "ptpd_netif.h"
+//#include "ptpd_netif.h"
 
 
  /** \name System messages*/
