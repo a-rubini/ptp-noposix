@@ -1,12 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
+//#include <stdio.h>
+//#include <stdlib.h>
 //#include <string.h>
 
-#include <math.h>
+//#include <math.h>
 
 
-#include <inttypes.h>
-#include <sys/time.h>
+//#include <inttypes.h>
+//#include <sys/time.h>
 
 #include <wr_ipc.h>
 
