@@ -18,7 +18,6 @@
 #include <time.h>		/* bmc: time, sys.c: nanosleep */
 //#include <limits.h>
 //#include <sys/time.h>
-#include <sys/timex.h>		/* sys.c and timer.c: [ge]ettimeofday */
 //#include <sys/socket.h>
 //#include <sys/select.h>
 //#include <sys/ioctl.h>

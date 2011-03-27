@@ -3,6 +3,7 @@
 
 /*Struct defined in spec*/
 
+#include <sys/time.h> /* for struct timeval */
 
 /**
 *\file
