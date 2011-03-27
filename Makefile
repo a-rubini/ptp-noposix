@@ -76,7 +76,7 @@ FREE_OBJS = libposix/freestanding-startup.o
 FREE_OBJS += libposix/wr_nolibs.o
 
 # This is the compatilibity library, to hide posix stuff in a single place
-POSIX_OBJS += libposix/posix-wrapper.o
+POSIX_OBJS +=
 FREE_OBJS += libposix/freestanding-wrapper.o
 
 # we only support cross-compilation (if you want force CROSS_COMPILE to " ")
