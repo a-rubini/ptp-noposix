@@ -1,5 +1,5 @@
 #include <stdio.h>
-//#include <string.h>
+#include <string.h>
 
 #include "wr_ipc.h"
 #include "structs.h"

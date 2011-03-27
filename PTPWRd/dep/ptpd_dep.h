@@ -8,7 +8,7 @@
 
 #include <stdlib.h>		/* needed by sys.c, rand and RAND_MAX */
 //#include <stdio.h>
-//#include <string.h>
+#include <string.h>
 #include <unistd.h>		/* sys.c: write, wr_protocol.c: usleep */
 //#include <math.h>
 //#include <errno.h>

@@ -4,14 +4,12 @@
 #ifndef __PTPD_WRAPPERS_H__
 #define __PTPD_WRAPPERS_H__
 
-
 #if __STDC_HOSTED__
 /*
  * The compiler is _not_ freestanding: we need to include some headers that
  * are not available in the freestanding compilation, so are missing from
  * source files.
  */
-#include <string.h>
 #include <stdint.h>
 
 #else
