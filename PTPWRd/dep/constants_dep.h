@@ -21,16 +21,6 @@
 #define IF_NAMESIZE		8
 #define INET_ADDRSTRLEN		16
 
-
-#if defined(__zpu__) /* endianness.... zpu is big endian */
-#define PTPD_MSBF
-#elif defined(__arm__) /* not all arm are little-endian, but ours is */
-#define PTPD_LSBF
-#else
-#warning "Unknown cpu for freestanding compilation, plese set endianness"
-#define PTPD_LSBF /* well, little endiano is more common */
-#endif
-
 #endif /* freestanding */
 
 
@@ -41,12 +31,15 @@
 
 #define BSD_INTERFACE_FUNCTIONS
 
+/* -- don't define endianness here, it's already done in the Makefile --
 #include<endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define PTPD_LSBF
 #elif __BYTE_ORDER == __BIG_ENDIAN
 #define PTPD_MSBF
 #endif
+-- endianness */
+
 #endif /* linux */
 
 
@@ -66,12 +59,15 @@
 # include <ifaddrs.h>
 
 //# define adjtimex ntp_adjtime
+/* -- don't define endianness here, it's already done in the Makefile --
 # include <machine/endian.h>
 # if BYTE_ORDER == LITTLE_ENDIAN
 #   define PTPD_LSBF
 # elif BYTE_ORDER == BIG_ENDIAN
 #   define PTPD_MSBF
 # endif
+-- endianness */
+
 #endif /* bsd */
 
 /* Common definitions follow */

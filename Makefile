@@ -27,8 +27,9 @@ else
    TARGETS :=  ptpd ptpd-freestanding.o
    CHECKVARS = LINUX
 endif
-all: 
 
+# Calculate endianness before everything, for my ptpd-wrappers.h to have it
+CFLAGS += $(shell ./check-endian $(CC))
 
 # Flags for standalone compilation
 TOPDIR=$(shell /bin/pwd)
