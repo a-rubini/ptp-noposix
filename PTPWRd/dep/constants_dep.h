@@ -15,18 +15,29 @@
 
 /* platform dependent */
 
-#if !defined(linux) && !defined(__NetBSD__) && !defined(__FreeBSD__)
-#error Not ported to this architecture, please update.
+#if !__STDC_HOSTED__  /* This is the freestanding version: no OS help here */
+
+/* fake some numbers */
+#define IF_NAMESIZE		8
+#define INET_ADDRSTRLEN		16
+
+
+#if defined(__zpu__) /* endianness.... zpu is big endian */
+#define PTPD_MSBF
+#elif defined(__arm__) /* not all arm are little-endian, but ours is */
+#define PTPD_LSBF
+#else
+#warning "Unknown cpu for freestanding compilation, plese set endianness"
+#define PTPD_LSBF /* well, little endiano is more common */
 #endif
+
+#endif /* freestanding */
+
 
 #ifdef	linux
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/if_arp.h>
-#define IFACE_NAME_LENGTH         IF_NAMESIZE
-#define NET_ADDRESS_LENGTH        INET_ADDRSTRLEN
-
-#define IFCONF_LENGTH 10
 
 #define BSD_INTERFACE_FUNCTIONS
 
@@ -53,20 +64,21 @@
 #  include <net/if_ether.h>
 # endif
 # include <ifaddrs.h>
-# define IFACE_NAME_LENGTH         IF_NAMESIZE
-# define NET_ADDRESS_LENGTH        INET_ADDRSTRLEN
-
-# define IFCONF_LENGTH 10
 
 //# define adjtimex ntp_adjtime
-
 # include <machine/endian.h>
 # if BYTE_ORDER == LITTLE_ENDIAN
 #   define PTPD_LSBF
 # elif BYTE_ORDER == BIG_ENDIAN
 #   define PTPD_MSBF
 # endif
-#endif
+#endif /* bsd */
+
+/* Common definitions follow */
+#define IFACE_NAME_LENGTH         IF_NAMESIZE
+#define NET_ADDRESS_LENGTH        INET_ADDRSTRLEN
+# define IFCONF_LENGTH 10
+
 
 #define CLOCK_IDENTITY_LENGTH 8
 #define ADJ_FREQ_MAX  512000
