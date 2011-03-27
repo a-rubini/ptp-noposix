@@ -9,9 +9,25 @@ STRIP           = $(CROSS_COMPILE)strip
 OBJCOPY         = $(CROSS_COMPILE)objcopy
 OBJDUMP         = $(CROSS_COMPILE)objdump
 
+# Differentiate between freestanding compilazion (one with no libc)
+# from a complete one. This way, arm and x86 are identified as hosted,
+# while zpu or other minimal processors are identifed as freestanding.
+# A hosted processor depends in LINUX being set
+ifeq ($(shell $(CC) -print-file-name=libc.so),libc.so)
+   SAY := $(shell echo "CPU is freestanding" > /dev/tty)
+   CFLAGS = -ffreestanding
+   TARGETS := ptpd-freestanding
+else
+   SAY := $(shell echo "CPU is hosted" > /dev/tty)
+   TARGETS :=  ptpd ptpd-freestanding.o
+   CHECKVARS = LINUX
+endif
+all: 
+
+
 # Flags for standalone compilation
 TOPDIR=$(shell /bin/pwd)
-CFLAGS = -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libwripc \
+CFLAGS += -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libwripc \
 	-I$(TOPDIR)/libptpnetif -I$(TOPDIR)/PTPWRd -I$(LINUX)/include \
 	-include compat.h -include libposix/ptpd-wrappers.h
 # These are lifted in the ptp.o temporary object file, for me to see the size
@@ -26,7 +42,7 @@ CFLAGS += -DDEBUG
 
 
 # Targets follows (note that the freestanding version is only an object
-all: check libs ptpd ptpd-freestanding.o
+all: check $(TARGETS)
 
 # The main objects are all from the ptp directory
 D = PTPWRd
@@ -60,12 +76,11 @@ FREE_OBJS += libposix/freestanding-wrapper.o
 # we only support cross-compilation (if you want force CROSS_COMPILE to " ")
 # similarly, we need a kernel at this time
 check:
-	@if [ -z "$$CROSS_COMPILE" ]; then \
-		echo "Please set CROSS_COMPILE" >& 2; exit 1; \
-	fi
-	@if [ -z "$$LINUX" ]; then \
-		echo "Please set LINUX for header inclusion" >& 2; exit 1; \
-	fi
+	@for n in CROSS_COMPILE $(CHECKVARS); do \
+	    if [ -z "$$(eval echo \$$$$n)" ]; then \
+	        echo "Please set $n" >& 2; exit 1; \
+	    fi \
+	done
 
 libs: check $(CORELIBS)
 
@@ -79,7 +94,7 @@ libptpnetif.a: libptpnetif/hal_client.o libptpnetif/ptpd_netif.o
 # However, we need a freestanding version, so we build two binaries:
 # one is gnu/linux-based (well, "posix") and the other is freestanding.
 # The "ptpd.o" object is used to run "nm" on it and drive patches
-ptpd: check $(CORELIBS) ptpd.o $(CORELIBS) $(POSIX_OBJS)
+ptpd: check ptpd.o $(CORELIBS) $(POSIX_OBJS)
 	$(CC) $(CFLAGS) ptpd.o $(CORELIBS) $(POSIX_OBJS) $(LDFLAGS) -o ptpd
 
 
