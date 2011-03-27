@@ -13,6 +13,11 @@
 #include <stdint.h>
 
 #else
+/*
+ * This is a freestanding compilation, and we may miss some data
+ * structures. For example misses <stdint.h>. Most likely it's
+ * because it's an old compiler version, so the #if may be wrong here.
+ */
 
 /* Looks like we miss <stdint.h>. Let's assume we are 32 bits */
 typedef unsigned char		uint8_t;
@@ -24,6 +29,18 @@ typedef signed char		int8_t;
 typedef signed short		int16_t;
 typedef signed int		int32_t;
 typedef signed long long	int64_t;
+
+/* Hmm... htons/htonl are missing. I made the Makefile check endianness */
+#ifdef PTPD_MSBF
+static inline uint16_t htons(uint16_t x) {return x;}
+static inline uint32_t htonl(uint32_t x) {return x;}
+#else
+static inline uint16_t htons(uint16_t x) { return (x << 8) | (x >> 8); }
+static inline uint32_t htonl(uint32_t x)
+{ return htons(x>>16) | ((uint32_t)(htons(x) << 16));}
+
+#endif /* endian */
+
 #endif /* hosted */
 
 #endif /* __PTPD_WRAPPERS_H__ */
