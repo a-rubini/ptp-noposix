@@ -1,16 +1,17 @@
 
-This is a version of wr_ptpd meant to be ported to ZPU or other
-embedded processors. Currently it is not ported at all.
+This is a version of wr_ptpd somewhat ported to ZPU or other embedded
+processors. The core program is ported, but external functions
+(hardware access) are still missing).  The program still compiles and
+works in a "normal" ARM926 GNU/Linux environment.
 
 I imported in this git tree an unmodified copy of version 916 for the
 svn repository (white-rabbit/trunl/software/), and started working on
-that.  
+that.  After that, Tomasz allowed me to commit some reindented files,
+so version 918 is now the one to diff against if you need it.
 
 I planned to change the Makefiles to have no external dependencies (like
 ../../Makedefs), but I finally chose to write a new top-level Makefile
-and use that instead. Other Makefiles have been removed, so you don't
-get strange errors if issuing "make" inside (you'll get "no Makefile"
-which I see as a better error).
+and use that instead. Other Makefiles have been removed, as unused.
 
 WARNING: The is no dependencies support, so if you touch headers you should
 "make clean" and again "make".
@@ -29,13 +30,7 @@ For example, I do like this in my own systems:
 or
     export CROSS_COMPILE=$HOME/zpugcc-install/bin/zpu-elf-
 
-(the latter is not working, as the package has not been ported yet).
-
-The current situation is working. It means that this new ptpd 
-can work on a White Rabbit Switch like the original one, when compiled
-for ARM.
-
-The freestanding one is not working, yet.
+The zpu compilation is not complete, as support functions are missing.
 
      The compilation steps
      ---------------------
@@ -43,25 +38,60 @@ The freestanding one is not working, yet.
 The package (which only exists to make ptpd a freestanding thing
 with a goal of short-term maintainability) is designed as follows:
 
-* all objects from ptpd are linked into ptpd.o . This is where
-I look for undefined symbols that must be dealt with.
+* All objects from ptpd are linked into ptpd.o . This is where
+I look for undefined symbols that must be dealt with.  Missing
+symbols in this file are added later using different strategies
+for hosted and freestanding compilation.
 
-* wr-specific libraries and special "late objects" are linked
-later, to make the normal linux-hosted ptpd that runs on the switch.
-Late objects are ptpd-internal files that need to be rewritten
-for the freestanding version (e.g.: startup.c) and wrap-management
-files (like implementing internal function names by calling system ones).
+Please note that you can force freestanding compilation on ARM
+(or whatever "hosted" cpu) by passing "PTPD_FREESTANDING=y~.
 
-* the same ptpd.o is linked with other objects (from libposix, which
-is probably misnamed) to make the freestanding object file.  Such
-objects include rewriting of posix-heavy thing (e.g., startup.c),
-no-op IPC library files and wrap-management files.
+    Final steps in hosted compilation
+    .................................
 
-* this "ptpd-freestanding.o" may be linked in a full-fledged
-executable, but this is not the default when running "make", so I don't
-have a zillion errors during development (e.g., libposix files are
-not ready yet).  You can "make ptpd-freestanding" if you want.
+For hosted compilation, the following files are added, which
+are called CORELIBS and POSIX_OBJS, to make ./ptpd (the final program)
 
+    libwripc.a (libwripc/wr_ipc.o libwripc/helper_arm.o)
+    libptpnetif.a (libptpnetif/hal_client.o libptpnetif/ptpd_netif.o)
+    PTPWRd/dep/startup.o
+
+Then, the default libc is used as well.
+
+    Final steps in freestanding compilation
+    .......................................
+
+For freestanding, two steps are taken. First ptpd-freestanding.o
+is build adding the following object files to the ptp.o object:
+
+    libposix/freestanding-startup.o
+    libposix/wr_nolibs.o
+    libposix/freestanding-wrapper.o
+
+These three are called FREE_OBJS in the Makefile.
+
+Finally, the ptp-freestanding executable is built by a simple
+compile step with no special options. This is where your default
+libc gets linked (and you can change it if needed).
+
+To summarize, you have these files:
+
+   ptp.o                  the code with all its unresolved symbols
+   ptpd-freestanding.o    same, with added the fake libraries
+   ptpd-freestanding      the final executable
+
+To complete this port you'll need to look for undefined symbols in
+ptpd-freestanding.o and add them in the libposix/ files as neeeded.
+Looking for them is much easier in the object file than it is
+in the compile error, but pleae remember some of these will be
+resolved by the default libc:
+
+   ${CROSS_COMPILE}nm ptpd-freestanding.o | grep -w U
+
+
+The last step takes this ptpd-freestanding.o to buld your
+ptpd-freestanding final exectuable.  You can change libc or whatever
+in this final step.
 
      How portability is accomplished
      -------------------------------
@@ -70,8 +100,10 @@ The command-line of $(CROSS_COMPILE)gcc has the option
 
     -include libposix/ptpd-wrappers.h
 
-The header does all the magic by selecting whether the compilation
-is freestanding or not.
+The header does all the magic by adding missing pieces for
+freestanding compilation (actually, it's not much).  Two shell scripts
+are used by Make to select freestanding or hosted compilation, and
+detect endianness (on zpu we have no <endian.h>).
 
 If the compilation is not freestanding, the header includes headers that
 can't be included otherwise (because they are missing in the zpu
@@ -81,39 +113,124 @@ If the compilation is freestanding, what is missing is defined or
 declared.
 
 
+Freestanding compilation is selected if you either miss a dynamic
+library (e.g: zpu) or if you select PTPD_FREESTANDING=y as a make
+variable (environment or command line).
+
+
 In this way, the original sources are minimally affected and I hope to
 fill the missing bits easily. In any case, I removed the inclusion of
 system headers where they were not needed, and sometimes I added
 "#ifdeffed" inclusions when headers were only needed in one place
 (to avoid including it in ptpd-wrappers if it's too specific).
 
-Sometimes, inclusion of system headers is removed when it was not needed.
+Since there was a constants_dep.h file, I added a stanza there for
+freestanding compilation where a pair of symbols that were defined in
+that file are defined for zpu or otherwise.  All other fixes have been
+made in the ptpd-wrappers.h header file.
+
+You can force freestanding compilation (for example, in your ARM
+or x86 environment) by calling
+
+   make PTPD_FREESTANDING=y
+
+(this is accomplished by a Makefile conditional and an external script)
 
      List of issues I am facing
      --------------------------
 
 * This binary is horribly big.
 
-I changed the Makefile to create a ptpd.o with all the objects,
-before linking to the full-fledged executable ptpd.  This shows
-that some of the size comes from the libraries, but it's still big:
+     tornado$ ${CROSS_COMPILE}size ptpd-freestanding.o
+        text    data     bss     dec     hex filename
+       70523      36     136   70695   11427 ptpd-freestanding.o
 
-   tornado$ size ptpd.o ptpd
-      text    data     bss     dec     hex filename
-     52272      32     140   52444    ccdc ptpd.o
-     88896     564    1216   90676   16234 ptpd
+(this is the zpu version with all externals unresolved -- including the
+strcpy and so on that the default library offers).
 
-The biggest files are the following 4:
+The split up is as follows (sorted by size):
 
-       text    data     bss     dec     hex filename
-       7628       0       0    7628    1dcc ./PTPWRd/dep/msg.o
-       8780       0       0    8780    224c ./PTPWRd/display.o
-      11704       4     256   11964    2ebc ./libwripc/wr_ipc.o
-      13700       0       0   13700    3584 ./PTPWRd/protocol.o
+    100       0       0     100      64 ./PTPWRd/dep/servo.o
+    394       0       4     398     18e ./PTPWRd/ptpd_exports.o
+    964       0       0     964     3c4 ./PTPWRd/ptpd.o
+   1683      24       0    1707     6ab ./PTPWRd/dep/timer.o
+   1745       4     128    1877     755 ./PTPWRd/dep/sys.o
+   2068       0       0    2068     814 ./PTPWRd/dep/net.o
+   2726       0       0    2726     aa6 ./PTPWRd/arith.o
+   5035       0       0    5035    13ab ./PTPWRd/wr_protocol.o
+   6610       0       0    6610    19d2 ./PTPWRd/bmc.o
+   8814       0       0    8814    226e ./PTPWRd/dep/msg.o
+   9085       0       0    9085    237d ./PTPWRd/display.o
+  12427       8       4   12439    3097 ./PTPWRd/dep/wr_servo.o
+  18872       0       0   18872    49b8 ./PTPWRd/protocol.o
 
+* Some floating point is there. I removed some but there is more:
 
-* The program is built over floating point. Float stuff is being
-removed as it would be a problem with zpu
+arith.c	               has some float calculations
+netif_test.c           has some as well
+PTPWRd/dep/wr_servo.c  has a lot of that (Tow will make fixed point)
 
-* Other issues are being worked on, I don't have documentation at
-this point, though
+* There are a number of still undefined functions, to be filled:
+
+I use this command to count what the default library doesn't provide:
+
+    make 2>&1 | grep undefined | tr -d \'\` | \
+          awk '{print $NF}' | sort | uniq -c | sort -k 2
+
+      1 ZPU_ID
+      4 gettimeofday
+      1 halexp_get_port_state
+      5 halexp_pps_cmd
+      1 ptpdShutdown
+      1 ptpdStartup
+      2 ptpd_netif_calibrating_disable
+      3 ptpd_netif_calibrating_enable
+      2 ptpd_netif_calibrating_poll
+      2 ptpd_netif_calibration_pattern_disable
+      3 ptpd_netif_calibration_pattern_enable
+      1 ptpd_netif_create_socket
+      1 ptpd_netif_get_hw_addr
+      1 ptpd_netif_get_ifName
+      1 ptpd_netif_get_port_state
+      1 ptpd_netif_init
+      1 ptpd_netif_locking_disable
+      2 ptpd_netif_locking_enable
+      1 ptpd_netif_locking_poll
+      1 ptpd_netif_recvfrom
+      1 ptpd_netif_select
+      3 ptpd_netif_sendto
+      1 settimeofday
+      1 usleep
+      1 wripc_create_server
+      2 wripc_export
+      1 wripc_process
+
+The same command, on freestanding arm, gives less undefined symbols becase
+some are in the library. 
+
+    make PTPD_FREESTANDING=y 2>&1 | grep undefined | tr -d \'\` | \
+          awk '{print $NF}' | sort | uniq -c | sort -k 2
+
+      1 halexp_get_port_state
+      5 halexp_pps_cmd
+      1 ptpdShutdown
+      1 ptpdStartup
+      2 ptpd_netif_calibrating_disable
+      3 ptpd_netif_calibrating_enable
+      2 ptpd_netif_calibrating_poll
+      2 ptpd_netif_calibration_pattern_disable
+      3 ptpd_netif_calibration_pattern_enable
+      1 ptpd_netif_create_socket
+      1 ptpd_netif_get_hw_addr
+      1 ptpd_netif_get_ifName
+      1 ptpd_netif_get_port_state
+      1 ptpd_netif_init
+      1 ptpd_netif_locking_disable
+      2 ptpd_netif_locking_enable
+      1 ptpd_netif_locking_poll
+      1 ptpd_netif_recvfrom
+      1 ptpd_netif_select
+      3 ptpd_netif_sendto
+      1 wripc_create_server
+      2 wripc_export
+      1 wripc_process
