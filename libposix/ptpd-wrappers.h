@@ -38,8 +38,10 @@ static inline uint32_t htonl(uint32_t x) {return x;}
 static inline uint16_t htons(uint16_t x) { return (x << 8) | (x >> 8); }
 static inline uint32_t htonl(uint32_t x)
 { return htons(x>>16) | ((uint32_t)(htons(x) << 16));}
-
 #endif /* endian */
+
+/* usleep is not there in zpu */
+extern int usleep(unsigned useconds);
 
 #endif /* hosted */
 
