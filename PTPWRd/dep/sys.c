@@ -55,6 +55,7 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   write(1, sbuf, rtOpts->csvStats ? len : SCREEN_MAXSZ + 1);
 }
 
+#if 0 /* not used */
 Boolean nanoSleep(TimeInternal *t)
 {
   struct timespec ts, tr;
@@ -71,6 +72,7 @@ Boolean nanoSleep(TimeInternal *t)
 
   return TRUE;
 }
+#endif
 
 void getTime(TimeInternal *time)
 {
