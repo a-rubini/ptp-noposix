@@ -11,7 +11,7 @@ void do_irq_less_timing(PtpClock *ptpClock)
 
   struct timeval tv;
   time_t        sec_diff;
-  suseconds_t  usec_diff;
+  long  usec_diff;
   UInteger16 portN = ptpClock->portIdentity.portNumber - 1;
 
   gettimeofday(&tv, 0);
