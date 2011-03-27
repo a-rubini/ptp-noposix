@@ -1,7 +1,7 @@
 #ifndef __HAL_EXPORTS_H
 #define __HAL_EXPORTS_H
 
-#include <inttypes.h>
+//#include <inttypes.h>  -- now in ptpd-wrappers.h
 
 #define HAL_MAX_PORTS 64
 

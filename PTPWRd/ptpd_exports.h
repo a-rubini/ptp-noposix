@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <inttypes.h>
+//#include <inttypes.h>  -- now in ptpd-wrappers.h
 
 #include "ptpd.h"
 

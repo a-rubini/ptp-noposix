@@ -5,15 +5,27 @@
 #define __PTPD_WRAPPERS_H__
 
 
-#ifdef __STDC_HOSTED__
+#if __STDC_HOSTED__
 /*
  * The compiler is _not_ freestanding: we need to include some headers that
  * are not available in the freestanding compilation, so are missing from
  * source files.
  */
 #include <string.h>
+#include <stdint.h>
 
-#endif
+#else
 
+/* Looks like we miss <stdint.h>. Let's assume we are 32 bits */
+typedef unsigned char		uint8_t;
+typedef unsigned short		uint16_t;
+typedef unsigned int		uint32_t;
+typedef unsigned long long	uint64_t;
+
+typedef signed char		int8_t;
+typedef signed short		int16_t;
+typedef signed int		int32_t;
+typedef signed long long	int64_t;
+#endif /* hosted */
 
 #endif /* __PTPD_WRAPPERS_H__ */

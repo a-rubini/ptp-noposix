@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <poll.h>
-#include <inttypes.h>
+//#include <inttypes.h>  -- now in ptpd-wrappers.h
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>

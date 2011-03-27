@@ -1,7 +1,7 @@
 #ifndef __WR_IPC_H
 #define __WR_IPC_H
 
-#include <inttypes.h>
+//#include <inttypes.h>  -- now in ptpd-wrappers.h
 
 #define T_INT32 1
 #define T_INT16 2

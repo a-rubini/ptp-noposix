@@ -7,7 +7,7 @@
 
 #include <math.h>
 
-#include <inttypes.h>
+//#include <inttypes.h>  -- now in ptpd-wrappers.h
 #include <sys/time.h>
 
 #include "ptpd_netif.h"

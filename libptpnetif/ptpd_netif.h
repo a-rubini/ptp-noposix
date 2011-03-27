@@ -4,7 +4,7 @@
 #define __PTPD_NETIF_H
 
 #include <stdio.h>
-#include <inttypes.h>
+//#include <inttypes.h>
 
 #define PTPD_SOCK_RAW_ETHERNET 	1
 #define PTPD_SOCK_UDP 		2
