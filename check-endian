@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# I used to just check __STDC_HOSTED__ without special CFLAGS, but now I
+# want to force freestanding compilation on otherwise hosted processors.
+
+# Thus, the user can set PTPD_FREESTANDING=y . If unset, this gets called.
+CC=$1
+if [ "x$CC" == "x" ]; then
+    echo "$0: pass the compiler path (\$CC) as argument" >& 2
+    exit 1
+fi
+
+# Check endianness, by making an object file
+TMPC=$(mktemp /tmp/endian-c-XXXXXX)
+TMPO=$(mktemp /tmp/endian-o-XXXXXX)
+echo "int i = 0xbbee;" > $TMPC
+
+$CC -x c -c $TMPC -o $TMPO
+OBJCOPY=$(echo $CC | sed 's/gcc$/objcopy/')
+if $OBJCOPY -O binary $TMPO /dev/stdout | od -t x1 -An | \
+    grep -q 'bb ee'; then
+    echo " -DPTPD_MSBF"
+else
+    echo " -DPTPD_LSBF"
+fi
