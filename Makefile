@@ -12,10 +12,15 @@ OBJDUMP         = $(CROSS_COMPILE)objdump
 # Differentiate between freestanding compilazion (one with no libc)
 # from a complete one. This way, arm and x86 are identified as hosted,
 # while zpu or other minimal processors are identifed as freestanding.
-# A hosted processor depends in LINUX being set
-ifeq ($(shell $(CC) -print-file-name=libc.so),libc.so)
+# A hosted processor depends in LINUX being set.  To allow forcing
+# freestanding arm compilations, use a local script to define this
+# (if you set PTPD_FREESTANDING=y you force freestanding compile)
+
+PTPD_FREESTANDING ?= $(shell ./check-freestanding $(CC))
+
+ifeq ($(PTPD_FREESTANDING), y)
    SAY := $(shell echo "CPU is freestanding" > /dev/tty)
-   CFLAGS = -ffreestanding
+   CFLAGS = -ffreestanding -DPTPD_FREESTANDING
    TARGETS := ptpd-freestanding
 else
    SAY := $(shell echo "CPU is hosted" > /dev/tty)

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# I used to just check __STDC_HOSTED__ without special CFLAGS, but now I
+# want to force freestanding compilation on otherwise hosted processors.
+
+# Thus, the user can set PTPD_FREESTANDING=y . If unset, this gets called.
+CC=$1
+if [ "x$CC" == "x" ]; then
+    echo "$0: pass the compiler path (\$CC) as argument" >& 2
+    exit 1
+fi
+
+# Check if we have a shared library. Otherwise, build freestanding (HACK)
+
+if [ "$($CC -print-file-name=libc.so)" == "libc.so" ]; then
+    echo y
+else
+    echo n
+fi
