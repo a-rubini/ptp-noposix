@@ -143,7 +143,7 @@ or x86 environment) by calling
 
      tornado$ ${CROSS_COMPILE}size ptpd-freestanding.o
         text    data     bss     dec     hex filename
-       70523      36     136   70695   11427 ptpd-freestanding.o
+       70298      36     136   70470   11346 ptpd-freestanding.o
 
 (this is the zpu version with all externals unresolved -- including the
 strcpy and so on that the default library offers).
@@ -153,14 +153,14 @@ The split up is as follows (sorted by size):
     100       0       0     100      64 ./PTPWRd/dep/servo.o
     394       0       4     398     18e ./PTPWRd/ptpd_exports.o
     964       0       0     964     3c4 ./PTPWRd/ptpd.o
+   1590       4     128    1722     6ba ./PTPWRd/dep/sys.o
    1683      24       0    1707     6ab ./PTPWRd/dep/timer.o
-   1745       4     128    1877     755 ./PTPWRd/dep/sys.o
    2068       0       0    2068     814 ./PTPWRd/dep/net.o
    2726       0       0    2726     aa6 ./PTPWRd/arith.o
    5035       0       0    5035    13ab ./PTPWRd/wr_protocol.o
-   6610       0       0    6610    19d2 ./PTPWRd/bmc.o
+   6588       0       0    6588    19bc ./PTPWRd/bmc.o
    8814       0       0    8814    226e ./PTPWRd/dep/msg.o
-   9085       0       0    9085    237d ./PTPWRd/display.o
+   9037       0       0    9037    234d ./PTPWRd/display.o
   12427       8       4   12439    3097 ./PTPWRd/dep/wr_servo.o
   18872       0       0   18872    49b8 ./PTPWRd/protocol.o
 
