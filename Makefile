@@ -63,11 +63,11 @@ OBJS += $D/dep/timer.o
 OBJS += $D/dep/wr_servo.o
 OBJS += $D/display.o
 OBJS += $D/protocol.o
-OBJS += $D/ptpd_exports.o
 OBJS += $D/wr_protocol.o
 
 # The following object is so posix-specific, that it mut go alone
 POSIX_OBJS = $D/dep/startup.o
+POSIX_OBJS += $D/ptpd_exports.o
 
 # This is a replacement for startup in the freestanding version
 FREE_OBJS = libposix/freestanding-startup.o
@@ -101,7 +101,7 @@ libptpnetif.a: libptpnetif/hal_client.o libptpnetif/ptpd_netif.o
 # one is gnu/linux-based (well, "posix") and the other is freestanding.
 # The "ptpd.o" object is used to run "nm" on it and drive patches
 ptpd: check ptpd.o $(CORELIBS) $(POSIX_OBJS)
-	$(CC) $(CFLAGS) ptpd.o $(CORELIBS) $(POSIX_OBJS) $(LDFLAGS) -o ptpd
+	$(CC) $(CFLAGS) ptpd.o $(POSIX_OBJS) $(CORELIBS) $(LDFLAGS) -o ptpd
 
 
 # make an intermediavte version here as well, before linking in main
