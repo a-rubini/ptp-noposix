@@ -143,31 +143,30 @@ or x86 environment) by calling
 
      tornado$ ${CROSS_COMPILE}size ptpd-freestanding.o
         text    data     bss     dec     hex filename
-       70298      36     136   70470   11346 ptpd-freestanding.o
+       69944      36     132   70112   111e0 ptpd-freestanding.o
 
 (this is the zpu version with all externals unresolved -- including the
 strcpy and so on that the default library offers).
 
 The split up is as follows (sorted by size):
 
+   text    data     bss     dec     hex filename
     100       0       0     100      64 ./PTPWRd/dep/servo.o
-    394       0       4     398     18e ./PTPWRd/ptpd_exports.o
     964       0       0     964     3c4 ./PTPWRd/ptpd.o
    1590       4     128    1722     6ba ./PTPWRd/dep/sys.o
    1683      24       0    1707     6ab ./PTPWRd/dep/timer.o
-   2068       0       0    2068     814 ./PTPWRd/dep/net.o
+   2088       0       0    2088     828 ./PTPWRd/dep/net.o
    2726       0       0    2726     aa6 ./PTPWRd/arith.o
    5035       0       0    5035    13ab ./PTPWRd/wr_protocol.o
    6588       0       0    6588    19bc ./PTPWRd/bmc.o
    8814       0       0    8814    226e ./PTPWRd/dep/msg.o
    9037       0       0    9037    234d ./PTPWRd/display.o
   12427       8       4   12439    3097 ./PTPWRd/dep/wr_servo.o
-  18872       0       0   18872    49b8 ./PTPWRd/protocol.o
+  18892       0       0   18892    49cc ./PTPWRd/protocol.o
 
 * Some floating point is there. I removed some but there is more:
 
-arith.c	               has some float calculations
-netif_test.c           has some as well
+arith.c	               has some float calculations (Tom will fix)
 PTPWRd/dep/wr_servo.c  has a lot of that (Tow will make fixed point)
 
 * There are a number of still undefined functions, to be filled:
@@ -201,9 +200,6 @@ I use this command to count what the default library doesn't provide:
       3 ptpd_netif_sendto
       1 settimeofday
       1 usleep
-      1 wripc_create_server
-      2 wripc_export
-      1 wripc_process
 
 The same command, on freestanding arm, gives less undefined symbols becase
 some are in the library. 
@@ -231,6 +227,3 @@ some are in the library.
       1 ptpd_netif_recvfrom
       1 ptpd_netif_select
       3 ptpd_netif_sendto
-      1 wripc_create_server
-      2 wripc_export
-      1 wripc_process
