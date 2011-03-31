@@ -43,6 +43,10 @@ static inline uint32_t htonl(uint32_t x)
 /* usleep is not there in zpu */
 extern int usleep(unsigned useconds);
 
+/* The exports are not used in freestanding environment */
+static inline void ptpd_init_exports() {}
+static inline void ptpd_handle_wripc() {}
+
 #endif /* hosted */
 
 #endif /* __PTPD_WRAPPERS_H__ */
