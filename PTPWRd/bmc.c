@@ -71,7 +71,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	/*Initialize seed for random number used with Announce Timeout (spec 9.2.6.11)*/
 	srand(time(NULL));
-	ptpClock->R = getRand();
+	//ptpClock->R = getRand();
 
 	/*Init other stuff*/
 	ptpClock->number_foreign_records = 0;

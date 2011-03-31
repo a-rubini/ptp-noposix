@@ -393,7 +393,7 @@ typedef struct {
 	TimeInternal  lastSyncCorrectionField;
 	TimeInternal  lastPdelayRespCorrectionField;
 
-	double  R;
+	//int  R; /* random -- unused */
 
 	Boolean  sentPDelayReq;
 	UInteger16  sentPDelayReqSequenceId;

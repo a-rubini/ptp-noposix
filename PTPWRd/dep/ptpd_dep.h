@@ -171,7 +171,7 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock);
 Boolean nanoSleep(TimeInternal*);
 void getTime(TimeInternal*);
 void setTime(TimeInternal*);
-double getRand();
+int getRand();
 Boolean adjFreq(Integer32);
 /** \}*/
 

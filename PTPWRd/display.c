@@ -388,7 +388,7 @@ printf("\n");
 printf("sync_receive_time : \n");
 timeInternal_display(&ptpClock->sync_receive_time);
 printf("\n");
-printf("R : %f \n",ptpClock->R);
+//printf("R : %f \n",ptpClock->R);
 printf("sentPdelayReq : %d \n",ptpClock->sentPDelayReq);
 printf("sentPDelayReqSequenceId : %d \n",ptpClock->sentPDelayReqSequenceId);
 printf("waitingForFollow : %d \n",ptpClock->waitingForFollow);

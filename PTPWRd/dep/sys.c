@@ -94,10 +94,12 @@ void setTime(TimeInternal *time)
   NOTIFY("resetting system clock to %ds %dns\n", time->seconds, time->nanoseconds);
 }
 
-double getRand()
+#if 0 /* unused (was double) */
+int getRand()
 {
-  return ((rand() * 1.0)/RAND_MAX);
+	return (rand());
 }
+#endif
 
 Boolean adjFreq(Integer32 adj)
 {
