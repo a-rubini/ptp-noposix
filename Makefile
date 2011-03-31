@@ -61,16 +61,17 @@ OBJS += $D/dep/servo.o
 OBJS += $D/dep/sys.o
 OBJS += $D/dep/timer.o
 OBJS += $D/dep/wr_servo.o
-OBJS += $D/display.o
 OBJS += $D/protocol.o
 OBJS += $D/wr_protocol.o
 
 # The following object is so posix-specific, that it mut go alone
 POSIX_OBJS = $D/dep/startup.o
 POSIX_OBJS += $D/ptpd_exports.o
+POSIX_OBJS += $D/display.o
 
 # This is a replacement for startup in the freestanding version
 FREE_OBJS = libposix/freestanding-startup.o
+FREE_OBJS += libposix/freestanding-display.o
 
 # When running freestanding, we have no libraries, so hack this
 FREE_OBJS += libposix/wr_nolibs.o
