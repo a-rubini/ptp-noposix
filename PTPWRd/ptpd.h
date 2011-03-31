@@ -158,7 +158,9 @@ int wr_servo_update(PtpClock *clock);
 
 /* What follows are the protopytes that were missing when I started (ARub) */
 extern void do_irq_less_timing(PtpClock *ptpClock);
-extern void ptpd_handle_wripc(void);
+#if __STDC_HOSTED__
+	extern void ptpd_handle_wripc(void);
+#endif
 extern void handleFollowUp(MsgHeader *header, Octet *msgIbuf,
 			   ssize_t length, Boolean isFromSelf,
 			   RunTimeOpts *rtOpts, PtpClock *ptpClock);
@@ -175,7 +177,10 @@ extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
 extern void handle(RunTimeOpts*,PtpClock*);
 extern void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,
 			      PtpClock*);
-extern void ptpd_init_exports(void);
+#if __STDC_HOSTED__
+	extern void ptpd_init_exports(void);
+#endif
+
 extern void wr_servo_enable_tracking(int enable);
 extern int wr_servo_man_adjust_phase(int phase);
 
