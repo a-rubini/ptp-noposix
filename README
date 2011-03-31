@@ -163,6 +163,15 @@ The split up is as follows (sorted by size):
   12427       8       4   12439    3097 ./PTPWRd/dep/wr_servo.o
   18892       0       0   18892    49cc ./PTPWRd/protocol.o
 
+* Data is horribly big.
+
+The init code used to allocate, it is now statically compiled
+but it is now 60kB of bss stuff in ./libposix/freestanding-startup.o .
+
+The thing depends on MAX_PORT_NUMBER (16) and
+DEFAULT_MAX_FOREIGN_RECORDS (5). So things will get better by reducing
+those values. I prefer to leave them untouched by now.
+
 * Some floating point is there. I removed some but there is more:
 
 arith.c	               has some float calculations (Tom will fix)
@@ -189,8 +198,6 @@ I use this command to count what the default library doesn't provide:
       4 gettimeofday
       1 halexp_get_port_state
       5 halexp_pps_cmd
-      1 ptpdShutdown
-      1 ptpdStartup
       2 ptpd_netif_calibrating_disable
       3 ptpd_netif_calibrating_enable
       2 ptpd_netif_calibrating_poll
