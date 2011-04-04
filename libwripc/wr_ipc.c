@@ -637,9 +637,11 @@ static int handle_call(struct wripc_server_context *srv,
 			current_pos =
 				deserialize_string(buf, current_pos,
 						   buf_size,
-						   &arg_buf[arg_buf_pos++]);
+						   &arg_buf[arg_buf_pos]);
 			DBG("DeserializeString, pos = %d string = %s\n",
-			    current_pos);
+			    current_pos, &arg_buf[arg_buf_pos]);
+			    
+			    arg_buf_pos++;
 
 			if(current_pos < 0)
 			{
