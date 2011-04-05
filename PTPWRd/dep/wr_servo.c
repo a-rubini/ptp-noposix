@@ -34,13 +34,6 @@ void wr_servo_enable_tracking(int enable)
 	tracking_enabled = enable;
 }
 
-static uint64_t get_tics()
-{
-	struct timezone tz ={0,0};
-	struct timeval tv;
-	gettimeofday(&tv, &tz);
-	return(uint64_t) tv.tv_sec *1000000ULL + (uint64_t) tv.tv_usec;
-}
 
 static void dump_timestamp(char *what, wr_timestamp_t ts)
 {
@@ -253,7 +246,7 @@ int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
 int wr_servo_update(PtpClock *clock)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
-
+	uint64_t tics;
 	double big_delta, alpha /*, mu, asymmetry */;
 	double delay_ms;
 	wr_timestamp_t ts_offset, ts_offset_hw /*, ts_phase_adjust */;
@@ -315,6 +308,8 @@ int wr_servo_update(PtpClock *clock)
 
 	cur_servo_state.tracking_enabled = tracking_enabled;
 
+	tics = ptpd_netif_get_msec_tics();
+
 	switch(s->state)
 	{
 
@@ -322,7 +317,7 @@ int wr_servo_update(PtpClock *clock)
 		strcpy(adjust.port_name, s->if_name);
 
 		if(!halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &adjust)
-		   && (get_tics() - s->last_tics) > 2000000ULL)
+		   && (tics - s->last_tics) > 2000ULL)
 			s->state = s->next_state;
 		break;
 
@@ -340,7 +335,7 @@ int wr_servo_update(PtpClock *clock)
 			s->next_state = WR_SYNC_NSEC;
 
 			s->state = WR_WAIT_SYNC_IDLE;
-			s->last_tics = get_tics();
+			s->last_tics = tics;
 
 		} else s->state = WR_SYNC_NSEC;
 		break;
@@ -359,7 +354,7 @@ int wr_servo_update(PtpClock *clock)
 			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &adjust);
 			s->next_state = WR_SYNC_PHASE;
 			s->state = WR_WAIT_SYNC_IDLE;
-			s->last_tics = get_tics();
+			s->last_tics = tics;
 
 		} else s->state = WR_SYNC_PHASE;
 		break;
@@ -375,7 +370,7 @@ int wr_servo_update(PtpClock *clock)
 
 		s->next_state = WR_TRACK_PHASE;
 		s->state = WR_WAIT_SYNC_IDLE;
-		s->last_tics = get_tics();
+		s->last_tics = tics;
 
 		s->delta_ms_prev = s->delta_ms;
 
@@ -401,7 +396,7 @@ int wr_servo_update(PtpClock *clock)
 			s->delta_ms_prev = s->delta_ms;
 			s->next_state = WR_TRACK_PHASE;
 			s->state = WR_WAIT_SYNC_IDLE;
-			s->last_tics = get_tics();
+			s->last_tics = tics;
 
 		}
 
