@@ -1,5 +1,6 @@
-
 #include "ptpd.h"
+
+#ifndef WRPC_EXTRA_SLIM
 
 /**\brief Display an Integer64 type*/
 void integer64_display (Integer64 *bigint){
@@ -70,10 +71,15 @@ void netPath_display(NetPath *net)
 }
 
 /**\brief Display a IntervalTimer Structure*/
-void intervalTimer_display(IntervalTimer *ptimer){
+void intervalTimer_display(IntervalTimer *ptimer)
+{
+	uint64_t tics;
+
+	tics = ptpd_netif_get_msec_tics();
+
 	printf("interval : %d \n",ptimer->interval);
-	printf("left : %d \n",ptimer->left);
-	printf("expire : %d \n",ptimer->expire);
+	printf("left : %d \n", (int) (tics + ptimer->interval - ptimer->t_start));
+	printf("expire : %d \n",(int) (tics - ptimer->t_start));
 }
 
 
@@ -406,11 +412,13 @@ printf("observed_drift : %d \n",ptpClock->observed_drift);
 printf("message activity %d \n",ptpClock->message_activity);
 printf("\n");
 
+#if 0
 for (i=0;i<TIMER_ARRAY_SIZE;i++){
 	printf("%s : \n",timer[i]);
 	intervalTimer_display(&ptpClock->itimer[i]);
 	printf("\n");
 }
+#endif
 
 netPath_display(&ptpClock->netPath);
 printf("mCommunication technology %d \n",ptpClock->port_communication_technology);
@@ -484,3 +492,4 @@ displayOthers (ptpClock);
 
 }
 
+#endif
