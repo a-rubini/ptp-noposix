@@ -442,7 +442,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 		char control[1024];
 	} control;
 	struct cmsghdr *cmsg;
-	struct scm_timestamping *sts;
+	struct scm_timestamping *sts = NULL;
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
@@ -882,4 +882,9 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 			j++;
 	}
 	return PTPD_NETIF_ERROR;
+}
+
+uint64_t ptpd_netif_get_msec_tics()
+{
+	return get_tics() / 1000ULL;
 }
