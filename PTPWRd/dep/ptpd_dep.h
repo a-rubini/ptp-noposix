@@ -23,7 +23,6 @@
 //#include <sys/ioctl.h>
 //#include <arpa/inet.h>
 
-
 //#include "ptpd_netif.h"
 
 
@@ -178,12 +177,13 @@ Boolean adjFreq(Integer32);
 /** \name timer.c (Linux API dependent) 
  * -Handle with timers*/
  /**\{*/
-//void initTimer(void);
-void initTimer(PtpClock*);
-void timerUpdate(IntervalTimer*,UInteger16);
-void timerStop(UInteger16,IntervalTimer*);
-void timerStart(UInteger16, int /* milliseconds */, IntervalTimer*);
-Boolean timerExpired(UInteger16,IntervalTimer*, UInteger16);
+
+void timerInit(IntervalTimer *itimer, const char *name);
+void timerStart(IntervalTimer *itimer, int interval);
+void timerStop(IntervalTimer *itimer);
+Boolean timerExpired(IntervalTimer *itimer);
+
+
 /** \}*/
 
 
