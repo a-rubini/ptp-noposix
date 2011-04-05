@@ -237,9 +237,13 @@ typedef struct {
  * \brief Structure used as a timer
  */
 typedef struct {
-	Integer32  interval;
-	Integer32  left;
-	Boolean expire;
+	unsigned long long t_start;
+	int interval;
+
+#ifndef WRPC_EXTRA_SLIM
+	char name [16];
+#endif
+
 } IntervalTimer;
 
 
@@ -289,7 +293,7 @@ typedef struct {
 
 /******* Parent data set *******/
 
-	/*Dynamic members*/
+  /*Dynamic members*/
 	PortIdentity parentPortIdentity;
 	Boolean parentStats;
 	UInteger16 observedParentOffsetScaledLogVariance;
@@ -340,8 +344,6 @@ typedef struct {
 	Enumeration8 delayMechanism;
 	Integer8 logMinPdelayReqInterval;
 	UInteger4 versionNumber;
-
-
 
 	/* Foreign master data set */
 	ForeignMasterRecord *foreign;
@@ -408,9 +410,6 @@ typedef struct {
 	one_way_delay_filter  owd_filt;
 
 	Boolean message_activity;
-
-	IntervalTimer  itimer[TIMER_ARRAY_SIZE];
-
 
 	/*Usefull to init network stuff*/
 	UInteger8 port_communication_technology;
@@ -515,10 +514,6 @@ typedef struct {
 	 * track of which timestamp is read from HW
 	 * for each msg
 	 */
-//  wr_frame_tag_t synch_tx_tag;
-//  wr_frame_tag_t delayReq_tx_tag;
-//  wr_frame_tag_t pDelayReq_tx_tag;
-//  wr_frame_tag_t pDelayResp_tx_tag;
 
 
 	/*
@@ -543,25 +538,17 @@ typedef struct {
 	 */
 	UInteger8 currentWRstateCnt;
 
-	/*
-	 * stores eclapsed time for each timer
-	 */
-	IntervalTimer wrtimer[WR_TIMER_ARRAY_SIZE];
+	struct {
+		IntervalTimer pdelayReq;
+		IntervalTimer delayReq;
+		IntervalTimer sync;
+		IntervalTimer announceReceipt;
+		IntervalTimer announceInterval;
 
-	/*
-	 * stores timeout for each timer
-	 */
-	UInteger16 wrTimeouts[WR_TIMER_ARRAY_SIZE];
+	} timers;
 
-	/*
-	 * used to calculate eclapsed time,
-	 * we don't use interrapts, but periodically
-	 * call do_irq_less_timing()
-	 * and check time since last it's call
-	 */
-	struct timeval last_update;
-
-	//wr_servo_state_t servo
+	IntervalTimer wrTimers[WR_TIMER_ARRAY_SIZE];
+	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
 } PtpClock;
 
