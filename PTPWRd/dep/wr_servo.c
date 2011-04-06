@@ -170,14 +170,19 @@ static wr_timestamp_t ts_zero()
 
 int wr_servo_init(PtpClock *clock)
 {
+	hexp_port_state_t pstate;
 	wr_servo_state_t *s = &clock->wr_servo;
 
 	fprintf(stderr,"[slave] initializing clock servo\n");
+
+	/* Determine the alpha coefficient */
+	halexp_get_port_state(&pstate, clock->netPath.ifaceName);
 
 	strncpy(s->if_name, clock->netPath.ifaceName, 16);
 
 	s->state = WR_SYNC_TAI;
 	s->cur_setpoint = 0;
+	s->fiber_fix_alpha = pstate.fiber_fix_alpha;
 
 	// fixme: full precision
 	s->delta_tx_m = ((int32_t)clock->grandmasterDeltaTx
@@ -191,6 +196,13 @@ int wr_servo_init(PtpClock *clock)
 	cur_servo_state.delta_rx_m = (double)s->delta_rx_m;
 	cur_servo_state.delta_tx_s = (double)s->delta_tx_s;
 	cur_servo_state.delta_rx_s = (double)s->delta_rx_s;
+	
+	printf("Deltas: TxM = %d RxM = %d TxS = %d RxS = %d\n", 
+	       s->delta_tx_m,
+	       s->delta_rx_m,
+	       s->delta_tx_s,
+	       s->delta_rx_s);
+
 
 	strncpy(cur_servo_state.sync_source,
 			  clock->netPath.ifaceName, 16);//fixme
@@ -247,8 +259,15 @@ int wr_servo_update(PtpClock *clock)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 	uint64_t tics;
+
+#if 1
 	double big_delta, alpha /*, mu, asymmetry */;
 	double delay_ms;
+#endif
+
+	uint64_t big_delta_fix;
+	uint64_t delay_ms_fix;
+
 	wr_timestamp_t ts_offset, ts_offset_hw /*, ts_phase_adjust */;
 	hexp_pps_params_t adjust;
 
@@ -265,38 +284,50 @@ int wr_servo_update(PtpClock *clock)
 		dump_timestamp("mdelay", s->mu);
 	}
 
-	alpha = 1.4682e-04*1.76; // EXPERIMENTALLY DERIVED. VALID.
 
-	printf("delta_TX_M = %d\n", s->delta_tx_m);
-	printf("delta_TX_S = %d\n", s->delta_tx_s);
-	printf("delta_RX_M = %d\n", s->delta_rx_m);
-	printf("delta_RX_S = %d\n", s->delta_rx_s);
+#if 1
+	alpha = 1.4682e-04*1.76; // EXPERIMENTALLY DERIVED. VALID.
 
 	big_delta = (double) s->delta_tx_m + (double) s->delta_tx_s
 		+ (double) s->delta_rx_m + (double) s->delta_rx_s;
 
-	cur_servo_state.mu = (double)ts_to_picos(s->mu);
 
 	// fiber part (first line) + PHY/routing part (second line)
-	delay_ms = ((double)ts_to_picos(s->mu) - big_delta) / (2.0 + alpha)
-		+ (double)s->delta_tx_m + (double) s->delta_rx_s + ph_adjust;
+	delay_ms = ((double)ts_to_picos(s->mu) - big_delta) * ((1.0 + alpha) / (2.0 + alpha))
+  		+ (double)s->delta_tx_m + (double) s->delta_rx_s + ph_adjust;
 
-	//  printf("delay_ms = %.0f\n", delay_ms);
-	//  printf("mu = %lld\n", ts_to_picos(s->mu));
+	printf("delay_ms [float] = %.0f ps\n", delay_ms);
+#endif
 
-	ts_offset = ts_add(ts_sub(s->t1, s->t2),
-			   picos_to_ts((int64_t)delay_ms));
+	big_delta_fix =  s->delta_tx_m + s->delta_tx_s
+		       + s->delta_rx_m + s->delta_rx_s;
+
+	delay_ms_fix = (((uint64_t)(ts_to_picos(s->mu) - big_delta_fix) * (uint64_t) s->fiber_fix_alpha) >> FIX_ALPHA_FRACBITS) 
+		+ ((ts_to_picos(s->mu) - big_delta_fix) >> 1) 
+		+ s->delta_tx_m + s->delta_rx_s + ph_adjust;
+
+	printf("delay_ms = %lld ps\n", delay_ms_fix);
+
+	ts_offset = ts_add(ts_sub(s->t1, s->t2), picos_to_ts(delay_ms_fix));
 	ts_offset_hw = ts_hardwarize(ts_offset);
+
+#ifndef WRPC_EXTRA_SLIM
+	cur_servo_state.mu = (double)ts_to_picos(s->mu);
 
 	cur_servo_state.cur_offset = ts_to_picos(ts_offset);
 
-	cur_servo_state.delay_ms = delay_ms;
+	cur_servo_state.delay_ms = delay_ms_fix;
 	cur_servo_state.total_asymmetry =
-		(cur_servo_state.mu - 2.0 * delay_ms);
+		(cur_servo_state.mu - 2.0 * (double)delay_ms_fix);
 	cur_servo_state.fiber_asymmetry =
 		cur_servo_state.total_asymmetry
 		- (s->delta_tx_m + s->delta_rx_s)
 		+ (s->delta_rx_m + s->delta_tx_s);
+
+	cur_servo_state.tracking_enabled = tracking_enabled;
+
+#endif
+
 
 	if (0) { /* enable for debugging */
 		dump_timestamp("offset", ts_offset_hw);
@@ -304,9 +335,7 @@ int wr_servo_update(PtpClock *clock)
 
 	//printf("state %d\n", s->state);
 
-	s->delta_ms = delay_ms;
-
-	cur_servo_state.tracking_enabled = tracking_enabled;
+	s->delta_ms = delay_ms_fix;
 
 	tics = ptpd_netif_get_msec_tics();
 
@@ -324,7 +353,10 @@ int wr_servo_update(PtpClock *clock)
 	case WR_SYNC_TAI:
 		if(ts_offset_hw.utc != 0)
 		{
+
+#ifndef WRPC_EXTRA_SLIM			
 			strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
+#endif
 
 			strcpy(adjust.port_name, s->if_name);
 			adjust.adjust_utc = ts_offset_hw.utc;
@@ -341,8 +373,10 @@ int wr_servo_update(PtpClock *clock)
 		break;
 
 	case WR_SYNC_NSEC:
-		strcpy(cur_servo_state.slave_servo_state, "SYNC_NSEC");
 
+#ifndef WRPC_EXTRA_SLIM
+		strcpy(cur_servo_state.slave_servo_state, "SYNC_NSEC");
+#endif
 		if(ts_offset_hw.nsec != 0)
 		{
 
@@ -360,8 +394,9 @@ int wr_servo_update(PtpClock *clock)
 		break;
 
 	case WR_SYNC_PHASE:
+#ifndef WRPC_EXTRA_SLIM
 		strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
-
+#endif
 		s->cur_setpoint = -ts_offset_hw.phase;
 
 		strcpy(adjust.port_name, s->if_name);
@@ -378,8 +413,9 @@ int wr_servo_update(PtpClock *clock)
 
 
 	case WR_TRACK_PHASE:
+#ifndef WRPC_EXTRA_SLIM
 		strcpy(cur_servo_state.slave_servo_state, "TRACK_PHASE");
-
+#endif
 		cur_servo_state.cur_setpoint = s->cur_setpoint;
 		cur_servo_state.cur_skew = s->delta_ms - s->delta_ms_prev;
 
