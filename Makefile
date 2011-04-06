@@ -20,7 +20,7 @@ PTPD_FREESTANDING ?= $(shell ./check-freestanding $(CC))
 
 ifeq ($(PTPD_FREESTANDING), y)
    SAY := $(shell echo "CPU is freestanding" > /dev/tty)
-   CFLAGS = -ffreestanding -DPTPD_FREESTANDING
+   CFLAGS = -ffreestanding -DPTPD_FREESTANDING -ffunction-sections -fdata-sections -Os -DWRPC_EXTRA_SLIM
    TARGETS := ptpd-freestanding
 else
    SAY := $(shell echo "CPU is hosted" > /dev/tty)
@@ -42,8 +42,8 @@ CORELIBS = libwripc.a libptpnetif.a
 LDFLAGS = #-L. -lwripc -lptpnetif
 
 # Flags from the original Makefiles
-CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM
-CFLAGS += -DDEBUG
+CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM 
+#CFLAGS += -DDEBUG
 #CFLAGS += -DPTPD_DBG
 
 
@@ -52,8 +52,7 @@ all: check $(TARGETS)
 
 # The main objects are all from the ptp directory
 D = PTPWRd
-OBJS = $D/ptpd.o
-OBJS += $D/arith.o
+OBJS = $D/arith.o
 OBJS += $D/bmc.o
 OBJS += $D/dep/msg.o
 OBJS += $D/dep/net.o
@@ -68,6 +67,7 @@ OBJS += $D/wr_protocol.o
 POSIX_OBJS = $D/dep/startup.o
 POSIX_OBJS += $D/ptpd_exports.o
 POSIX_OBJS += $D/display.o
+POSIX_OBJS += $D/ptpd.o
 
 # This is a replacement for startup in the freestanding version
 FREE_OBJS = libposix/freestanding-startup.o
@@ -83,7 +83,7 @@ FREE_OBJS += libposix/freestanding-wrapper.o
 # we only support cross-compilation (if you want force CROSS_COMPILE to " ")
 # similarly, we need a kernel at this time
 check:
-	@for n in CROSS_COMPILE $(CHECKVARS); do \
+	@for n in $(CHECKVARS); do \
 	    if [ -z "$$(eval echo \$$$$n)" ]; then \
 	        echo "Please set $n" >& 2; exit 1; \
 	    fi \
