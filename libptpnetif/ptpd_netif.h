@@ -210,4 +210,9 @@ int ptpd_netif_get_port_state(const char *ifaceName);
  */
 int ptpd_netif_get_ifName(char *ifname, int number);
 
+
+/* Returns the millisecond "tics" counter value */
+uint64_t ptpd_netif_get_msec_tics();
+
+
 #endif
