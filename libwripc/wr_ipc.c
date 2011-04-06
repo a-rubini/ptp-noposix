@@ -39,7 +39,7 @@
 #define MSG_TYPE_SUBSCRIBE_ACK 6
 
 #define MAX_MESSAGE_SIZE 2048
-#define REPLY_TIMEOUT 1000 // msec
+#define REPLY_TIMEOUT 20000 // msec
 
 #define ARG_TYPE_MASK 0xff
 
