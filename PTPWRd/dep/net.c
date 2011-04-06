@@ -20,7 +20,7 @@ const mac_addr_t ZERO_ADDR          = {0x00, 0x00, 0x00, 0x00, 0x001, 0x00};
 Boolean netShutdown(NetPath *netPath)
 {
 
-  PERROR("WR: not implemented: %s\n", __FUNCTION__ );
+  /*  PERROR("WR: not implemented: %s\n", __FUNCTION__ ); */
   return TRUE;
 
 #if 0
