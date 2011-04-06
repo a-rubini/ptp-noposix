@@ -48,7 +48,7 @@ static inline unsigned long pow_2(int exp)
 
 
 
-
+#ifndef WRPC_EXTRA_SLIM
 
 //added by ML
 /*
@@ -124,6 +124,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
  }
+
+#endif
 
 /* loop forever. doState() has a switch for the actions and events to be
    checked for 'port_state'. the actions and events may or may not change
