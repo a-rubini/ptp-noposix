@@ -68,6 +68,8 @@ typedef struct {
 #define HEXP_PORT_MODE_WR_SLAVE 2
 #define HEXP_PORT_MODE_NON_WR 3
 
+
+#define FIX_ALPHA_FRACBITS 40
 /*
 #define HEXP_PORT_TSC_RISING 1
 #define HEXP_PORT_TSC_FALLING 2
@@ -114,6 +116,7 @@ typedef struct {
 
   uint8_t hw_addr[6];
   int hw_index;
+  int32_t fiber_fix_alpha;
 } hexp_port_state_t;
 
 typedef struct {
