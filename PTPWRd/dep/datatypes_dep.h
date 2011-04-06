@@ -102,6 +102,8 @@ typedef struct {
 
 	uint64_t last_tics;
 
+	int32_t fiber_fix_alpha;
+
 } wr_servo_state_t;
 
 #endif /*DATATYPES_DEP_H_*/
