@@ -37,7 +37,14 @@
 #define DEFAULT_PRIORITY1			100
 #define DEFAULT_PRIORITY2			100
 #define DEFAULT_CLOCK_VARIANCE			-4000 //To be determined in 802.1AS...so same value of ptpdv1 is used
+
+/* In WR mode we need only one foreign master */
+#ifdef WRPC_EXTRA_SLIM
+#define DEFAULT_MAX_FOREIGN_RECORDS		1
+#else
 #define DEFAULT_MAX_FOREIGN_RECORDS		5
+#endif
+
 #define DEFAULT_PARENTS_STATS			FALSE
 
 /* features, only change to refelect changes in implementation */
@@ -101,7 +108,13 @@
 #define WR_MANAGEMENT_TLV_LENGTH	 6
 #define WR_MANAGEMENT_LENGTH	 (MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
 
+/* memory footprint tweak for WRPC */
+#ifdef WRPC_EXTRA_SLIM
+#define MAX_PORT_NUMBER			1
+#else
 #define MAX_PORT_NUMBER			16
+#endif
+
 #define MIN_PORT_NUMBER			1
 
 #define WR_PORT_NUMBER			10
