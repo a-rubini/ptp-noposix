@@ -74,6 +74,9 @@ PACKED struct _wr_timestamp {
   // Phase (in picoseconds), linearized for receive timestamps, zero for send timestamps
   int32_t phase; // phase(picoseconds)
 
+	int32_t raw_phase;
+	int32_t raw_nsec;
+	int32_t raw_ahead;
   //int cntr_ahead;
 };
 

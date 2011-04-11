@@ -132,14 +132,17 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 {
 	struct my_socket *s = (struct my_socket *) sock;
 	int trip_lo, trip_hi;
-
+	int phase;
 
 	update_dmtd(sock);
 
 	// "phase" transition: DMTD output value (in picoseconds)
 	// at which the transition of rising edge
 	// TS counter will appear
+	ts->raw_phase = s->dmtd_phase;
 
+  phase = s->clock_period -1 -s->dmtd_phase;
+	
 
 	// calculate the range within which falling edge timestamp is stable
 	// (no possible transitions)
@@ -149,7 +152,7 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 	trip_hi = s->phase_transition + s->clock_period / 4;
 	if(trip_hi >= s->clock_period) trip_hi -= s->clock_period;
 
-	if(inside_range(trip_lo, trip_hi, s->dmtd_phase))
+	if(inside_range(trip_lo, trip_hi, phase))
 	{
 		// We are within +- 25% range of transition area of
 		// rising counter. Take the falling edge counter value as the
@@ -162,12 +165,12 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 		// and eventually increase the counter by 1 to simulate a
 		// timestamp transition exactly at s->phase_transition
 		//DMTD phase value
-		if(inside_range(trip_lo, s->phase_transition, s->dmtd_phase))
+		if(inside_range(trip_lo, s->phase_transition, phase))
 			ts->nsec += s->clock_period / 1000;
 
 	}
 
-	ts->phase = s->dmtd_phase - s->phase_transition - 1;
+	ts->phase = phase - s->phase_transition - 1;
 	if(ts->phase  < 0) ts->phase += s->clock_period;
 	ts->phase = s->clock_period - 1 -ts->phase;
 }
@@ -489,6 +492,10 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 		rx_timestamp->nsec = sts->hwtimeraw.tv_nsec;
 		rx_timestamp->utc =
 			(uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
+	
+		rx_timestamp->raw_nsec = sts->hwtimeraw.tv_sec & 0x7fffffff;
+		rx_timestamp->raw_ahead = cntr_ahead;
+
 		linearize_rx_timestamp(rx_timestamp, sock, cntr_ahead);
 	}
 
