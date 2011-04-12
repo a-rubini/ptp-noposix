@@ -13,6 +13,8 @@
 #include <stdint.h>
 
 #else
+
+#include <inttypes.h>
 /*
  * This is a freestanding compilation, and we may miss some data
  * structures. For example misses <stdint.h>. Most likely it's
@@ -20,7 +22,7 @@
  */
 
 /* Looks like we miss <stdint.h>. Let's assume we are 32 bits */
-typedef unsigned char		uint8_t;
+/*typedef unsigned char		uint8_t;
 typedef unsigned short		uint16_t;
 typedef unsigned int		uint32_t;
 typedef unsigned long long	uint64_t;
@@ -29,11 +31,12 @@ typedef signed char		int8_t;
 typedef signed short		int16_t;
 typedef signed int		int32_t;
 typedef signed long long	int64_t;
-
+*/
 /* Hmm... htons/htonl are missing. I made the Makefile check endianness */
 #ifdef PTPD_MSBF
 static inline uint16_t htons(uint16_t x) {return x;}
 static inline uint32_t htonl(uint32_t x) {return x;}
+static inline uint16_t ntohs(uint16_t x) {return x;}
 #else
 static inline uint16_t htons(uint16_t x) { return (x << 8) | (x >> 8); }
 static inline uint32_t htonl(uint32_t x)
@@ -48,5 +51,14 @@ static inline void ptpd_init_exports() {}
 static inline void ptpd_handle_wripc() {}
 
 #endif /* hosted */
+
+#define PPS_WIDTH 1000000
+
+#define printf(x, ...) mprintf(x, ##__VA_ARGS__)
+#define fprintf(file, x, ...) mprintf(x, ##__VA_ARGS__)
+#define sprintf(buf, ...) msprintf(buf, __VA_ARGS__)
+//#define DBG(x, ...) mprintf(x, ##__VA_ARGS__)
+
+int usleep(unsigned useconds);
 
 #endif /* __PTPD_WRAPPERS_H__ */
