@@ -270,13 +270,10 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     // WRPTPv2: we might not need it TODO: investigate
     
 #ifdef WRPTPv2
-    if( ptpClock->portWrConfig          == WR_S_ONLY  && \
-        ptpClock->parentPortWrConfig    == WR_M_ONLY && \
+    if( ptpClock->wrNodeMode            == WR_SLAVE  && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->isWRmode             == FALSE     ))
     {
-      DBG("setting wrNodeMode to WR_SLAVE\n");
-      ptpClock->wrNodeMode   = WR_SLAVE;
 #else
     if( ptpClock->wrNodeMode            == WR_SLAVE  && \
         ptpClock->grandmasterWrNodeMode == WR_MASTER && \
@@ -284,7 +281,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
          ptpClock->isWRmode             == FALSE     ))
     {
 #endif           
-      DBG("state PTP_UNCALIBRATED\n");
+      DBG("state PTP_UNCALIBRATED : WR_SLAVE\n");
 #ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_PRESENT, rtOpts, ptpClock);
 #else
@@ -301,16 +298,16 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      *
      */
     
-    if(ptpClock->portWrConfig == WR_M_ONLY)
+    if(ptpClock->wrNodeMode == WR_MASTER)
     {
-      DBG("state PTP_UNCALIBRATED\n");
-      DBG("setting wrNodeMode to WR_MASTER\n");
-      ptpClock->wrNodeMode   = WR_MASTER;
+      DBG("state PTP_UNCALIBRATED: WR_MASTER\n");
+      
 #ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_M_LOCK, rtOpts, ptpClock);
 #else
       toWRMasterState(PTPWR_LOCK, rtOpts, ptpClock);
 #endif
+
       ptpClock->portState = PTP_UNCALIBRATED;
       break;
     }
@@ -481,6 +478,14 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					* as transcient state between sth and SLAVE
 					* as specified in PTP state machine: Figure 23, 78p
 					*/
+					if((ptpClock->portWrConfig          == WR_S_ONLY  || \
+					    ptpClock->portWrConfig          == WR_M_AND_S)&& \
+					   (ptpClock->parentPortWrConfig    == WR_M_ONLY  || \
+					    ptpClock->parentPortWrConfig    == WR_M_AND_S))
+					{
+					  DBG("wrNodeMode <= WR_SLAVE\n");
+					  ptpClock->wrNodeMode  = WR_SLAVE;
+					}
 					toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
 				}
 				else
@@ -489,7 +494,39 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					toState(state, rtOpts, ptpClock);
 				}
 
+			}else
+			{
+				 /***** SYNCHRONIZATION_FAULT detection ****
+				  * here we have a mechanims to enforce WR LINK SETUP (so-colled WR 
+				  * calibration).
+				  * It's enough if we "turn off" WRmode in the WR Slave or WR Master
+		 		  *
+		 		  * WR Master: the info will be transferred with Annouce MSG 
+				  *            (wr_flags), and the WR Slave will verify **here**  
+				  *            that re-synch is needed,
+				  *
+		 		  * WR Slave: the need for re-synch, indicated by isWRmode==FALSE,  
+		 		  *           will be evaluated here
+		 		  */
+		 
+				  if(ptpClock->portState	    == PTP_SLAVE && \
+				     ptpClock->wrNodeMode           == WR_SLAVE  && \
+		   		    (ptpClock->grandmasterIsWRmode  == FALSE     || \
+		   		     ptpClock->isWRmode             == FALSE     ))
+		 		  {
+				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+				      if(ptpClock->grandmasterIsWRmode  == FALSE)
+					DBG("parent node left White Rabbit Mode- WR Master-forced");
+					DBG(" re-synchronization\n");
+				      if(ptpClock->isWRmode             == FALSE)
+					DBG("this node left White Rabbit Mode - WR Slave-forced ");
+					DBG("re-synchronization\n");
+				      
+				      toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
+
+				   }
 			}
+			
 		}
 		break;
 
@@ -819,9 +856,20 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 			if(ptpClock->msgTmp.announce.wr_flags != NON_WR)
 				DBG("handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
-
+			
+#ifdef WRPTPv2			
+			/*******  bug fix ???? *****
+			* the problem was that we update directly the data in portDS but later
+			* we executed BMC which uses data of foreignMasters, this was not updated,
+			* so, if there was change of date received from the parent, it was ignored.
+			* Therefore, now we update the best foreignMaster (which is the parent) and
+			* then let the BMC do the job of updating portDS
+			*/
+			msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->foreign[ptpClock->foreign_record_best].header);
+			msgUnpackAnnounce(ptpClock->msgIbuf,&ptpClock->foreign[ptpClock->foreign_record_best].announce,&ptpClock->foreign[ptpClock->foreign_record_best].header);
+#else			
 			s1(header,&ptpClock->msgTmp.announce,ptpClock);
-
+#endif
 			/*Reset Timer handling Announce receipt timeout*/
 			timerStart(&ptpClock->timers.announceReceipt,
 				   ptpClock->announceReceiptTimeout * 1000 *
@@ -1550,7 +1598,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 	switch(ptpClock->msgTmpManagementId)
 	{
-#ifdef WRPTPv2
+#ifndef WRPTPv2
+//we dont' use this staff !!!
 	case CALIBRATE:
 
 		DBG("WR Management msg [CALIBRATE]:	\
@@ -1601,21 +1650,20 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 #endif		
 	}
 
+
+#ifndef WRPTPv2
+//we dont' use this staff !!!
 	/*
 	* here the master recognizes that it talks with WR slave
 	* which identifies itself and the calibration is statrted
 	* if the calibration is already being done, just ignore this
 	*/
-#ifdef WRPTPv2
-	if(ptpClock->wrNodeMode        == WR_MASTER &&
-	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && 
-	   ptpClock->portState          != PTP_UNCALIBRATED )
-#else	
 	if(ptpClock->wrNodeMode        == WR_MASTER &&
 	   ptpClock->msgTmpManagementId == SLAVE_PRESENT && 
 	   ptpClock->portState          != PTP_UNCALIBRATED )
+	  toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
 #endif	  
-		toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+
 }
 
 
@@ -1681,27 +1729,25 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		break;
 	}
 
-	/*
+	/***************** TURN ON WR_MASTER mode ********************
 	* here the master recognizes that it talks with WR slave
 	* which identifies itself and the calibration is statrted
 	* if the calibration is already being done, just ignore this
 	*/
-#if 0
-	if(ptpClock->wrNodeMode        == WR_MASTER &&
-	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && 
-	   ptpClock->portState          != PTP_UNCALIBRATED )
-	toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
-#else
-	/* here we deternime that a node shoudl be WR_MASTER */
+
+	/* here we deternime that a node should be WR_MASTER */
 	if(ptpClock->portState         == PTP_MASTER    && \
 	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && \
 	  (ptpClock->portWrConfig      == WR_M_ONLY     || 
 	   ptpClock->portWrConfig      == WR_M_AND_S     ))
 	{
+	     ///////// fucken important !! /////////////
+	     DBG("wrNodeMode <= WR_MASTER\n");
 	     ptpClock->wrNodeMode = WR_MASTER;
+	     ///////////////////////////////////////////
 	     toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
 	}
-#endif
+
 		
 
 		

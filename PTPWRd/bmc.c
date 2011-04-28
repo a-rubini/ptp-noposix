@@ -212,7 +212,7 @@ void m1(PtpClock *ptpClock)
 	/*White Rabbit*/
 #ifdef WRPTPv2
 	ptpClock->parentPortWrConfig      = ptpClock->portWrConfig;
-	ptpClock->parentPortWrConfig      = (ptpClock->portWrConfig != NON_WR) ;
+	ptpClock->grandmasterIsWRnode     = (ptpClock->portWrConfig != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #else
@@ -224,12 +224,14 @@ void m1(PtpClock *ptpClock)
 
 	/*Time Properties data set*/
 	ptpClock->timeSource = INTERNAL_OSCILLATOR;
-		}
+		
+}
 
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
 void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 {
+	DBG("[%s]\n",__func__);
 	/*Current DS*/
 	ptpClock->stepsRemoved = announce->stepsRemoved + 1;
 
@@ -248,12 +250,20 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	ptpClock->grandmasterIsWRnode     = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpClock->grandmasterIsWRmode     = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
 	ptpClock->grandmasterIsCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
+	DBG(" S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
+	DBG(" S1: grandmasterIsWRnode....... 0x%x\n", ptpClock->grandmasterIsWRnode);
+	DBG(" S1: grandmasterIsWRmode....... 0x%x\n", ptpClock->grandmasterIsWRmode);
+	DBG(" S1: grandmasterIsCalibrated... 0x%x\n", ptpClock->grandmasterIsCalibrated);	
 #ifdef WRPTPv2
 	ptpClock->parentPortWrConfig      =   announce->wr_flags & WR_NODE_MODE;
+	DBG(" S1: parentPortWrConfig.......  0x%x\n", ptpClock->parentPortWrConfig);
 #else
 	ptpClock->grandmasterWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
+	DBG(" S1: grandmasterWrNodeMode....  0x%x\n",ptpClock->grandmasterWrNodeMode);
 #endif
 
+	
+	
 	/*Timeproperties DS*/
 	ptpClock->currentUtcOffset = announce->currentUtcOffset;
 	ptpClock->currentUtcOffsetValid = ((header->flagField[1] & 0x04) == 0x04); //"Valid" is bit 2 in second octet of flagfield
@@ -269,6 +279,7 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 /*Copy local data set into header and announce message. 9.3.4 table 12*/
 void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 {
+	DBG("[%s]\n",__func__);
   	announce->grandmasterPriority1 = ptpClock->priority1;
 	memcpy(announce->grandmasterIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	announce->grandmasterClockQuality.clockClass = ptpClock->clockQuality.clockClass;

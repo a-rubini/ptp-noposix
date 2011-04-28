@@ -399,6 +399,7 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", tlv_versionNumber);
 	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", tlv_wrMessageID);
 #endif	  
+	  DBGM(" [WR suffix] wr_flags.......... 0x%x\n", announce->wr_flags);
 	  if((announce->wr_flags & WR_NODE_MODE) == NON_WR)
 	    DBGM(" [WR suffix] wr_flags.......... NON_WR\n");
 	  else if((announce->wr_flags & WR_NODE_MODE) == WR_S_ONLY)
