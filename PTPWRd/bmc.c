@@ -38,7 +38,18 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
 	/* If priority not defined at the runtime, set it high for the WR master*/
+#ifdef WRPTPv2	
+	// initial value of wrNodeMode 
+	
+	ptpClock->wrNodeMode = NON_WR;
+	
+//TODO: probably to be change
+	
+	
+	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->portWrConfig == WR_M_ONLY)
+#else
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrNodeMode == WR_MASTER)
+#endif	  
 	  ptpClock->priority1 = WR_MASTER_PRIORITY1;
 	else
 	  ptpClock->priority1 = rtOpts->priority1;
@@ -76,8 +87,11 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	/*Init other stuff*/
 	ptpClock->number_foreign_records = 0;
 	ptpClock->max_foreign_records = rtOpts->max_foreign_records;
-
+#ifdef WRPTPv2
+	if(ptpClock->portWrConfig != NON_WR)
+#else
 	if(ptpClock->wrNodeMode != NON_WR)
+#endif	  
 	{
 	  /* we want White Rabbit daemon, so here we are */
 
@@ -90,10 +104,18 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	  if(rtOpts->clockQuality.clockClass == DEFAULT_CLOCK_CLASS)
 	  {
+#ifdef WRPTPv2
+//TODO: change
+	    if( ptpClock->portWrConfig == WR_M_ONLY)
+	      ptpClock->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
+	    else if(ptpClock->portWrConfig == WR_S_ONLY)
+	      ptpClock->clockQuality.clockClass = WR_SLAVE_CLOCK_CLASS;
+#else
 	    if( ptpClock->wrNodeMode == WR_MASTER)
 	      ptpClock->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
 	    else if(ptpClock->wrNodeMode == WR_SLAVE)
 	      ptpClock->clockQuality.clockClass = WR_SLAVE_CLOCK_CLASS;
+#endif	    
 	  }
 	  else
 	    ptpClock->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
@@ -188,10 +210,17 @@ void m1(PtpClock *ptpClock)
 	ptpClock->grandmasterPriority2 = ptpClock->priority2;
 
 	/*White Rabbit*/
+#ifdef WRPTPv2
+	ptpClock->parentPortWrConfig      = ptpClock->portWrConfig;
+	ptpClock->parentPortWrConfig      = (ptpClock->portWrConfig != NON_WR) ;
+	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
+	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
+#else
 	ptpClock->grandmasterWrNodeMode   = ptpClock->wrNodeMode;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrNodeMode != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
+#endif	
 
 	/*Time Properties data set*/
 	ptpClock->timeSource = INTERNAL_OSCILLATOR;
@@ -219,8 +248,11 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	ptpClock->grandmasterIsWRnode     = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpClock->grandmasterIsWRmode     = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
 	ptpClock->grandmasterIsCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
+#ifdef WRPTPv2
+	ptpClock->parentPortWrConfig      =   announce->wr_flags & WR_NODE_MODE;
+#else
 	ptpClock->grandmasterWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
-
+#endif
 
 	/*Timeproperties DS*/
 	ptpClock->currentUtcOffset = announce->currentUtcOffset;
@@ -247,9 +279,16 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 	memcpy(header->sourcePortIdentity.clockIdentity,ptpClock->clockIdentity,CLOCK_IDENTITY_LENGTH);
 
 	/*White Rabbit*/
+#ifdef WRPTPv2
+	announce->wr_flags = (announce->wr_flags | ptpClock->portWrConfig) & WR_NODE_MODE  ;
+	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
+	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
+
+#else
 	announce->wr_flags = (announce->wr_flags | ptpClock->wrNodeMode) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
+#endif	
 }
 
 

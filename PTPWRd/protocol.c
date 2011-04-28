@@ -18,7 +18,11 @@ void issueAnnounce(RunTimeOpts*,PtpClock*);
 void issueSync(RunTimeOpts*,PtpClock*);
 void issueFollowup(RunTimeOpts*,PtpClock*);
 void issueDelayReq(RunTimeOpts*,PtpClock*);
+#ifdef WRPTPv2
+void issueWRSignalingMsg(Enumeration16,RunTimeOpts*,PtpClock*);
+#else
 void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,PtpClock*);
+#endif
 void addForeign(Octet*,MsgHeader*,PtpClock*);
 
 void handleSignaling(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
@@ -263,11 +267,23 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * here we have case of slave which
      * detectes that calibration is needed
      */
+    // WRPTPv2: we might not need it TODO: investigate
+    
+#ifdef WRPTPv2
+    if( ptpClock->portWrConfig          == WR_S_ONLY  && \
+        ptpClock->parentPortWrConfig    == WR_M_ONLY && \
+        (ptpClock->grandmasterIsWRmode  == FALSE     || \
+         ptpClock->isWRmode             == FALSE     ))
+    {
+      DBG("setting wrNodeMode to WR_SLAVE\n");
+      ptpClock->wrNodeMode   = WR_SLAVE;
+#else
     if( ptpClock->wrNodeMode            == WR_SLAVE  && \
         ptpClock->grandmasterWrNodeMode == WR_MASTER && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->isWRmode             == FALSE     ))
     {
+#endif           
       DBG("state PTP_UNCALIBRATED\n");
 #ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_PRESENT, rtOpts, ptpClock);
@@ -284,9 +300,12 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * was forced to enter UNCALIBRATED state
      *
      */
-    if(ptpClock->wrNodeMode == WR_MASTER)
+    
+    if(ptpClock->portWrConfig == WR_M_ONLY)
     {
       DBG("state PTP_UNCALIBRATED\n");
+      DBG("setting wrNodeMode to WR_MASTER\n");
+      ptpClock->wrNodeMode   = WR_MASTER;
 #ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_M_LOCK, rtOpts, ptpClock);
 #else
@@ -392,7 +411,11 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   m1(ptpClock);
   msgPackHeader(ptpClock->msgObuf, ptpClock);
 
+#ifdef WRPTPv2
+  if(ptpClock->portWrConfig != NON_WR)
+#else
   if(ptpClock->wrNodeMode != NON_WR)
+#endif    
     initWRcalibration(ptpClock->netPath.ifaceName, ptpClock);
 
   toState(PTP_LISTENING, rtOpts, ptpClock);
@@ -410,7 +433,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	UInteger8 state;
 	Boolean linkUP;
 
-	DBG("DoState : %d\n", ptpClock->portState);
+	//DBG("DoState : %d\n", ptpClock->portState);
 
 	linkUP = isPortUp(&ptpClock->netPath);
 
@@ -494,8 +517,11 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		else
 			toState(PTP_SLAVE, rtOpts, ptpClock);
 
+#ifdef WRPTPv2		
+		ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+#else		
 		ptpClock->msgTmpManagementId =  NULL_MANAGEMENT;
-
+#endif		
 		break;
 
 	case PTP_LISTENING:
@@ -591,7 +617,7 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ssize_t length;
 	Boolean isFromSelf;
 	TimeInternal time = { 0, 0 };
-
+	
 #if 0
 	/*
 	* TODO: implement netSelect()
@@ -625,20 +651,26 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	if(length < 0)
 	{
 		PERROR("Failed to receive on the event socket, len = %d\n", (int)length);
+		DBG("Failed to receive on the event socket, len = %d\n", (int)length);
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
 	else if(!length) /* nothing received, just exit */
+	{
+	  //DBG(" nothing received, just exit, len = %d\n", (int)length);
 		return;
+	}
 
 	ptpClock->message_activity = TRUE;
 
 	if(length < HEADER_LENGTH)
 	{
 		ERROR("Message shorter than header length\n");
+		DBG("Message shorter than header length\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
+
 
 	// !!!!!!!!!!!!!!!!!
 	/*
@@ -673,6 +705,8 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   
 	if(!isFromSelf && time.seconds > 0)
 		subTime(&time, &time, &rtOpts->inboundLatency);
+
+	DBG("handle: messageType = 0x%x\n",ptpClock->msgTmpHeader.messageType);
   
 	switch(ptpClock->msgTmpHeader.messageType)
 	{
@@ -759,6 +793,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	case PTP_UNCALIBRATED:
 
 		/* White Rabbit Extension */
+		//TODO: maybe change to portWrConfig
 		if(ptpClock->wrNodeMode != NON_WR)
 		{
 			DBGV("Handle Announce: drop messages other than management in WR mode\n");
@@ -1515,7 +1550,7 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 	switch(ptpClock->msgTmpManagementId)
 	{
-
+#ifdef WRPTPv2
 	case CALIBRATE:
 
 		DBG("WR Management msg [CALIBRATE]:	\
@@ -1559,6 +1594,11 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	default:
 		DBG("\n\nhandle WR Management msg [UNKNOWN], failed \n\n");
 		break;
+#else
+	default:
+		DBG("\n\nhandle Management msg : no support !!! \n\n");
+		break;
+#endif		
 	}
 
 	/*
@@ -1566,15 +1606,108 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	* which identifies itself and the calibration is statrted
 	* if the calibration is already being done, just ignore this
 	*/
-
+#ifdef WRPTPv2
+	if(ptpClock->wrNodeMode        == WR_MASTER &&
+	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && 
+	   ptpClock->portState          != PTP_UNCALIBRATED )
+#else	
 	if(ptpClock->wrNodeMode        == WR_MASTER &&
 	   ptpClock->msgTmpManagementId == SLAVE_PRESENT && 
 	   ptpClock->portState          != PTP_UNCALIBRATED )
+#endif	  
 		toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
 }
 
 
-void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock) { }
+void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock) 
+{
+#ifdef WRPTPv2  
+	MsgSignaling signalingMsg;
+
+	if(isFromSelf)
+		return;
+
+
+	msgUnpackWRSignalingMsg(ptpClock->msgIbuf,&signalingMsg,&(ptpClock->msgTmpWrMessageID),ptpClock);
+
+	// a hack
+	//ptpClock->msgTmpManagementId = ptpClock->msgTmpWrMessageID;
+
+	switch(ptpClock->msgTmpWrMessageID)
+	{
+
+	case CALIBRATE:
+
+		DBG("WR Signaling msg [CALIBRATE]:	\
+	\n\tcalibrateSendPattern  = %32x			\
+	\n\tcalibrationPeriod     = %32lld us		\
+	\n\tcalibrationPattern    = %s			\
+	\n\tcalibrationPatternLen = %32d bits",\
+		    ptpClock->otherNodeCalibrationSendPattern,	  \
+		    (unsigned long long)ptpClock->otherNodeCalibrationPeriod, \
+		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
+		    (unsigned)ptpClock->otherNodeCalibrationPatternLen);
+		break;
+
+	case CALIBRATED:
+
+		DBG("WR Signaling msg [CALIBRATED]: \
+	\n\tdeltaTx = %16lld			     \
+	\n\tdeltaRx = %16lld\n", 
+		    ((unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.lsb);
+		break;
+
+	case SLAVE_PRESENT:
+		DBG("\n\nhandle WR Signaling msg [SLAVE_PRESENT], succedded \n\n\n");
+		break;
+	      
+	case LOCK:
+		DBG("\n\nhandle WR Signaling msg [LOCK], succedded \n\n");
+		break;
+
+	case LOCKED:
+
+		DBG("\n\nhandle WR Signaling msg [LOCKED], succedded \n\n");
+		break;
+
+	case WR_MODE_ON:
+
+		DBG("\n\nhandle WR Signaling msg [WR_LINK_ON], succedded \n\n");
+		break;
+
+	default:
+		DBG("\n\nhandle WR Signaling msg [UNKNOWN], failed \n\n");
+		break;
+	}
+
+	/*
+	* here the master recognizes that it talks with WR slave
+	* which identifies itself and the calibration is statrted
+	* if the calibration is already being done, just ignore this
+	*/
+#if 0
+	if(ptpClock->wrNodeMode        == WR_MASTER &&
+	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && 
+	   ptpClock->portState          != PTP_UNCALIBRATED )
+	toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+#else
+	/* here we deternime that a node shoudl be WR_MASTER */
+	if(ptpClock->portState         == PTP_MASTER    && \
+	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && \
+	  (ptpClock->portWrConfig      == WR_M_ONLY     || 
+	   ptpClock->portWrConfig      == WR_M_AND_S     ))
+	{
+	     ptpClock->wrNodeMode = WR_MASTER;
+	     toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+	}
+#endif
+		
+
+		
+		
+#endif /*WRPTPv2*/
+}
 
 
 /*Pack and send on general multicast ip adress an Announce message*/
@@ -1583,8 +1716,12 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	UInteger16 announce_len;
 
 	msgPackAnnounce(ptpClock->msgObuf,ptpClock);
-
+#ifdef WRPTPv2
+	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
+#else
 	if (ptpClock->wrNodeMode != NON_WR)
+#endif
+	
 		announce_len = WR_ANNOUNCE_LENGTH;
 	else
 		announce_len = ANNOUNCE_LENGTH;
@@ -1790,7 +1927,8 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 }
 #endif
 
-
+#ifndef WRPTPv2
+// this function seems to be unsued
 void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpts,PtpClock *ptpClock)
 {
 	msgPackWRManagement(ptpClock->msgObuf,ptpClock, SLAVE_PRESENT);
@@ -1808,7 +1946,62 @@ void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpt
 		DBGV("FOllowUp MSG sent ! \n");
 	}
 }
+#endif
 
+#ifdef WRPTPv2
+void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+{
+	UInteger16 len;
+	
+	len = msgPackWRSignalingMsg(ptpClock->msgObuf,ptpClock, wrMessageID);
+
+	if (!netSendGeneral(ptpClock->msgObuf,len,&ptpClock->netPath))
+	{
+		toState(PTP_FAULTY,rtOpts,ptpClock);
+		DBGV("Signaling message can't be sent -> FAULTY state \n");
+		DBG("issue: WR Signaling Msg, failed \n");
+	}
+	else
+	{
+		switch(wrMessageID)
+		{
+		case CALIBRATE:
+			DBG("\n\nissue WR Signaling msg [CALIBRATE], succedded, \
+		  \n\t\tcalibrationSendPattern = %32x			\
+		  \n\t\tcalibrationPeriod      = %32lld us		\
+		  \n\t\tcalibrationPattern     = %s			\
+		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
+			    !ptpClock->isCalibrated,			\
+			    (unsigned long long)ptpClock->calibrationPeriod, \
+			    printf_bits(ptpClock->calibrationPattern),	\
+			    (unsigned)ptpClock->calibrationPatternLen);
+
+			break;
+
+		case CALIBRATED:
+			DBG("\n\nissue WR Signaling msg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n\n", \
+			    ((unsigned long long)ptpClock->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaTx.scaledPicoseconds.lsb, \
+			    ((unsigned long long)ptpClock->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaRx.scaledPicoseconds.lsb);
+			break;
+		case SLAVE_PRESENT:
+			DBG("\n\nissue WR Signaling msg [SLAVE_PRESENT], succedded, len = %d \n\n",len);
+			break;
+		case LOCK:
+			DBG("\n\nissue WR Signaling msg [LOCK], succedded \n\n");
+			break;
+		case LOCKED:
+			DBG("\n\nissue WR Signaling msg [LOCKED], succedded \n\n");
+			break;
+		case WR_MODE_ON:
+			DBG("\n\nissue WR Signaling msg [WR_MODE_ON], succedded \n\n");
+			break;
+		default:
+			DBG("\n\nissue WR Signaling msg [UNKNOWN], failed \n\n");
+			break;
+		}
+	}
+}
+#else
 /* WR: custom White Rabbit management messages */
 void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpClock *ptpClock)
 {
@@ -1863,6 +2056,7 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 	}
 }
 
+#endif /*WRPTPv2*/
 void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 {
 	int i,j;

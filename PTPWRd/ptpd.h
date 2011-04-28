@@ -165,18 +165,32 @@ extern void handleFollowUp(MsgHeader *header, Octet *msgIbuf,
 			   ssize_t length, Boolean isFromSelf,
 			   RunTimeOpts *rtOpts, PtpClock *ptpClock);
 extern void msgUnpackDelayResp(void *buf,MsgDelayResp *resp);
-extern void msgUnpackWRManagement(void *buf,MsgManagement *management,
-				  Enumeration16 *wr_managementId,
-				  PtpClock *ptpClock );
+
 extern void msgPackDelayReq(void *buf,Timestamp *originTimestamp,
 			    PtpClock *ptpClock);
 extern void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock);
-extern UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock,
-					   Enumeration16 wr_managementId);
+
 extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
 extern void handle(RunTimeOpts*,PtpClock*);
+
+
+#ifdef WRPTPv2
+void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, 
+			     PtpClock *ptpClock );
+extern UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrMessageID);
+
+extern void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock *ptpClock);
+
+#else
 extern void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,
 			      PtpClock*);
+extern void msgUnpackWRManagement(void *buf,MsgManagement *management,
+				  Enumeration16 *wr_managementId,
+				  PtpClock *ptpClock );
+extern UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock,
+					   Enumeration16 wr_managementId);				  
+#endif
+			      
 #if __STDC_HOSTED__
 	extern void ptpd_init_exports(void);
 #endif

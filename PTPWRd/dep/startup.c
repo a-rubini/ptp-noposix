@@ -253,13 +253,21 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	   break;
 
    case 'S':
+#ifdef WRPTPv2
+	   rtOpts->portWrConfig = WR_S_ONLY;
+#else
 	   rtOpts->wrNodeMode = WR_SLAVE;
+#endif	   
 
 	   DBGNPI("WR Slave\n");
 	   break;
 
    case 'M':
+#ifdef WRPTPv2
+	   rtOpts->portWrConfig = WR_M_ONLY;
+#else     
 	   rtOpts->wrNodeMode = WR_MASTER;
+#endif	   
 
 	   DBGNPI("WR Master\n");
 	   break;

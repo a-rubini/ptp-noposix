@@ -291,6 +291,10 @@ typedef struct {
 	TimeInternal offsetFromMaster;
 	TimeInternal meanPathDelay;
 
+#ifdef WRPTPv2
+	UInteger16 primarySlavePortNumber;
+	Enumeration8 parentPortWrConfig; 
+#endif
 /******* Parent data set *******/
 
   /*Dynamic members*/
@@ -307,13 +311,14 @@ typedef struct {
    ******* White Rabbit *******
    *       (parentDS)
    */
-	Boolean grandmasterIsWRnode;
-	Boolean grandmasterIsWRmode;
-	Boolean grandmasterIsCalibrated;
-	Enumeration8 grandmasterWrNodeMode;
+	//WRPTPv2: move these to portDS
+	Boolean grandmasterIsWRnode; 
+	Boolean grandmasterIsWRmode; //WRPTPv2: parentPortWrMode
+	Boolean grandmasterIsCalibrated; //WRPTPv2: parentPortCalibrated
+	Enumeration8 grandmasterWrNodeMode; //WRPTPv2:parentPortWrConfig
 
-	FixedDelta grandmasterDeltaTx;
-	FixedDelta grandmasterDeltaRx;
+	FixedDelta grandmasterDeltaTx; //WRPTPv2: parentPortDeltaTx
+	FixedDelta grandmasterDeltaRx; //WRPTPv2: parentPortDeltaRx
 
 /******* Global time properties data set *********/
 
@@ -431,6 +436,13 @@ typedef struct {
 	Enumeration16 msgTmpManagementId;
 
 	/*
+	 * stores current wrMessageID
+	 * it's set to null when used
+	 */
+	Enumeration16 msgTmpWrMessageID;
+	
+	
+	/*
 	 * This says whether PTPd is run for:
 	 * - non-WR node,
 	 * - WR Slave
@@ -439,42 +451,61 @@ typedef struct {
 	 * Its important that the node knows what it is,
 	 * by default PTPd runs in NON_WR
 	 */
-	Enumeration8 wrNodeMode; //copied to new
+	Enumeration8 wrNodeMode; //WRPTPv2: portWrConfig
 
 	/*
 	 * tell us whether we work in WR
 	 * mode at the moment
 	 * starts with FALSE
 	 */
-	Boolean isWRmode;
+	Boolean isWRmode; //WRPTPv2: portWrMode
+#ifdef WRPTPv2	
+	/*
+	 * Indicates current WR Mode of the port.
+	 * Can be:
+	 * NON_WR
+	 * WR_SLAVE
+	 * WR_MASTER
+	 */	
+	Enumeration8 portWrMode;
 
+	/*
+	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
+	 * Can be:
+	 * NON_WR
+	 * WR_S_ONLY
+	 * WR_M_ONLY
+	 * WR_M_AND_S
+	 */	
+	Enumeration8 portWrConfig;	
+#endif	
 	/*
 	 * If port is aware of it's
 	 * fixed delays (they are measured and
 	 * stored in deltaTx and deltaRx)
 	 * it's TRUE
 	 */
-	Boolean isCalibrated;
+	Boolean isCalibrated; //WRPTPv2: portCalibrated
 
 	/*
 	 * Fixed elays
 	 */
-	FixedDelta deltaTx;
-	FixedDelta deltaRx;
+	FixedDelta deltaTx; //WRPTPv2: portDeltaTx
+	FixedDelta deltaRx; //WRPTPv2: portDeltaRx
 
 	/*
 	 * Calibration parameters of the
 	 * current port
 	 */
 
-	UInteger32 calibrationPeriod;//[us]
-	UInteger32 calibrationPattern;
-	UInteger16 calibrationPatternLen;
-
-	UInteger16 otherNodeCalibrationSendPattern;
-	UInteger32 otherNodeCalibrationPeriod;
-	UInteger32 otherNodeCalibrationPattern;
-	UInteger16 otherNodeCalibrationPatternLen;
+	UInteger32 calibrationPeriod;//[us]  //WRPTPv2: portCalPeriod
+	UInteger32 calibrationPattern;       //WRPTPv2: portCalPattern
+	UInteger16 calibrationPatternLen;    //WRPTPv2: portCalPatternLen
+  
+	UInteger16 otherNodeCalibrationSendPattern; //WRPTPv2: parentPortCalSendPattern ??
+	UInteger32 otherNodeCalibrationPeriod;      //WRPTPv2: parentPortCalPeriod
+	UInteger32 otherNodeCalibrationPattern;     //WRPTPv2: parentPortCalPattern
+	UInteger16 otherNodeCalibrationPatternLen;  //WRPTPv2: parentPortCalPatternLen
 
 	/*
 	 * used to implemetn two-step clock
@@ -589,7 +620,18 @@ typedef struct {
 	UInteger16	calibrationPatternLen;
 	//tmp
 	UInteger8	overrideClockIdentity;
+#ifdef WRPTPv2	
 
+	/*
+	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
+	 * Can be:
+	 * NON_WR
+	 * WR_S_ONLY
+	 * WR_M_ONLY
+	 * WR_M_AND_S
+	 */	
+	Enumeration8 portWrConfig;	
+#endif
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

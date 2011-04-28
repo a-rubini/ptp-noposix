@@ -29,7 +29,7 @@ void ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 void ptpdexp_cmd(int cmd, int value)
 {
 
-	DBG("GotCMd: %d value %d\n", cmd, value);
+	//DBG("GotCMd: %d value %d\n", cmd, value);
 	if(cmd == PTPDEXP_COMMAND_TRACKING)
 		wr_servo_enable_tracking(value);
 

@@ -87,7 +87,9 @@
 #define WR_IS_CALIBRATED		0x04
 #define WR_IS_WR_MODE			0x08
 #define WR_NODE_MODE			0x03
-#define WR_TLV_TYPE			0x2004
+
+# define WR_TLV_TYPE			0x2004
+
 #define WR_MASTER_PRIORITY1		6
 #define WR_DEFAULT_CAL_PERIOD		3000     //[us]
 #define WR_DEFAULT_CAL_PATTERN		0x3E0     //1111100000
@@ -98,13 +100,17 @@
 #define WR_DEFAULT_INIT_REPEAT		3
 
 /*White Rabbit package Size*/
-#ifdef WR_IN_HEADER_AND_ANNBODY
-# define WR_ANNOUNCE_TLV_LENGTH		0
+#ifdef WRPTPv2
+# define WR_ANNOUNCE_TLV_LENGTH		0x0A
 #else
-# define WR_ANNOUNCE_TLV_LENGTH		6
+# ifdef WR_IN_HEADER_AND_ANNBODY
+#  define WR_ANNOUNCE_TLV_LENGTH	0
+# else
+#  define WR_ANNOUNCE_TLV_LENGTH	6
+# endif
 #endif
 
-#define WR_ANNOUNCE_LENGTH	(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH)
+#define WR_ANNOUNCE_LENGTH	(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH + 4)
 #define WR_MANAGEMENT_TLV_LENGTH	 6
 #define WR_MANAGEMENT_LENGTH	 (MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
 
@@ -121,6 +127,20 @@
 
 #define WR_SLAVE_CLOCK_CLASS		248
 #define WR_MASTER_CLOCK_CLASS		5
+
+///// new staff for WRPTPv2
+#ifdef WRPTPv2
+
+#define TLV_TYPE_ORG_EXTENSION 	0x0003 //organization specific 
+
+
+#define WR_TLV_ORGANIZATION_ID		0x080030
+#define WR_TLV_MAGIC_NUMBER		0xDEAD
+#define WR_TLV_WR_VERSION_NUMBER	0x01
+
+#define WR_SIGNALING_MSG_BASE_LENGTH	48
+
+#endif
 
 /** \}*/
 
@@ -229,15 +249,34 @@ enum {
 
 
 /**
- * \brief Indicates if a node runs as White Rabbit, and what kind (master/slave) [White Rabbit]
+ * \brief Indicates if a port is configured as White Rabbit, and what kind (master/slave) [White Rabbit]
  */
 /*White Rabbit node */
 enum{
+#ifdef WRPTPv2
 	NON_WR    = 0x0,
+	WR_S_ONLY = 0x2, 
+	WR_M_ONLY = 0x1,
+	WR_M_AND_S= 0x3,
+#else
+	NON_WR    = 0x0,
+	WR_SLAVE  = PTPD_NETIF_RX, //2; just for convenient useage with ptpd_netif interface
+	WR_MASTER = PTPD_NETIF_TX, //1; just for convenient useage with ptpd_netif interface
+#endif	
+};
+
+#ifdef WRPTPv2
+/**
+ * \brief Indicate current White Rabbit mode of a given port (non wr/wr master/wr slave) [White Rabbit]
+ */
+/*White Rabbit node */
+enum{
+	//NON_WR = 0x0,
+	// below tric used in calling e.g.: ptpd_netif_locking_enable()
 	WR_SLAVE  = PTPD_NETIF_RX, // just for convenient useage with ptpd_netif interface
 	WR_MASTER = PTPD_NETIF_TX, // just for convenient useage with ptpd_netif interface
 };
-
+#endif	
 /**
  * \brief Values of Management Actions (extended for WR), see table 38 [White Rabbit]
  */
@@ -282,6 +321,17 @@ enum {
  * \brief White Rabbit commands (for new implementation, single FSM), see table 38 [White Rabbit]
  */
 enum{
+ #ifdef WRPTPv2 
+	
+	NULL_WR_TLV = 0x0000,
+	SLAVE_PRESENT	= 0x1000,
+	LOCK,
+	LOCKED,
+	CALIBRATE,
+	CALIBRATED,
+	WR_MODE_ON,	
+	ANN_SUFIX = 0x2000,
+ #else
 	NULL_MANAGEMENT = 0x0000,
 	SLAVE_PRESENT	= 0x6000,
 	LOCK,
@@ -289,6 +339,7 @@ enum{
 	CALIBRATE,
 	CALIBRATED,
 	WR_MODE_ON,
+#endif
 };
 
 #define     SEND_CALIBRATION_PATTERN 0X0001
@@ -324,6 +375,8 @@ enum {
  * \brief White Rabbit commands, see table 38 [White Rabbit]
  */
 enum{
+ #ifndef WRPTPv2  
+	// these seems to be old, should not be used
 	NULL_MANAGEMENT = 0x0000,
 	SLAVE_PRESENT = 0x6000,
 	LOCK,
@@ -333,6 +386,7 @@ enum{
 	SLAVE_CALIBRATE,
 	SLAVE_CALIBRATED,
 	WR_MODE_ON,
+#endif;	
 };
 
 #endif

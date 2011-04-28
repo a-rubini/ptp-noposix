@@ -342,14 +342,23 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     DBG("DoState WRS_PRESENT");
     handle(rtOpts, ptpClock);
+
+#ifdef WRPTPv2
+    if(ptpClock->msgTmpWrMessageID == LOCK)
+#else      
     if(ptpClock->msgTmpManagementId == LOCK)
+#endif      
     {
 
 
       toWRState(WRS_S_LOCK, rtOpts, ptpClock);
 
       // management message used, so clean tmp
+#ifdef WRPTPv2
+      ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+#else
       ptpClock->msgTmpManagementId = NULL_MANAGEMENT;
+#endif      
     }
 
  DBG("DoState WRS_PRESENT done");
@@ -386,7 +395,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	  handle(rtOpts, ptpClock);
 
+#ifdef WRPTPv2
+	  if(ptpClock->msgTmpWrMessageID == LOCKED)
+#else	    
 	  if(ptpClock->msgTmpManagementId == LOCKED)
+#endif	    
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpClock);
 
 
@@ -396,8 +409,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
 	   handle(rtOpts, ptpClock);
-
+#ifdef WRPTPv2
+	   if(ptpClock->msgTmpWrMessageID == CALIBRATE)
+#else
 	   if(ptpClock->msgTmpManagementId == CALIBRATE)
+#endif	     
 	     toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpClock);
 
 	   break;
@@ -413,7 +429,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	      timerStart(&ptpClock->wrTimers[WRS_REQ_CALIBRATION],
 			 ptpClock->wrTimeouts[WRS_REQ_CALIBRATION] );
 
+#ifdef WRPTPv2	      
+	      issueWRSignalingMsg(CALIBRATE,rtOpts, ptpClock);
+#else	      
 	      issueWRManagement(CALIBRATE,rtOpts, ptpClock);
+#endif	      
 	      ptpClock->wrPortState = WRS_REQ_CALIBRATION_1;
 	    }
 	    else
@@ -441,7 +461,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    if( ptpd_netif_calibrating_disable(PTPD_NETIF_RX, ptpClock->netPath.ifaceName) != PTPD_NETIF_OK)
 	      break; // try again
 
+#ifdef WRPTPv2
+	    issueWRSignalingMsg(CALIBRATED,rtOpts, ptpClock);
+#else
 	    issueWRManagement(CALIBRATED,rtOpts, ptpClock);
+#endif	    
 	    toWRState(WRS_CALIBRATED, rtOpts, ptpClock);
 	    ptpClock->isCalibrated = TRUE;
 
@@ -452,12 +476,19 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   case WRS_CALIBRATED:
 	    handle(rtOpts, ptpClock);
 
+#ifdef WRPTPv2    
+	    if(ptpClock->msgTmpWrMessageID == CALIBRATE && ptpClock->wrNodeMode == WR_MASTER)
+	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpClock);
+	    
+	    if(ptpClock->msgTmpWrMessageID == WR_MODE_ON && ptpClock->wrNodeMode == WR_SLAVE)
+	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpClock);
+#else
 	    if(ptpClock->msgTmpManagementId == CALIBRATE && ptpClock->wrNodeMode == WR_MASTER)
 	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpClock);
 
 	    if(ptpClock->msgTmpManagementId == WR_MODE_ON && ptpClock->wrNodeMode == WR_SLAVE)
 	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpClock);
-
+#endif
 	    break;
 
 /**********************************  WRS_RESP_CALIB_REQ  ***************************************************************************/
@@ -476,8 +507,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       case WRS_RESP_CALIB_REQ_1 :
 
 	    handle(rtOpts, ptpClock);
-
+#ifdef WRPTPv2
+	    if(ptpClock->msgTmpWrMessageID == CALIBRATED /* || timeout */)
+#else	      
 	    if(ptpClock->msgTmpManagementId == CALIBRATED /* || timeout */)
+#endif	      
 	    {
 	      if(ptpClock->otherNodeCalibrationSendPattern ==  TRUE)
 		ptpClock->wrPortState = WRS_RESP_CALIB_REQ_2;
@@ -624,8 +658,12 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     /* no substates here*/
     DBG("state WRS_PRESENT\n");
     /*send message to the Master to enforce entering UNCALIBRATED state*/
+    
+#ifdef WRPTPv2
+    issueWRSignalingMsg(SLAVE_PRESENT,rtOpts, ptpClock);
+#else
     issueWRManagement(SLAVE_PRESENT,rtOpts, ptpClock);
-
+#endif
     ptpClock->wrPortState = WRS_PRESENT;
     break;
 
@@ -652,17 +690,22 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     DBG("state WR_LOCKED\n");
 
     /* say Master that you are locked */
+#ifdef WRPTPv2
+    issueWRSignalingMsg(LOCKED,rtOpts, ptpClock);
+#else
     issueWRManagement(LOCKED,rtOpts, ptpClock);
-
+#endif
     ptpClock->wrPortState = WRS_LOCKED;
     break;
 
   case WRS_M_LOCK:
     /* no substates here*/
     DBG("state WRS_M_LOCK\n");
-
+#ifdef WRPTPv2
+    issueWRSignalingMsg(LOCK,rtOpts, ptpClock);
+#else
     issueWRManagement(LOCK,rtOpts, ptpClock);
-
+#endif
     ptpClock->wrPortState = WRS_M_LOCK;
     break;
 
@@ -682,7 +725,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
        * just go to the last step of this state
        * which is going to WRS_CALIBRATED
        */
+#ifdef WRPTPv2
+      issueWRSignalingMsg(CALIBRATE,rtOpts, ptpClock);
+#else
       issueWRManagement(CALIBRATE,rtOpts, ptpClock);
+#endif      
       ptpClock->wrPortState = WRS_REQ_CALIBRATION_2; // go to substate 1
       break;
     }
@@ -691,7 +738,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
     {
       //successfully enabled calibration, inform master
+#ifdef WRPTPv2
+      issueWRSignalingMsg(CALIBRATE,rtOpts, ptpClock);
+#else      
       issueWRManagement(CALIBRATE,rtOpts, ptpClock);
+#endif      
       ptpClock->wrPortState = WRS_REQ_CALIBRATION_1; // go to substate 1
     }
     else
@@ -750,8 +801,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     ptpClock->isWRmode = TRUE;
 
     if(ptpClock->wrNodeMode == WR_MASTER)
+#ifdef WRPTPv2
+      issueWRSignalingMsg(WR_MODE_ON,rtOpts, ptpClock);
+#else      
       issueWRManagement(WR_MODE_ON,rtOpts, ptpClock);
-
+#endif
     /*Assume that Master is calibrated and in WR mode, it will be verified with the next Annonce msg*/
     ptpClock->grandmasterIsWRmode     = TRUE;
     ptpClock->grandmasterIsCalibrated = TRUE;

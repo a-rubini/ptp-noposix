@@ -188,31 +188,52 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
   DBG(" netif_WR_mode = %d\n", pstate.mode);
+#ifdef WRPTPv2
+   if(rtOpts->portWrConfig == NON_WR)
+#else
    if(rtOpts->wrNodeMode == NON_WR)
+#endif     
    {
      switch(pstate.mode)
      {
 	case HEXP_PORT_MODE_WR_MASTER:
 	   DBG("wrNodeMode(auto config) ....... MASTER\n");
+#ifdef WRPTPv2
+	   ptpClock->portWrConfig = WR_M_ONLY;
+#else	   
 	   ptpClock->wrNodeMode = WR_MASTER;
+#endif	   
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_WR_SLAVE:
 	   DBG("wrNodeMode(auto config) ........ SLAVE\n");
+#ifdef WRPTPv2
+//TODO: change
+	   ptpClock->portWrConfig = WR_S_ONLY;
+#else	   
 	   ptpClock->wrNodeMode = WR_SLAVE;
+#endif	   
 	   ptpd_init_exports();
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_NON_WR:
 	default:
 	   DBG("wrNodeMode(auto config) ........ NON_WR\n");
+#ifdef WRPTPv2
+	   ptpClock->portWrConfig = NON_WR;
+#else	   
 	   ptpClock->wrNodeMode = NON_WR;
+#endif	   
 	   //tmp solution
 	   break;
      }
    }else
    {
+#ifdef WRPTPv2
+     ptpClock->portWrConfig = rtOpts->portWrConfig;
+#else
      ptpClock->wrNodeMode = rtOpts->wrNodeMode;
+#endif     
      DBG("wrNodeMode (............ FORCE ON STARTUP\n");
    }
 

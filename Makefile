@@ -44,8 +44,9 @@ LDFLAGS = #-L. -lwripc -lptpnetif
 # Flags from the original Makefiles
 CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM 
 #CFLAGS += -DDEBUG
-#CFLAGS += -DPTPD_DBG
-
+CFLAGS += -DPTPD_DBG
+CFLAGS += -DPTPD_DBGMSG
+CFLAGS += -DWRPTPv2
 
 # Targets follows (note that the freestanding version is only an object
 all: check $(TARGETS)
