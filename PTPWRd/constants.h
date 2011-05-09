@@ -251,8 +251,6 @@ enum{
 };
 
 
-#ifdef NEW_SINGLE_WRFSM
-
 /**
  * \brief WR PTP states (new, single FSM) [White Rabbit]
  */
@@ -293,48 +291,5 @@ enum{
 
 #define     SEND_CALIBRATION_PATTERN 0X0001
 #define NOT_SEND_CALIBRATION_PATTERN 0X0000
-
-#else
-
-
-/**
- * \brief WR PTP states (old wr fsm, two separate FSMs) [White Rabbit]
- */
-enum {
-	PTPWR_PRESENT = 0,  PTPWR_LOCK,  PTPWR_LOCKED,
-	PTPWR_M_CALIBRATE,  PTPWR_S_CALIBRATE,  PTPWR_CAL_COMPLETED,
-	/*
-	  each WR main state (except IDLE) has an associated timetout
-	  we use state names to manage timeouts as well
-	*/
-	WR_TIMER_ARRAY_SIZE, //number of states which has timeouts
-	PTPWR_IDLE,
-	/* here are substates*/
-	PTPWR_LOCK_1,
-	PTPWR_LOCK_2,
-	PTPWR_M_CALIBRATE_1,
-	PTPWR_M_CALIBRATE_2,
-	PTPWR_S_CALIBRATE_1,
-	PTPWR_S_CALIBRATE_2,
-	PTPWR_S_CALIBRATE_3,
-};
-
-
-/**
- * \brief White Rabbit commands, see table 38 [White Rabbit]
- */
-enum{
-	NULL_MANAGEMENT = 0x0000,
-	SLAVE_PRESENT = 0x6000,
-	LOCK,
-	LOCKED,
-	MASTER_CALIBRATE,
-	MASTER_CALIBRATED,
-	SLAVE_CALIBRATE,
-	SLAVE_CALIBRATED,
-	WR_MODE_ON,
-};
-
-#endif
 
 #endif /*CONSTANTS_H_*/
