@@ -72,7 +72,10 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	{
 		
  		if(ptpd_netif_get_ifName(dummy, rtOpts->portNumber) == PTPD_NETIF_OK)
+ 		{
+// 			strcpy(rtOpts->ptpClock.netPath.ifaceName, dummy);
  			rtOpts->portNumber++;
+ 		}
  		else
  			break;
  	
@@ -86,6 +89,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   for (i=0; i < rtOpts->portNumber; i++)
   {
      PTPD_TRACE(TRACE_PROTO, "multiPortProtocol: initializing port %d\n", (i+1));
+//		 rtOpts->portNumber = i;
+  	currentPtpClockData->portIdentity.portNumber = i;
      toState(PTP_INITIALIZING, rtOpts, currentPtpClockData);
      if(!doInit(rtOpts, currentPtpClockData))
      {
@@ -195,7 +200,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     else
       timerStop(&ptpClock->timers.pdelayReq);
 
-/*    wr_servo_init(ptpClock);*/
+//    wr_servo_init(ptpClock);
     break;
 
    case PTP_PASSIVE:

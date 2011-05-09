@@ -71,7 +71,7 @@
 #endif /* bsd */
 
 /* Common definitions follow */
-#define IFACE_NAME_LENGTH         IF_NAMESIZE
+#define IFACE_NAME_LENGTH         16 //IF_NAMESIZE
 #define NET_ADDRESS_LENGTH        INET_ADDRSTRLEN
 # define IFCONF_LENGTH 10
 

@@ -51,7 +51,9 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   // Create a PTP socket:
   wr_sockaddr_t bindaddr;
 
+  PTPD_TRACE(TRACE_NET, "NetInit : %s\n",netPath->ifaceName);
 
+#if 0
   if(rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1][0] != '\0')
   {
     /*interface specified at PTPd start*/
@@ -60,6 +62,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     PTPD_TRACE(TRACE_NET, "Network interface : %s\n",rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]  );
   }
   else
+  #endif
   {
     /*
       get interface name (port name) for the port
