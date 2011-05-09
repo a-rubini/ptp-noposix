@@ -321,7 +321,7 @@ int wr_servo_update(PtpClock *clock)
 
 	case WR_SYNC_PHASE:
 		strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
-		s->cur_setpoint = ts_offset_hw.phase;
+		s->cur_setpoint = ts_offset_hw.phase + ts_offset_hw.nsec * 1000;
 
 		PTPD_TRACE(TRACE_SERVO, "Adjusting clock phase: %d picoseconds", (int32_t) ts_offset_hw.phase);
 
