@@ -28,6 +28,7 @@
 #include "dep/datatypes_dep.h"
 #include "datatypes.h"
 #include "dep/ptpd_dep.h"
+#include "dep/trace.h"
 #include "wr_protocol.h"
 #include "ptpd_netif.h"
 
