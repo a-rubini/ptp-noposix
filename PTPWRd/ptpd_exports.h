@@ -13,17 +13,17 @@ typedef struct{
 	char slave_servo_state[128];
 	char sync_source[128];
 	int tracking_enabled;
-	double mu;
-	double delay_ms;
-	double delta_tx_m;
-	double delta_rx_m;
-	double delta_tx_s;
-	double delta_rx_s;
-	double fiber_asymmetry;
-	double total_asymmetry;
-	double cur_offset;
-	double cur_setpoint;
-	double cur_skew;
+	int64_t mu;
+	int64_t delay_ms;
+	int64_t delta_tx_m;
+	int64_t delta_rx_m;
+	int64_t delta_tx_s;
+	int64_t delta_rx_s;
+	int64_t fiber_asymmetry;
+	int64_t total_asymmetry;
+	int64_t cur_offset;
+	int64_t cur_setpoint;
+	int64_t cur_skew;
 }  ptpdexp_sync_state_t ;
 
 #define PTPDEXP_COMMAND_TRACKING 1
