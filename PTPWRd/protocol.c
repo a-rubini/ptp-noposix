@@ -65,6 +65,21 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   int           i;
   PtpClock *    currentPtpClockData;
+	char dummy[16];
+
+	rtOpts->portNumber = 0;
+	for(;;)
+	{
+		
+ 		if(ptpd_netif_get_ifName(dummy, rtOpts->portNumber) == PTPD_NETIF_OK)
+ 			rtOpts->portNumber++;
+ 		else
+ 			break;
+ 	
+	}
+		
+	
+	DBGV("Using %d ports\n", rtOpts->portNumber);
 
   currentPtpClockData = ptpClock;
 
