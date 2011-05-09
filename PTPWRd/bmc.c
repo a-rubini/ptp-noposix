@@ -8,7 +8,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
   int i,j;
   j=0;
-  DBG("initData\n");
+  PTPD_TRACE(TRACE_BMC,"initData\n");
 
 /* Default data set */
 	ptpClock->twoStepFlag = TWO_STEP_FLAG;
@@ -70,7 +70,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->versionNumber = VERSION_PTP;
 
 	/*Initialize seed for random number used with Announce Timeout (spec 9.2.6.11)*/
-	srand(time(NULL));
+	//srand(time(NULL));
 	//ptpClock->R = getRand();
 
 	/*Init other stuff*/
@@ -141,11 +141,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->pending_PDelayReq_tx_ts  = 0;
 	ptpClock->pending_PDelayResp_tx_ts = 0;
 
-#ifdef NEW_SINGLE_WRFSM
 	ptpClock->wrPortState = WRS_IDLE;
-#else
-	ptpClock->wrPortState = PTPWR_IDLE;
-#endif
 
 	ptpClock->calibrationPeriod = rtOpts->calibrationPeriod;
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
@@ -166,7 +162,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpClock *ptpClock)
 {
-  DBG("[%s]\n",__func__);
+  PTPD_TRACE(TRACE_BMC,"[%s]\n",__func__);
 	/*Current data set update*/
 	ptpClock->stepsRemoved = 0;
 	ptpClock->offsetFromMaster.nanoseconds = 0;
@@ -259,33 +255,33 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 								MsgHeader *headerB,MsgAnnounce *announceB,PtpClock *ptpClock)
 {
-	DBGV("Data set comparison \n");
+	PTPD_TRACE(TRACE_BMC,"Data set comparison \n");
 	short comp = 0;
 	if(announceA->wr_flags & WR_MASTER)
-	  DBG("A is WR_MASTER\n");
+	  PTPD_TRACE(TRACE_BMC,"A is WR_MASTER\n")
 	else if(announceA->wr_flags & WR_SLAVE)
-	  DBG("A is WR_SLAVE\n");
-	else
-	  DBG("A is not WR\n");
+	  PTPD_TRACE(TRACE_BMC,"A is WR_SLAVE\n")
+ 	else
+	  PTPD_TRACE(TRACE_BMC,"A is not WR\n")
 
 	if(announceB->wr_flags & WR_MASTER)
-	  DBG("B is WR_MASTER\n");
+	  PTPD_TRACE(TRACE_BMC,"B is WR_MASTER\n")
 	else if(announceB->wr_flags & WR_SLAVE)
-	  DBG("B is WR_SLAVE\n");
+	  PTPD_TRACE(TRACE_BMC,"B is WR_SLAVE\n")
 	else
-	  DBG("B is not WR\n");
+	  PTPD_TRACE(TRACE_BMC,"B is not WR\n")
 
 
 	/*white rabbit staff*/
 	if(announceA->wr_flags & WR_MASTER && !(announceB->wr_flags & WR_MASTER))
 	{
-	  DBG("A better B [White Rabbit]\n");
+	  PTPD_TRACE(TRACE_BMC,"A better B [White Rabbit]\n");
 	  return -1;
 	}
 
 	if(announceB->wr_flags & WR_MASTER && !(announceA->wr_flags & WR_MASTER))
 	{
-	  DBG("B better A [White Rabbit]\n");
+	  PTPD_TRACE(TRACE_BMC,"B better A [White Rabbit]\n");
 	  return 1;
 	}
 
@@ -307,7 +303,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			{
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				    DBG("Sender=Receiver : Error -1");
+				    PTPD_TRACE(TRACE_BMC,"Sender=Receiver : Error -1");
 				    return 0;
 				}
 				else
@@ -320,7 +316,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			{
 				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				  	DBG("Sender=Receiver : Error -1");
+				  	PTPD_TRACE(TRACE_BMC,"Sender=Receiver : Error -1");
 					return 0;
 				}
 				else
@@ -332,7 +328,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			{
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-					DBG("Sender=Receiver : Error -2");
+					PTPD_TRACE(TRACE_BMC,"Sender=Receiver : Error -2");
 					return 0;
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
@@ -504,7 +500,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 		}
 		else
 		{
-			DBG("Error in bmcDataSetComparison..\n");
+			PTPD_TRACE(TRACE_BMC,"Error in bmcDataSetComparison..\n");
 		}
 	}
 
@@ -523,7 +519,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 		}
 		else
 		{
-			DBG("Error in bmcDataSetComparison..\n");
+			PTPD_TRACE(TRACE_BMC,"Error in bmcDataSetComparison..\n");
 		}
 
 	}
@@ -533,7 +529,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 
 UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *ptpClock )
 {
-	DBG("Best Master Clock Algorithm @ working\n");
+	PTPD_TRACE(TRACE_BMC,"Best Master Clock Algorithm @ working\n");
 	Integer16 i,best;
 
 
@@ -557,7 +553,7 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *
 		}
 	}
 
-	DBG("Best record : %d \n",best);
+	PTPD_TRACE(TRACE_BMC,"Best record : %d \n",best);
 	ptpClock->foreign_record_best = best;
 
 
