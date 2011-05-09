@@ -107,7 +107,7 @@ ptpd: check ptpd.o $(CORELIBS) $(POSIX_OBJS)
 
 
 # make an intermediavte version here as well, before linking in main
-ptpd-freestanding.o: check ptpd.o $(FREE_OBJS)
+ptpd-freestanding.o:	check ptpd.o $(FREE_OBJS)
 	$(LD) -r ptpd.o $(FREE_OBJS) -o $@
 
 # This is not built by default, only on explicit request
