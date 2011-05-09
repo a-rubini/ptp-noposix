@@ -173,6 +173,8 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   switch(ptpClock->portState)
   {
   case PTP_MASTER:
+    DBG("PTP_FSM .... exiting PTP_MASTER\n");
+    
     timerStop(&ptpClock->timers.sync);
     timerStop(&ptpClock->timers.announceInterval);
     timerStop(&ptpClock->timers.pdelayReq);
@@ -180,6 +182,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case PTP_SLAVE:
+    DBG("PTP_FSM .... exiting PTP_SLAVE\n");
     timerStop(&ptpClock->timers.announceReceipt);
 
     if (rtOpts->E2E_mode)
@@ -191,11 +194,13 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
    case PTP_PASSIVE:
+     DBG("PTP_FSM .... exiting PTP_PASSIVE\n");
      timerStop(&ptpClock->timers.pdelayReq);
      timerStop(&ptpClock->timers.announceReceipt);
      break;
       
   case PTP_LISTENING:
+    DBG("PTP_FSM .... exiting PTP_LISTENING\n");
     timerStop(&ptpClock->timers.announceReceipt);
       
     break;
@@ -211,22 +216,22 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   switch(state)
   {
   case PTP_INITIALIZING:
-    DBG("state PTP_INITIALIZING\n");
+    DBG("PTP_FSM .... entering PTP_INITIALIZING\n");
     ptpClock->portState = PTP_INITIALIZING;
     break;
 
   case PTP_FAULTY:
-    DBG("state PTP_FAULTY\n");
+    DBG("PTP_FSM .... entering PTP_FAULTY\n");
     ptpClock->portState = PTP_FAULTY;
     break;
 
   case PTP_DISABLED:
-    DBG("state PTP_DISABLED\n");
+    DBG("PTP_FSM .... entering  PTP_DISABLED\n");
     ptpClock->portState = PTP_DISABLED;
     break;
 
   case PTP_LISTENING:
-    DBG("state PTP_LISTENING\n");
+    DBG("PTP_FSM .... entering  PTP_LISTENING\n");
 
     timerStart(&ptpClock->timers.announceReceipt, 
 	       ptpClock->announceReceiptTimeout * 1000 * (pow_2(ptpClock->logAnnounceInterval)));
@@ -234,7 +239,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
    case PTP_MASTER:
-    DBG("state PTP_MASTER\n");
+    DBG("PTP_FSM .... entering  PTP_MASTER\n");
 
     timerStart(&ptpClock->timers.sync, 
 	       1000 * pow_2(ptpClock->logSyncInterval));
@@ -248,7 +253,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
   case PTP_PASSIVE:
-    DBG("state PTP_PASSIVE\n");
+    DBG("PTP_FSM .... entering  PTP_PASSIVE\n");
 
     timerStart(&ptpClock->timers.pdelayReq, 
 	      1000 * pow_2(ptpClock->logMinPdelayReqInterval));
@@ -260,7 +265,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case PTP_UNCALIBRATED:
-
+    DBG("PTP_FSM .... entering  PTP_UNCALIBRATED\n");
 
     /*********** White Rabbit SLAVE*************
      *
@@ -270,27 +275,51 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     // WRPTPv2: we might not need it TODO: investigate
     
 #ifdef WRPTPv2
-    if( ptpClock->wrNodeMode            == WR_SLAVE  && \
-        (ptpClock->grandmasterIsWRmode  == FALSE     || \
-         ptpClock->isWRmode             == FALSE     ))
+
+   /********* evaluating candidate for WR Slave **********
+    *
+    * First we check whether the port is WR Slave enabled
+    * and the parentPort is WR Master enabled
+    *****************************************************/
+    if( ptpClock->wrNodeMode            == WR_SLAVE   &&
+       (ptpClock->portWrConfig          == WR_S_ONLY  || \
+	ptpClock->portWrConfig          == WR_M_AND_S)&& \
+	(ptpClock->parentPortWrConfig   == WR_M_ONLY  || \
+	ptpClock->parentPortWrConfig    == WR_M_AND_S))
     {
+        /* now we check whether WR Link Setup is needed */
+	if(ptpClock->grandmasterIsWRmode  == FALSE     || \
+	   ptpClock->isWRmode             == FALSE     )
+      {
+	toWRState(WRS_PRESENT, rtOpts, ptpClock);
+	ptpClock->portState = PTP_UNCALIBRATED;
+	DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_SLAVE )\n");
+	break;
+      }
+    }
+    else if(ptpClock->wrNodeMode != WR_MASTER) 
+    {// one of the ports on the link is not WR-enabled
+      ptpClock->wrNodeMode = NON_WR;
+    }
+    
 #else
     if( ptpClock->wrNodeMode            == WR_SLAVE  && \
         ptpClock->grandmasterWrNodeMode == WR_MASTER && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->isWRmode             == FALSE     ))
     {
-#endif           
-      DBG("state PTP_UNCALIBRATED : WR_SLAVE\n");
-#ifdef NEW_SINGLE_WRFSM
+          
+      
+# ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_PRESENT, rtOpts, ptpClock);
-#else
+# else
       toWRSlaveState(PTPWR_PRESENT, rtOpts, ptpClock);
-#endif
+
       ptpClock->portState = PTP_UNCALIBRATED;
       break;
     }
-
+# endif      
+#endif 
     /*********** White Rabbit MASTER *************
      *
      * her we have case of master which
@@ -300,7 +329,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     
     if(ptpClock->wrNodeMode == WR_MASTER)
     {
-      DBG("state PTP_UNCALIBRATED: WR_MASTER\n");
+      DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
       
 #ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_M_LOCK, rtOpts, ptpClock);
@@ -313,13 +342,14 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     }
 
     /* Standard PTP, go straight to SLAVE */
-    DBG("state PTP_SLAVE\n");
-    ptpClock->portState = PTP_SLAVE;
+    DBG("PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
+    ptpClock->portState  = PTP_SLAVE;
+   
     break;
 
 
   case PTP_SLAVE:
-    DBG("state PTP_SLAVE\n");
+    DBG("PTP_FSM .... entering PTP_SLAVE\n");
     wr_servo_init(ptpClock);
 
     ptpClock->waitingForFollow = FALSE;
@@ -347,7 +377,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   default:
-    DBG("to unrecognized state\n");
+    DBG("PTP_FSM .... entering  unrecognized state\n");
     break;
   }
 
@@ -413,7 +443,10 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #else
   if(ptpClock->wrNodeMode != NON_WR)
 #endif    
+  {
     initWRcalibration(ptpClock->netPath.ifaceName, ptpClock);
+    // TODO: set appropriately classes if slaveOnly or masterOnly
+  }
 
   toState(PTP_LISTENING, rtOpts, ptpClock);
 
@@ -478,6 +511,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					* as transcient state between sth and SLAVE
 					* as specified in PTP state machine: Figure 23, 78p
 					*/
+					/*
 					if((ptpClock->portWrConfig          == WR_S_ONLY  || \
 					    ptpClock->portWrConfig          == WR_M_AND_S)&& \
 					   (ptpClock->parentPortWrConfig    == WR_M_ONLY  || \
@@ -486,7 +520,13 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					  DBG("wrNodeMode <= WR_SLAVE\n");
 					  ptpClock->wrNodeMode  = WR_SLAVE;
 					}
+					*/
+					/* Candidate for WR Slave */
+					ptpClock->wrNodeMode  = WR_SLAVE;
+					DBG("recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
+					DBG("recommended wrMode = WR_SLAVE\n");
 					toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
+
 				}
 				else
 				{
@@ -545,11 +585,12 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		return;
 
 	case PTP_UNCALIBRATED:
-		DBG("state: PTP_UNCALIBRATED\n");
+		DBGV("state: PTP_UNCALIBRATED\n");
 
 		/* Execute WR protocol state machine */
 
 		if(ptpClock->wrNodeMode == WR_SLAVE || ptpClock->wrNodeMode == WR_MASTER)
+			/* handling messages inside: handle()*/
 			doWRState(rtOpts, ptpClock);
 		else
 			toState(PTP_SLAVE, rtOpts, ptpClock);
@@ -743,7 +784,7 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	if(!isFromSelf && time.seconds > 0)
 		subTime(&time, &time, &rtOpts->inboundLatency);
 
-	DBG("handle: messageType = 0x%x\n",ptpClock->msgTmpHeader.messageType);
+	//DBG("handle: messageType = 0x%x => ",ptpClock->msgTmpHeader.messageType);
   
 	switch(ptpClock->msgTmpHeader.messageType)
 	{
@@ -760,6 +801,7 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 
 	case DELAY_REQ:
+		DBG("handle ..... DELAY_REQ\n");
 		handleDelayReq(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
 		break;
 
@@ -769,10 +811,12 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 
 	case PDELAY_RESP:
+		DBG("handle ..... PDELAY_RESP\n");
 		handlePDelayResp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf,&time, length, isFromSelf, rtOpts, ptpClock);
 		break;
 
 	case PDELAY_RESP_FOLLOW_UP:
+		DBG("handle ..... PDELAY_RESP_FOLLOW_UP\n");
 		handlePDelayRespFollowUp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
 		break;
 #endif
@@ -783,10 +827,12 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
 	case MANAGEMENT:
+		DBG("MANAGEMENT\n");
 		handleManagement(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
 		break;
 
 	case SIGNALING:
+		
 		handleSignaling(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
 		break;
 
@@ -816,9 +862,9 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	}
 
 	if(length > ANNOUNCE_LENGTH)
-		DBG("Handle Announce msg, perhaps a message from another White Rabbit node\n");
+		DBG("handle ..... ANNOUNCE (WR ?): perhaps a message from another White Rabbit node\n");
 	else
-		DBG("Handle Announce msg, standard PTP\n");
+		DBG("handle ..... ANNOUNCE: standard PTP\n");
 
 	switch(ptpClock->portState )
 	{
@@ -855,7 +901,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			msgUnpackAnnounce(ptpClock->msgIbuf,&ptpClock->msgTmp.announce,header);
 
 			if(ptpClock->msgTmp.announce.wr_flags != NON_WR)
-				DBG("handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
+				DBG("handle ..... WR_ANNOUNCE:  message from another White Rabbit node [wr_flag != NON_WR]\n");
 			
 #ifdef WRPTPv2			
 			/*******  bug fix ???? *****
@@ -893,7 +939,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		if (isFromSelf)
 		{
-			DBG("HandleAnnounce : Ignore message from self \n");
+			DBG("handle ..... ANNOUNCE:  Ignore message from self \n");
 			return;
 		}
 
@@ -930,7 +976,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 			/* White Rabbit */
 			if(ptpClock->wrNodeMode != NON_WR)
 			{
-				DBGV("Handle Announce WR mode: disregaurd messages other than management \n");
+				DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
 				return;
 			}
 
@@ -952,7 +998,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
-					DBG("HandleSynce: two step clock mode\n");
+					DBG("handle ..... SYNC    : two step clock mode\n");
 					ptpClock->waitingForFollow = TRUE;
 					ptpClock->recvSyncSequenceId = header->sequenceId;
 
@@ -1062,7 +1108,13 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 					msgUnpackFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.follow);
 
-					DBG("handle FollowUP msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
+					DBG("handle ..... FOLLOW_UP:  , succedded [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
+					    (unsigned      long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
+					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
+					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
+
+					
+					DBGM("handle FollowUP msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
 					    (unsigned      long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
 					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
 					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
@@ -1087,22 +1139,22 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 						break;
 				}
-				else DBG("handle FollowUp msg, SequenceID doesn't match with last Sync message \n");
+				else DBG("handle ..... FOLLOW_UP:, SequenceID doesn't match with last Sync message \n");
 				//else DBGV("SequenceID doesn't match with last Sync message \n");
 
 			}
-			else DBG("handle FollowUp msg, Slave was not waiting a follow up message \n");
+			else DBG("handle ..... FOLLOW_UP:, Slave was not waiting a follow up message \n");
 			//else DBGV("Slave was not waiting a follow up message \n");
 		}
-		else DBG("handle FollowUp msg, Follow up message is not from current parent \n");
+		else DBG("handle ..... FOLLOW_UP:, Follow up message is not from current parent \n");
 		//else DBGV("Follow up message is not from current parent \n");
 
 		case PTP_MASTER:
-			DBGV("Follow up message received from another master \n");
+			DBGV("handle ..... FOLLOW_UP: Follow up message received from another master \n");
 			break;
 
 		default:
-		DBG("do unrecognized state\n");
+		DBG("handle ..... FOLLOW_UP: do unrecognized state\n");
 		break;
 	}//Switch on (port_state)
 
@@ -1161,7 +1213,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 	case PTP_MASTER:
 
-		DBG("handle DelayReq msg, succedded\n");
+		DBG("handle ..... DELAY_REQ:, succedded\n");
 		msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->delayReqHeader);
 				
 		/* FIXME: do this, but properly */
@@ -1172,7 +1224,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 		break;
 
 	default:
-		DBG("do unrecognized state\n");
+		DBG("handle ..... DELAY_REQdo unrecognized state\n");
 		break;
 	}
 }
@@ -1214,7 +1266,12 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 
 		msgUnpackDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.resp);
 
-		DBG("handle DelayResp msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
+		DBG("handle ..... DELAY_RESP, succedded: [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
+		    (unsigned      long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.msb, \
+		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
+		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);		
+		
+		DBGM("handle ..... DELAY_RESP, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
 		    (unsigned      long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.msb, \
 		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
 		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);
@@ -1351,7 +1408,12 @@ if (!rtOpts->E2E_mode)
 
 			msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
 
-			DBG("handle PDelayResp msg, succedded [SLAVE]: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
+			DBG("handle PDelayResp msg, succedded [SLAVE sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
+			(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);			
+			
+			DBGM("handle PDelayResp msg, succedded [SLAVE]: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
@@ -1426,7 +1488,12 @@ if (!rtOpts->E2E_mode)
 
 				msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
 
-				DBG("handle PDelayResp msg, succedded [MASTER: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
+				DBG("handle PDelayResp msg, succedded [MASTER: sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
+				(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);				
+				
+				DBGM("handle PDelayResp msg, succedded [MASTER: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 				(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
@@ -1686,11 +1753,11 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 	case CALIBRATE:
 
-		DBG("WR Signaling msg [CALIBRATE]:	\
+		DBG("handle ..... WR_SIGNALING, [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
 	\n\tcalibrationPeriod     = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
-	\n\tcalibrationPatternLen = %32d bits",\
+	\n\tcalibrationPatternLen = %32d bits\n",\
 		    ptpClock->otherNodeCalibrationSendPattern,	  \
 		    (unsigned long long)ptpClock->otherNodeCalibrationPeriod, \
 		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
@@ -1699,7 +1766,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 	case CALIBRATED:
 
-		DBG("WR Signaling msg [CALIBRATED]: \
+		DBG("handle ..... WR_SIGNALING [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
 		    ((unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.lsb, \
@@ -1707,25 +1774,25 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		break;
 
 	case SLAVE_PRESENT:
-		DBG("\n\nhandle WR Signaling msg [SLAVE_PRESENT], succedded \n\n\n");
+		DBG("handle ..... WR_SIGNALING [SLAVE_PRESENT], succedded \n");
 		break;
 	      
 	case LOCK:
-		DBG("\n\nhandle WR Signaling msg [LOCK], succedded \n\n");
+		DBG("handle ..... WR_SIGNALING [LOCK], succedded \n");
 		break;
 
 	case LOCKED:
 
-		DBG("\n\nhandle WR Signaling msg [LOCKED], succedded \n\n");
+		DBG("handle ..... WR_SIGNALING [LOCKED], succedded \n");
 		break;
 
 	case WR_MODE_ON:
 
-		DBG("\n\nhandle WR Signaling msg [WR_LINK_ON], succedded \n\n");
+		DBG("handle ..... WR_SIGNALING [WR_LINK_ON], succedded \n");
 		break;
 
 	default:
-		DBG("\n\nhandle WR Signaling msg [UNKNOWN], failed \n\n");
+		DBG("handle ..... WR_SIGNALING [UNKNOWN], failed \n");
 		break;
 	}
 
@@ -1742,7 +1809,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	   ptpClock->portWrConfig      == WR_M_AND_S     ))
 	{
 	     ///////// fucken important !! /////////////
-	     DBG("wrNodeMode <= WR_MASTER\n");
+	     DBGWRFSM("wrNodeMode <= WR_MASTER\n");
 	     ptpClock->wrNodeMode = WR_MASTER;
 	     ///////////////////////////////////////////
 	     toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
@@ -1776,11 +1843,14 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		DBGV("Announce message can't be sent -> FAULTY state \n");
-		DBG("issue: Announce Msg, failed \n");
+		DBG("issue  ..... ANNOUNCE : Announce Msg, failed \n");
 	}
 	else
 	{
-		DBG("issue: Announce Msg, succedded \n");
+		if (ptpClock->wrNodeMode != NON_WR)
+		  DBG("issue  ..... WR ANNOUNCE : succedded \n");
+		else
+		  DBG("issue  ..... ANNOUNCE : succedded \n");
 		DBGV("Announce MSG sent ! \n");
 		ptpClock->sentAnnounceSequenceId++;
 	}
@@ -1803,11 +1873,11 @@ void issueSync(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		ptpClock->pending_Synch_tx_ts = FALSE;
 		DBGV("Sync message can't be sent -> FAULTY state \n");
-		DBG("issue: Sync Msg, failed");
+		DBG("issue  ..... SYNC:   failed");
 	}
 	else
 	{
-		DBG("issue: Sync Msg, succedded  \n \t\t synch timestamp: %s\n", \
+		DBG("issue  ..... SYNC: succedded [synch timestamp: %s]\n", \
 		format_wr_timestamp(ptpClock->synch_tx_ts));
 		ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_Synch_tx_ts = TRUE;
@@ -1834,11 +1904,11 @@ void issueFollowup(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		DBGV("FollowUp message can't be sent -> FAULTY state \n");
-		DBG("issue: FollowUp Msg, failed\n");
+		DBG("issue  ..... FOLLOW_UP: failed\n");
 	}
 	else
 	{
-		DBG("issue: FollowUp Msg, succedded [sending time of sync tx]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n",\
+		DBG("issue  ..... FOLLOW_UP: succedded [sending time of sync tx: sec = %lld  nanosec = %lld]\n",\
 		(unsigned long long)ptpClock->synch_tx_ts.utc,\
 		(unsigned long long)ptpClock->synch_tx_ts.nsec);
 
@@ -1861,11 +1931,11 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 		// ptpClock->new_tx_tag_read = FALSE;
 		// ptpClock->pending_DelayReq_tx_ts = FALSE;
 		DBGV("delayReq message can't be sent -> FAULTY state \n");
-		DBG("issue: DelayReq Msg, failed\n");
+		DBG("issue  ..... DELAY_REQ: failed\n");
 	}
 	else
 	{
-		DBG("issue: DelayReq Msg, succedded \n \t\t timestamp: %s\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));
+		DBG("issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));
 		ptpClock->sentDelayReqSequenceId++;
 		// ptpClock->pending_tx_ts = TRUE;
 		// ptpClock->pending_DelayReq_tx_ts = TRUE;
@@ -1888,11 +1958,11 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 // ptpClock->pending_PDelayReq_tx_ts = FALSE;
 		DBGV("PdelayReq message can't be sent -> FAULTY state \n");
-		DBG("issue: PDelayReq Msg, failed\n");
+		DBG("issue  ..... PDELAY_REQ, failed\n");
 	}
 	else
 	{
-		DBG("issue: PDelayReq Msg, succedded \n");
+		DBG("issue  ..... PDELAY_REQ, succedded \n");
 		DBGV("PDelayReq MSG sent ! \n");
 		/*	ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_PDelayReq_tx_ts = TRUE; */
@@ -1913,13 +1983,13 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		/*	ptpClock->pending_PDelayResp_tx_ts = FALSE; */
 		DBGV("PdelayResp message can't be sent -> FAULTY state \n");
-		DBG("issue: PDelayResp Msg, failed\n");
+		DBG("issue  ..... PDELAY_RESP, failed\n");
 	}
 	else
 	{
 		/* ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_PDelayResp_tx_ts = TRUE; */
-		DBG("issue: PDelayResp Msg, succedded [sending PDelayReq receive time]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n",\
+		DBG("issue  ..... PDELAY_RESP, succedded [sending PDelayReq receive time: sec = %lld nanosec = %lld]\n",\
 		(unsigned long long)ptpClock->pdelay_req_receive_time.seconds,\
 		(unsigned long long)ptpClock->pdelay_req_receive_time.nanoseconds);
 	}
@@ -1937,11 +2007,11 @@ void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		DBGV("delayResp message can't be sent -> FAULTY state \n");
-		DBG("issue: DelayResp Msg, failed\n");
+		DBG("issue  ..... DELAY_RESP, failed\n");
 	}
 	else
 	{
-		DBG("issue: DelayResp Msg, succedded [sending DelayReq receive time]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n", \
+		DBG("issue  ..... DELAY_RESP, succedded [sending DelayReq receive time]: sec = %lld nanosec = %lld]\n", \
 		    (unsigned long long)ptpClock->delay_req_receive_time.seconds, \
 		    (unsigned long long)ptpClock->delay_req_receive_time.nanoseconds);
 	}
@@ -1962,11 +2032,11 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		DBGV("PdelayRespFollowUp message can't be sent -> FAULTY state \n");
-		DBG("issue: PDelayFollowUp Msg, failed\n");
+		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, failed\n");
 	}
 	else
 	{
-		DBG("issue: PDelayRespFollowUp Msg, succedded [sending time of pDelayResp tx]: \n\t\t sec = %ld \n\t\t  nanosec = %lld\n",\
+		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %ld \n\t\t  nanosec = %lld\n",\
 		(unsigned long long)ptpClock->pDelayResp_tx_ts.utc,\
 		(unsigned long long)ptpClock->pDelayResp_tx_ts.nsec);
 	}
@@ -2005,14 +2075,15 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		DBGV("Signaling message can't be sent -> FAULTY state \n");
-		DBG("issue: WR Signaling Msg, failed \n");
+		DBG("issue ...... WR_SIGNALING: failed \n");
+		
 	}
 	else
 	{
 		switch(wrMessageID)
 		{
 		case CALIBRATE:
-			DBG("\n\nissue WR Signaling msg [CALIBRATE], succedded, \
+			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalibrationPeriod      = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
@@ -2025,24 +2096,24 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 			break;
 
 		case CALIBRATED:
-			DBG("\n\nissue WR Signaling msg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n\n", \
+			DBGWRFSM("issue ...... WR_SIGNALINGg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n", \
 			    ((unsigned long long)ptpClock->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaTx.scaledPicoseconds.lsb, \
 			    ((unsigned long long)ptpClock->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaRx.scaledPicoseconds.lsb);
 			break;
 		case SLAVE_PRESENT:
-			DBG("\n\nissue WR Signaling msg [SLAVE_PRESENT], succedded, len = %d \n\n",len);
+			DBGWRFSM("issue ...... WR_SIGNALING [SLAVE_PRESENT], succedded, len = %d \n",len);
 			break;
 		case LOCK:
-			DBG("\n\nissue WR Signaling msg [LOCK], succedded \n\n");
+			DBGWRFSM("issue ...... WR_SIGNALING [LOCK], succedded\n");
 			break;
 		case LOCKED:
-			DBG("\n\nissue WR Signaling msg [LOCKED], succedded \n\n");
+			DBGWRFSM("issue ...... WR_SIGNALING [LOCKED], succedded \n");
 			break;
 		case WR_MODE_ON:
-			DBG("\n\nissue WR Signaling msg [WR_MODE_ON], succedded \n\n");
+			DBGWRFSM("issue ...... WR_SIGNALING [WR_MODE_ON], succedded \n");
 			break;
 		default:
-			DBG("\n\nissue WR Signaling msg [UNKNOWN], failed \n\n");
+			DBGWRFSM("issue ...... WR_SIGNALING [UNKNOWN], failed \n");
 			break;
 		}
 	}
@@ -2124,7 +2195,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 			msgUnpackHeader(buf,&ptpClock->foreign[j].header);
 			msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
 			if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
-				DBG("handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
+				DBG("addForeign .                        message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
@@ -2149,7 +2220,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 		msgUnpackHeader(buf,&ptpClock->foreign[j].header);
 		msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
 		if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
-			DBG("handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
+			DBG("addForeign.. WR_ANNOUNCE message from another White Rabbit node [wr_flag != NON_WR]\n");
 
 		DBGV("New foreign Master added \n");
 

@@ -43,14 +43,14 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	
 	ptpClock->wrNodeMode = NON_WR;
 	
-//TODO: probably to be change
 	
-	
-	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->portWrConfig == WR_M_ONLY)
+	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->portWrConfig != NON_WR)
+	  ptpClock->priority1 = WR_PRIORITY1;
 #else
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrNodeMode == WR_MASTER)
-#endif	  
 	  ptpClock->priority1 = WR_MASTER_PRIORITY1;
+#endif	  
+	  
 	else
 	  ptpClock->priority1 = rtOpts->priority1;
 
@@ -105,11 +105,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	  if(rtOpts->clockQuality.clockClass == DEFAULT_CLOCK_CLASS)
 	  {
 #ifdef WRPTPv2
-//TODO: change
-	    if( ptpClock->portWrConfig == WR_M_ONLY)
-	      ptpClock->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
-	    else if(ptpClock->portWrConfig == WR_S_ONLY)
-	      ptpClock->clockQuality.clockClass = WR_SLAVE_CLOCK_CLASS;
+            // do nothing, we want it to be standard :)
 #else
 	    if( ptpClock->wrNodeMode == WR_MASTER)
 	      ptpClock->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
@@ -250,16 +246,16 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	ptpClock->grandmasterIsWRnode     = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpClock->grandmasterIsWRmode     = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
 	ptpClock->grandmasterIsCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
-	DBG(" S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
-	DBG(" S1: grandmasterIsWRnode....... 0x%x\n", ptpClock->grandmasterIsWRnode);
-	DBG(" S1: grandmasterIsWRmode....... 0x%x\n", ptpClock->grandmasterIsWRmode);
-	DBG(" S1: grandmasterIsCalibrated... 0x%x\n", ptpClock->grandmasterIsCalibrated);	
+	DBGBMC(" S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
+	DBGBMC(" S1: grandmasterIsWRnode....... 0x%x\n", ptpClock->grandmasterIsWRnode);
+	DBGBMC(" S1: grandmasterIsWRmode....... 0x%x\n", ptpClock->grandmasterIsWRmode);
+	DBGBMC(" S1: grandmasterIsCalibrated... 0x%x\n", ptpClock->grandmasterIsCalibrated);	
 #ifdef WRPTPv2
 	ptpClock->parentPortWrConfig      =   announce->wr_flags & WR_NODE_MODE;
-	DBG(" S1: parentPortWrConfig.......  0x%x\n", ptpClock->parentPortWrConfig);
+	DBGBMC(" S1: parentPortWrConfig.......  0x%x\n", ptpClock->parentPortWrConfig);
 #else
 	ptpClock->grandmasterWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
-	DBG(" S1: grandmasterWrNodeMode....  0x%x\n",ptpClock->grandmasterWrNodeMode);
+	DBGBMC(" S1: grandmasterWrNodeMode....  0x%x\n",ptpClock->grandmasterWrNodeMode);
 #endif
 
 	
@@ -311,6 +307,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 {
 	DBGV("Data set comparison \n");
 	short comp = 0;
+#ifndef WRPTPv2	
 	if(announceA->wr_flags & WR_MASTER)
 	  DBG("A is WR_MASTER\n");
 	else if(announceA->wr_flags & WR_SLAVE)
@@ -338,7 +335,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 	  DBG("B better A [White Rabbit]\n");
 	  return 1;
 	}
-
+#endif
 	/*Identity comparison*/
 	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH))
 	{

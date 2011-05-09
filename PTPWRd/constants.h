@@ -34,8 +34,19 @@
 #define DEFAULT_FOREIGN_MASTER_THRESHOLD	2
 #define DEFAULT_CLOCK_CLASS			100
 #define DEFAULT_CLOCK_ACCURACY			0xFE
-#define DEFAULT_PRIORITY1			100
-#define DEFAULT_PRIORITY2			100
+
+#ifdef WRPTPv2
+# define DEFAULT_CLOCK_CLASS			187
+# define DEFAULT_PRIORITY1			128
+# define DEFAULT_PRIORITY2			128
+#else
+//no idea where they took these values, but for sure
+//not from the standard !!!!
+# define DEFAULT_CLOCK_CLASS			100
+# define DEFAULT_PRIORITY1			100
+# define DEFAULT_PRIORITY2			100
+
+#endif
 #define DEFAULT_CLOCK_VARIANCE			-4000 //To be determined in 802.1AS...so same value of ptpdv1 is used
 
 /* In WR mode we need only one foreign master */
@@ -133,6 +144,7 @@
 
 #define TLV_TYPE_ORG_EXTENSION 	0x0003 //organization specific 
 
+#define WR_PRIORITY1                    64
 
 #define WR_TLV_ORGANIZATION_ID		0x080030
 #define WR_TLV_MAGIC_NUMBER		0xDEAD

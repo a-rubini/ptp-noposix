@@ -228,5 +228,17 @@ Boolean timerExpired(IntervalTimer *itimer);
 #define DBGM(x, ...)
 #endif
 
+#ifdef PTPD_DBGBMC
+#define DBGBMC(x, ...) fprintf(stderr, "(PTPWRd bmc) " x, ##__VA_ARGS__)
+#else
+#define DBGBMC(x, ...)
+#endif
+
+#ifdef PTPD_DBGWRFSM
+#define DBGWRFSM(x, ...)  fprintf(stderr, "(DBG [p=%d]) WR_FSM ..... " x, ptpClock->portIdentity.portNumber, ##__VA_ARGS__)
+#else
+#define DBGWRFSM(x, ...)
+#endif
+
 
 #endif /*PTPD_DEP_H_*/

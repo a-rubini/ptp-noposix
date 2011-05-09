@@ -45,7 +45,8 @@ LDFLAGS = #-L. -lwripc -lptpnetif
 CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM 
 #CFLAGS += -DDEBUG
 CFLAGS += -DPTPD_DBG
-CFLAGS += -DPTPD_DBGMSG
+#CFLAGS += -DPTPD_DBGMSG
+CFLAGS += -DPTPD_DBGWRFSM
 CFLAGS += -DWRPTPv2
 
 # Targets follows (note that the freestanding version is only an object

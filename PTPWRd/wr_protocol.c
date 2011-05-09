@@ -160,7 +160,10 @@ this function checks if wr timer has expired for a current WR state
 */
 void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpClock, Enumeration8 wrNodeMode)
 {
-
+  /*WRS_IDLE state does not expire */
+  if(currentState == WRS_IDLE)
+    return 0;
+  
   if(timerExpired(&ptpClock->wrTimers[currentState]))
   {
       if (ptpClock->currentWRstateCnt < WR_DEFAULT_STATE_REPEAT )
@@ -324,7 +327,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    */
   uint64_t delta;
 
-  DBG("DoWRState enter st: %d\n", ptpClock->wrPortState);
+  DBGV("DoWRState enter st: %d\n", ptpClock->wrPortState);
   switch(ptpClock->wrPortState)
   {
 
@@ -340,7 +343,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * message S_PRESENT sent to Master while entering state (toWRSlaveState())
      * here we wait for the answer from the Master asking us to LOCK
      */
-    DBG("DoState WRS_PRESENT");
+    DBGV("DoState WRS_PRESENT");
     handle(rtOpts, ptpClock);
 
 #ifdef WRPTPv2
@@ -361,7 +364,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #endif      
     }
 
- DBG("DoState WRS_PRESENT done");
+ DBGV("DoState WRS_PRESENT done");
     break;
   /**********************************  S_LOCK  ***************************************************************************/
   case WRS_S_LOCK:
@@ -372,7 +375,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
         if(ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
 	  {
-	    DBG("LockingSuccess\n");
+	    DBGWRFSM("LockingSuccess\n");
 	    ptpClock->wrPortState = WRS_S_LOCK_1; //success, go ahead
 	  }
 	break;
@@ -444,11 +447,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_RX, ptpClock->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
 	    {
-	      DBG("PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
+	      DBGWRFSM("PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
 	      ptpClock->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 	      ptpClock->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
-	      DBG("scaledPicoseconds.msb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.msb);
-	      DBG("scaledPicoseconds.lsb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.lsb);
+	      DBGWRFSM("scaledPicoseconds.msb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.msb);
+	      DBGWRFSM("scaledPicoseconds.lsb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.lsb);
 
 	      ptpClock->wrPortState = WRS_REQ_CALIBRATION_2;
 	    }
@@ -556,7 +559,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    else if(ptpClock->wrNodeMode == WR_MASTER)
 	      toState(PTP_MASTER, rtOpts, ptpClock);
 	    else
-	      DBG("SHIT !!!\n");
+	      DBGWRFSM("SHIT !!!\n");
 
 	    toWRState(WRS_IDLE, rtOpts, ptpClock);
 
@@ -567,7 +570,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    /**********************************  default  ***************************************************************************/
   default:
 
-	    DBG("(doWhiteRabbitState) do unrecognized state\n");
+	    DBGWRFSM("(doWhiteRabbitState) do unrecognized state\n");
 	    break;
   }
 
@@ -605,33 +608,53 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   switch(ptpClock->wrPortState)
   {
   case WRS_IDLE:
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("exiting WRS_IDLE\n");
+    DBGWRFSM("^^^^^^^^^^^^^^^^ starting White Rabbit State Machine^^^^^^^^^^^^^^^^^^\n");
+    DBGWRFSM("\n");
     break;
 
   case WRS_PRESENT:
+    DBGWRFSM("exiting WRS_PRESENT\n");
     break;
 
   case WRS_S_LOCK:
+    DBGWRFSM("exiting WRS_S_LOCK\n");    
   case WRS_S_LOCK_1:
   case WRS_S_LOCK_2:
     break;
 
   case WRS_M_LOCK:
+    DBGWRFSM("exiting WRS_M_LOCK\n");    
      break;
 
   case WRS_LOCKED:
+    DBGWRFSM("exiting WRS_LOCKED\n");    
      break;
 
    case WRS_REQ_CALIBRATION:
+    DBGWRFSM("exiting WRS_REQ_CALIBRATION\n");     
    case WRS_REQ_CALIBRATION_1:
    case WRS_REQ_CALIBRATION_2:
      break;
 
    case WRS_CALIBRATED:
+     DBGWRFSM("exiting WRS_CALIBRATED\n");     
      break;
 
    case WRS_WR_LINK_ON:
+     DBGWRFSM("\n");
+     DBGWRFSM("exiting WRS_WR_LINK_ON\n");
+     DBGWRFSM("^^^^^^^^^^^^^^^^^^^^^^^^^ WR Link is ON ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+     DBGWRFSM("\n");
+     DBGWRFSM("\n");
+     DBGWRFSM("\n");
+     DBGWRFSM("\n");
+     DBGWRFSM("\n");
 
-     DBG("*** WR Link is ON ***\n");
+   
 
      break;
 
@@ -649,14 +672,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   {
   case WRS_IDLE:
     /* no substates here*/
-    DBG("state WRS_IDLE\n");
+    DBGWRFSM("entering WRS_IDLE\n");
 
     ptpClock->wrPortState = WRS_IDLE;
     break;
 
   case WRS_PRESENT:
     /* no substates here*/
-    DBG("state WRS_PRESENT\n");
+    DBGWRFSM("entering  WRS_PRESENT\n");
     /*send message to the Master to enforce entering UNCALIBRATED state*/
     
 #ifdef WRPTPv2
@@ -673,7 +696,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 1 - locking enabled, polling
      * 2 - locked, disabling locking
      */
-    DBG("state WR_LOCK (modded?)\n");
+    DBGWRFSM("entering  WR_LOCK (modded?)\n");
 
 
     if( ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
@@ -681,13 +704,13 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     else
      ptpClock->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
 
-    DBG("state WR_LOCK (modded done?)\n");
+    //DBG("state WR_LOCK (modded done?)\n");
 
     break;
 
   case WRS_LOCKED:
     /* no substates here*/
-    DBG("state WR_LOCKED\n");
+    DBGWRFSM("entering  WR_LOCKED\n");
 
     /* say Master that you are locked */
 #ifdef WRPTPv2
@@ -700,7 +723,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   case WRS_M_LOCK:
     /* no substates here*/
-    DBG("state WRS_M_LOCK\n");
+    DBGWRFSM("entering  WRS_M_LOCK\n");
 #ifdef WRPTPv2
     issueWRSignalingMsg(LOCK,rtOpts, ptpClock);
 #else
@@ -716,7 +739,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 1 - calibration enabled, polling
      * 2 - HW finished calibration, disable calibration
      */
-    DBG("state WRS_REQ_CALIBRATION\n");
+    DBGWRFSM("entering  WRS_REQ_CALIBRATION\n");
 
     if( ptpClock->isCalibrated == TRUE)
     {
@@ -753,7 +776,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case WRS_CALIBRATED:
-    DBG("state WRS_CALIBRATED\n");
+    DBGWRFSM("entering  WRS_CALIBRATED\n");
 
     ptpClock->wrPortState = WRS_CALIBRATED;
     break;
@@ -766,7 +789,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 3 -
      * 4 -
      */
-    DBG("state WRS_RESP_CALIB_REQ\n");
+    DBGWRFSM("entering  WRS_RESP_CALIB_REQ\n");
 
     // to send the pattern or not to send
     // here is the answer to the question.....
@@ -796,7 +819,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case WRS_WR_LINK_ON:
-    DBG("state WRS_LINK_ON\n");
+    DBGWRFSM("entering  WRS_LINK_ON\n");
 
     ptpClock->isWRmode = TRUE;
 
@@ -815,7 +838,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
   default:
-    DBG("to unrecognized state\n");
+    DBGWRFSM("to unrecognized state\n");
     break;
   }
 
