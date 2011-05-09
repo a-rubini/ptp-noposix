@@ -1,13 +1,6 @@
-//#include <stdio.h>
-//#include <stdlib.h>
+#ifdef __STDC_HOSTED__
+
 #include <string.h>
-
-//#include <math.h>
-
-
-//#include <inttypes.h>
-//#include <sys/time.h>
-
 #include <wr_ipc.h>
 
 #include "ptpd.h"
@@ -29,7 +22,6 @@ void ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 void ptpdexp_cmd(int cmd, int value)
 {
 
-	DBG("GotCMd: %d value %d\n", cmd, value);
 	if(cmd == PTPDEXP_COMMAND_TRACKING)
 		wr_servo_enable_tracking(value);
 
@@ -50,5 +42,8 @@ void ptpd_init_exports()
 
 void ptpd_handle_wripc()
 {
+//	fprintf(stderr, ".");
 	wripc_process(wripc_srv);
 }
+
+#endif
