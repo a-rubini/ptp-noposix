@@ -36,13 +36,14 @@ TOPDIR=$(shell /bin/pwd)
 CFLAGS += -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libwripc \
 	-I$(TOPDIR)/libptpnetif -I$(TOPDIR)/PTPWRd -I$(LINUX)/include \
 	-include compat.h -include libposix/ptpd-wrappers.h
+
 # These are lifted in the ptp.o temporary object file, for me to see the size
 CORELIBS = libwripc.a libptpnetif.a
 
 LDFLAGS = #-L. -lwripc -lptpnetif
 
 # Flags from the original Makefiles
-CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM 
+CFLAGS += -DPTPD_NO_DAEMON -DPTPD_TRACE_MASK=TRACE_SERVO
 #CFLAGS += -DDEBUG
 #CFLAGS += -DPTPD_DBG
 
