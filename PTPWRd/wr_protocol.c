@@ -165,12 +165,12 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
   {
       if (ptpClock->currentWRstateCnt < WR_DEFAULT_STATE_REPEAT )
       {
-	DBG("WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
+	PTPD_TRACE(TRACE_WR_PROTO, "WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpClock);
       }
       else
       {
-	DBG("WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", currentState,ptpClock->currentWRstateCnt );
+	PTPD_TRACE(TRACE_WR_PROTO, "WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", currentState,ptpClock->currentWRstateCnt );
 	ptpClock->isWRmode = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpClock);
 
@@ -196,7 +196,7 @@ return:
 */
 Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 {
-  DBG("starting\n");
+  PTPD_TRACE(TRACE_WR_PROTO, "starting\n");
   uint64_t deltaTx;
   int ret;
   /*
@@ -210,7 +210,7 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 
 /*  if( ptpd_netif_read_calibration_data(ifaceName, &deltaTx, &deltaRx) == PTPD_NETIF_OK)
   {
-    DBG(" fixed delays known\n");
+    PTPD_TRACE(TRACE_WR_PROTO, " fixed delays known\n");
     ptpClock->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (deltaTx >> 16);
     ptpClock->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (deltaTx << 16);
 
@@ -224,7 +224,7 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
   }
   else*/
   {
-    DBG(" measuring Tx fixed delay for interface %s\n",__func__,ifaceName );
+    PTPD_TRACE(TRACE_WR_PROTO, " measuring Tx fixed delay for interface %s\n",__func__,ifaceName );
     /*
      * here we calibrate Tx of a given interface
      * since only one interface can be calibrated at a time
@@ -238,15 +238,15 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 
 
 
-    DBG("CalPatEnable!\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "CalPatEnable!\n");
     if(ptpd_netif_calibration_pattern_enable(ifaceName, 0, 0, 0) != PTPD_NETIF_OK)
       return FALSE;
 
-    DBG("CalMesaEnable!\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "CalMesaEnable!\n");
     if(ptpd_netif_calibrating_enable(PTPD_NETIF_TX, ifaceName) != PTPD_NETIF_OK)
       return FALSE;
 
-    DBG("CalPoll!\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "CalPoll!\n");
 
     for(;;)
       {
@@ -254,15 +254,18 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 
 	if(ret == PTPD_NETIF_READY)
 	  {
-	    printf("TX fixed delay = %d\n\n",(int)deltaTx);
+/*	    printf("TX fixed delay = %d\n\n",(int)deltaTx); */
 	    ptpClock->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (deltaTx >> 16);
 	    ptpClock->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (deltaTx << 16);
 	    break;
-	  } else usleep(10000);
+	  } else {
+	  	ptpd_handle_wripc(); // fixme: avoid active waiting in wr_protocol FSM
+//	  	usleep(10000);
+	  }
       }
 
 
-    DBG("CalMeasDisable\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "CalMeasDisable\n");
 
     ptpd_netif_calibrating_disable(PTPD_NETIF_TX,ifaceName);
     ptpd_netif_calibration_pattern_disable(ifaceName);
@@ -324,7 +327,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    */
   uint64_t delta;
 
-  DBG("DoWRState enter st: %d\n", ptpClock->wrPortState);
+  PTPD_TRACE(TRACE_WR_PROTO, "DoWRState enter st: %d\n", ptpClock->wrPortState);
   switch(ptpClock->wrPortState)
   {
 
@@ -340,7 +343,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * message S_PRESENT sent to Master while entering state (toWRSlaveState())
      * here we wait for the answer from the Master asking us to LOCK
      */
-    DBG("DoState WRS_PRESENT");
+    PTPD_TRACE(TRACE_WR_PROTO, "DoState WRS_PRESENT");
     handle(rtOpts, ptpClock);
     if(ptpClock->msgTmpManagementId == LOCK)
     {
@@ -352,7 +355,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       ptpClock->msgTmpManagementId = NULL_MANAGEMENT;
     }
 
- DBG("DoState WRS_PRESENT done");
+ PTPD_TRACE(TRACE_WR_PROTO, "DoState WRS_PRESENT done");
     break;
   /**********************************  S_LOCK  ***************************************************************************/
   case WRS_S_LOCK:
@@ -363,7 +366,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
         if(ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
 	  {
-	    DBG("LockingSuccess\n");
+	    PTPD_TRACE(TRACE_WR_PROTO, "LockingSuccess\n");
 	    ptpClock->wrPortState = WRS_S_LOCK_1; //success, go ahead
 	  }
 	break;
@@ -424,11 +427,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_RX, ptpClock->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
 	    {
-	      DBG("PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
+	      PTPD_TRACE(TRACE_WR_PROTO, "PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
 	      ptpClock->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 	      ptpClock->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
-	      DBG("scaledPicoseconds.msb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.msb);
-	      DBG("scaledPicoseconds.lsb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.lsb);
+	      PTPD_TRACE(TRACE_WR_PROTO, "scaledPicoseconds.msb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.msb);
+	      PTPD_TRACE(TRACE_WR_PROTO, "scaledPicoseconds.lsb = 0x%x\n",ptpClock->deltaRx.scaledPicoseconds.lsb);
 
 	      ptpClock->wrPortState = WRS_REQ_CALIBRATION_2;
 	    }
@@ -503,7 +506,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpClock);
 	  else
 	  {
-	    DBG("ERRRORROR!!!!!!!!!!\n");
+	    PTPD_TRACE(TRACE_WR_PROTO, "ERRRORROR!!!!!!!!!!\n");
 	    toWRState(WRS_IDLE, rtOpts, ptpClock);
 	   }
 
@@ -522,7 +525,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    else if(ptpClock->wrNodeMode == WR_MASTER)
 	      toState(PTP_MASTER, rtOpts, ptpClock);
 	    else
-	      DBG("SHIT !!!\n");
+	      PTPD_TRACE(TRACE_WR_PROTO, "SHIT !!!\n");
 
 	    toWRState(WRS_IDLE, rtOpts, ptpClock);
 
@@ -533,7 +536,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    /**********************************  default  ***************************************************************************/
   default:
 
-	    DBG("(doWhiteRabbitState) do unrecognized state\n");
+	    PTPD_TRACE(TRACE_WR_PROTO, "(doWhiteRabbitState) do unrecognized state\n");
 	    break;
   }
 
@@ -597,7 +600,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
    case WRS_WR_LINK_ON:
 
-     DBG("*** WR Link is ON ***\n");
+     PTPD_TRACE(TRACE_WR_PROTO, "*** WR Link is ON ***\n");
 
      break;
 
@@ -615,14 +618,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   {
   case WRS_IDLE:
     /* no substates here*/
-    DBG("state WRS_IDLE\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_IDLE\n");
 
     ptpClock->wrPortState = WRS_IDLE;
     break;
 
   case WRS_PRESENT:
     /* no substates here*/
-    DBG("state WRS_PRESENT\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_PRESENT\n");
     /*send message to the Master to enforce entering UNCALIBRATED state*/
     issueWRManagement(SLAVE_PRESENT,rtOpts, ptpClock);
 
@@ -635,7 +638,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 1 - locking enabled, polling
      * 2 - locked, disabling locking
      */
-    DBG("state WR_LOCK (modded?)\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WR_LOCK (modded?)\n");
 
 
     if( ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
@@ -643,13 +646,13 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     else
      ptpClock->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
 
-    DBG("state WR_LOCK (modded done?)\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WR_LOCK (modded done?)\n");
 
     break;
 
   case WRS_LOCKED:
     /* no substates here*/
-    DBG("state WR_LOCKED\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WR_LOCKED\n");
 
     /* say Master that you are locked */
     issueWRManagement(LOCKED,rtOpts, ptpClock);
@@ -659,7 +662,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   case WRS_M_LOCK:
     /* no substates here*/
-    DBG("state WRS_M_LOCK\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_M_LOCK\n");
 
     issueWRManagement(LOCK,rtOpts, ptpClock);
 
@@ -673,7 +676,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 1 - calibration enabled, polling
      * 2 - HW finished calibration, disable calibration
      */
-    DBG("state WRS_REQ_CALIBRATION\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_REQ_CALIBRATION\n");
 
     if( ptpClock->isCalibrated == TRUE)
     {
@@ -702,7 +705,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case WRS_CALIBRATED:
-    DBG("state WRS_CALIBRATED\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_CALIBRATED\n");
 
     ptpClock->wrPortState = WRS_CALIBRATED;
     break;
@@ -715,7 +718,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      * 3 -
      * 4 -
      */
-    DBG("state WRS_RESP_CALIB_REQ\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_RESP_CALIB_REQ\n");
 
     // to send the pattern or not to send
     // here is the answer to the question.....
@@ -745,7 +748,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   case WRS_WR_LINK_ON:
-    DBG("state WRS_LINK_ON\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "state WRS_LINK_ON\n");
 
     ptpClock->isWRmode = TRUE;
 
@@ -761,7 +764,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
   default:
-    DBG("to unrecognized state\n");
+    PTPD_TRACE(TRACE_WR_PROTO, "to unrecognized state\n");
     break;
   }
 
