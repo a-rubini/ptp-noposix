@@ -195,7 +195,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     else
       timerStop(&ptpClock->timers.pdelayReq);
 
-    wr_servo_init(ptpClock);
+/*    wr_servo_init(ptpClock);*/
     break;
 
    case PTP_PASSIVE:
@@ -343,21 +343,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     displayStats(rtOpts, ptpClock);
 }
 
-
-void send_test(PtpClock *clock)
-{
-  for(;;)
-    {
-      char buf[64];
-      wr_timestamp_t ts;
-
-      netSendEvent(buf, 48, &clock->netPath, &ts);
-      netSendGeneral(buf, 64, &clock->netPath);
-      sleep(1);
-      netSendGeneral(buf, 64, &clock->netPath);
-      sleep(1);
-    }
-}
 
 
 /*
@@ -1317,11 +1302,9 @@ if (!rtOpts->E2E_mode)
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
-					printf("\n\n ----------- calculate after receiving handlePDelayResp [one step] msg ---------\n");
 
 					//					updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,FALSE);
 
-					printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
 					break;
 				}
@@ -1387,11 +1370,9 @@ if (!rtOpts->E2E_mode)
 
 						integer64_to_internalTime(header->correctionfield,&correctionField);
 
-						printf("\n\n ----------- calculate after receiving handlePDelayResp [one step] msg ---------\n");
 
 						//						updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,FALSE);
 
-						printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
 						break;
 					}
@@ -1628,8 +1609,8 @@ void issueSync(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: Sync Msg, succedded  \n \t\t synch timestamp: %s\n", \
-		format_wr_timestamp(ptpClock->synch_tx_ts));
+/*		PTPD_TRACE(TRACE_PROTO, "issue: Sync Msg, succedded  \n \t\t synch timestamp: %s\n", \
+		format_wr_timestamp(ptpClock->synch_tx_ts));*/
 		ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_Synch_tx_ts = TRUE;
 		ptpClock->sentSyncSequenceId++;
@@ -1686,7 +1667,7 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: DelayReq Msg, succedded \n \t\t timestamp: %s\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));
+/*		PTPD_TRACE(TRACE_PROTO, "issue: DelayReq Msg, succedded \n \t\t timestamp: %s\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));*/
 		ptpClock->sentDelayReqSequenceId++;
 		// ptpClock->pending_tx_ts = TRUE;
 		// ptpClock->pending_DelayReq_tx_ts = TRUE;
