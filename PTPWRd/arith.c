@@ -38,7 +38,7 @@ void integer64_to_internalTime(Integer64 bigint,TimeInternal *internal)
 			s_msb += entire;
 			ns_msb -= entire;
 			ns_msb *= 1000000000;
-			internal->nanoseconds = (float)internal->nanoseconds + (float)ns_msb;
+			internal->nanoseconds = internal->nanoseconds + (int)ns_msb;
 			internal->seconds += s_msb;
 			normalizeTime(internal);
 
@@ -78,7 +78,7 @@ void integer64_to_internalTime(Integer64 bigint,TimeInternal *internal)
 			ns_msb -= entire;
 			ns_msb *= 1000000000;
 
-			internal->nanoseconds = (float)internal->nanoseconds + (float)ns_msb;
+			internal->nanoseconds = internal->nanoseconds + (int)ns_msb;
 			internal->seconds += s_msb;
 			normalizeTime(internal);
 
@@ -100,7 +100,7 @@ void fromInternalTime(TimeInternal *internal, Timestamp *external)
 
    if ((internal->seconds & ~INT_MAX) || (internal->nanoseconds & ~INT_MAX))
    {
-	DBGNPI("Negative value canno't be converted into timestamp \n");
+//	DBGNPI("Negative value canno't be converted into timestamp \n");
 	return;
    }
    else
@@ -124,7 +124,7 @@ void toInternalTime(TimeInternal *internal, Timestamp *external)
 
 	else
 	{
-		DBGNPI("Clock servo canno't be executed : seconds field is higher than signed integer (32bits) \n");
+	//	DBGNPI("Clock servo canno't be executed : seconds field is higher than signed integer (32bits) \n");
    		return;
 	}
 }
