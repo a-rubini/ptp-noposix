@@ -33,7 +33,7 @@ void catch_close(int sig)
     s = "?";
   }
 
-  NOTIFY("shutdown on %s signal\n", s);
+  PTPD_TRACE(TRACE_SYS, "shutdown on %s signal\n", s);
 
   exit(0);
 }
@@ -51,7 +51,6 @@ void ptpdShutdown()
      netShutdown(&currentPtpdClockData->netPath);
      if (currentPtpdClockData->foreign)
      {
-       DBG("freeing: p=%d\n",i+1);
        free(currentPtpdClockData->foreign);
      }
      //netShutdown(&currentPtpdClockData->netPath);
@@ -124,18 +123,6 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
     case 'c':
       nondaemon = 1;
-      break;
-
-
-    case 'f':
-      if((fd = creat(optarg, 0400)) != -1)
-      {
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        noclose = 1;
-      }
-      else
-        PERROR("could not open output file");
       break;
 
     case 'd':
@@ -230,14 +217,14 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     case 'q':
 
       rtOpts->overrideClockIdentity  = strtol(optarg, 0, 0);
-      DBGNPI("WR, port clockIdentity overwritten !!\n");
+      PTPD_TRACE(TRACE_PROTO, "WR, port clockIdentity overwritten !!\n");
 
 
       break;
 
    case 'e':
       rtOpts->ethernet_mode = TRUE;
-      PERROR("Not implemented yet !");
+
       return 0;
       break;
 
@@ -247,7 +234,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
 
    case 'A':
-	   DBGNPI("WR AUTO MODE\n");
+//	   DBGNPI("WR AUTO MODE\n");
 	   rtOpts->portNumber = WR_PORT_NUMBER;
 
 	   break;
@@ -255,13 +242,13 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
    case 'S':
 	   rtOpts->wrNodeMode = WR_SLAVE;
 
-	   DBGNPI("WR Slave\n");
+//	   DBGNPI("WR Slave\n");
 	   break;
 
    case 'M':
 	   rtOpts->wrNodeMode = WR_MASTER;
 
-	   DBGNPI("WR Master\n");
+//	   DBGNPI("WR Master\n");
 	   break;
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
@@ -294,13 +281,13 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
   if(!ptpClock)
   {
-    PERROR("failed to allocate memory for protocol engine data");
+    PTPD_TRACE(TRACE_ERROR, "failed to allocate memory for protocol engine data");
     *ret = 2;
     return 0;
   }
   else
   {
-    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpClock));
+/*    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpClock)); */
 
     currentPtpdClockData = ptpClock;
     int i;
@@ -311,7 +298,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
 	if(!currentPtpdClockData->foreign)
 	{
-	    PERROR("failed to allocate memory for foreign master data");
+	 //   PERROR("failed to allocate memory for foreign master data");
 	    *ret = 2;
 	  //TODO:
 	      free(ptpClock);
@@ -319,7 +306,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	}
 	else
 	{
-	    DBGNPI("allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
+//	    DBGNPI("allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
 	    /*Init to 0 net buffer*/
 
 	}
@@ -338,11 +325,11 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
   {
     if(daemon(0, noclose) == -1)
     {
-      PERROR("failed to start as daemon");
+  //    PERROR("failed to start as daemon");
       *ret = 3;
       return 0;
     }
-    DBGNPI("running as daemon\n");
+    PTPD_TRACE(TRACE_SYS, "running as daemon\n");
   }
 #endif
 
