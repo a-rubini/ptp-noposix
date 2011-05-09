@@ -2,7 +2,7 @@
 #define __PTPD_TRACE_H
 
 #ifndef PTPD_TRACE_MASK
-	#define PTPD_TRACE_MASK
+	#define PTPD_TRACE_MASK 0xffff
 #endif
 
 #define TRACE_PROTO (1<<0)
