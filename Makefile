@@ -20,7 +20,7 @@ PTPD_FREESTANDING ?= $(shell ./check-freestanding $(CC))
 
 ifeq ($(PTPD_FREESTANDING), y)
    SAY := $(shell echo "CPU is freestanding" > /dev/tty)
-   CFLAGS = -ffreestanding -DPTPD_FREESTANDING -ffunction-sections -fdata-sections -Os -DWRPC_EXTRA_SLIM
+   CFLAGS = -ffreestanding -DPTPD_FREESTANDING -ffunction-sections -fdata-sections -Os -DWRPC_EXTRA_SLIM $(EXTRA_CFLAGS)
    TARGETS := ptpd-freestanding
 else
    SAY := $(shell echo "CPU is hosted" > /dev/tty)
