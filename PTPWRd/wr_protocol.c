@@ -197,7 +197,7 @@ return:
 Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
 {
   PTPD_TRACE(TRACE_WR_PROTO, "starting\n");
-  uint64_t deltaTx;
+  uint64_t deltaTx, deltaRx;
   int ret;
   /*
    * check if Rx & Tx delays known
@@ -208,9 +208,9 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
    * otherwise, calibrate Rx
    */
 
-/*  if( ptpd_netif_read_calibration_data(ifaceName, &deltaTx, &deltaRx) == PTPD_NETIF_OK)
+  if( ptpd_netif_read_calibration_data(ifaceName, &deltaTx, &deltaRx) == PTPD_NETIF_OK)
   {
-    PTPD_TRACE(TRACE_WR_PROTO, " fixed delays known\n");
+    PTPD_TRACE(TRACE_WR_PROTO, " fixed delays known : %d %d\n", deltaTx, deltaRx);
     ptpClock->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (deltaTx >> 16);
     ptpClock->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (deltaTx << 16);
 
@@ -222,7 +222,7 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
     return TRUE;
 
   }
-  else*/
+  else
   {
     PTPD_TRACE(TRACE_WR_PROTO, " measuring Tx fixed delay for interface %s\n",__func__,ifaceName );
     /*
@@ -297,6 +297,7 @@ char *printf_bits(UInteger32 bits)
 
 
 /*prints RAW timestamp*/
+#ifndef WRPC_EXTRA_SLIM
 char *format_wr_timestamp(wr_timestamp_t ts)
 {
   char buf[64];
@@ -306,6 +307,7 @@ char *format_wr_timestamp(wr_timestamp_t ts)
 
   return strdup(buf);
 }
+#endif
 
 
 

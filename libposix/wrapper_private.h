@@ -34,7 +34,7 @@ typedef struct
 } sockq_t;
 
 struct my_socket {
-	int fd;
+	int in_use;
 	wr_sockaddr_t bind_addr;
 	mac_addr_t local_mac;
 	int if_index;

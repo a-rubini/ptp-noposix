@@ -20,9 +20,10 @@
 
 //static hal_port_state_t port_state;
 static struct my_socket wr_sockets[SOCKS_NUM];
+
 /* lets save some memory, we are not threaded so ptpd_netif_recvfrom() and update_rx_queues()
  * can share this buffer*/
-uint8_t pkg[sizeof(uint8_t)+ETH_HEADER_SIZE+MAX_PAYLOAD+sizeof(struct hw_timestamp)];
+static uint8_t pkg[sizeof(uint8_t)+ETH_HEADER_SIZE+MAX_PAYLOAD+sizeof(struct hw_timestamp)];
 
 int usleep(unsigned useconds)
 {
@@ -83,7 +84,7 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
 int ptpd_netif_init()
 {
   //TRACE_WRAP("%s\n", __FUNCTION__);
-
+  memset(wr_sockets, 0, sizeof(wr_sockets));
   return PTPD_NETIF_OK;
 }
 
@@ -182,40 +183,33 @@ int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
   state->t4_phase_transition = 1600;
   get_mac_addr(state->hw_addr);
   state->hw_index      = 0;
-  state->fiber_fix_alpha = (int32_t)71020155;
+  state->fiber_fix_alpha = (int32_t)75124859;
   
   return 0;
 }
 
+
 wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags, wr_sockaddr_t *bind_addr)
 {
   int i;
-  static uint8_t sidx = 0;
   uint8_t mac[6];
   hexp_port_state_t pstate;
+  struct my_socket *sock;
 
-  TRACE_WRAP("%s:\n", __FUNCTION__);
-  TRACE_WRAP("if_name=%s\n", bind_addr->if_name);
-  TRACE_WRAP("family=%d\n", bind_addr->family);
-  TRACE_WRAP("src_mac=");
-  for(i=0;i<6;i++) mprintf("%02x ", bind_addr->mac[i]);
-  TRACE_WRAP("\n");
-  TRACE_WRAP("dst_mac=");
-  for(i=0;i<6;i++) mprintf("%02x ", bind_addr->mac[i]);
-  TRACE_WRAP("\n");
-  TRACE_WRAP("ip=%u.%u.%u.%u:%u\n", bind_addr->ip>>24, 
-                              (bind_addr->ip&0xff0000)>>16,
-                              (bind_addr->ip&0xff00)>>8,
-                              (bind_addr->ip&0xff),
-                              bind_addr->port);
-  TRACE_WRAP("ethertype=%x\n", bind_addr->ethertype);
-  TRACE_WRAP("phys_port=%u\n", bind_addr->physical_port);
+	for(sock = NULL, i=0;i<SOCKS_NUM;i++)
+    	if(!wr_sockets[i].in_use)
+    	{
+    		sock = &wr_sockets[i];
+    		break;
+    	}
+	
+	
+	if(!sock)
+	{
+	 	TRACE_WRAP("No sockets left\n");
+	 	return NULL;
+	}
 
-  if(sidx == SOCKS_NUM) 
-  {
-    TRACE_WRAP("sidx=%d\n", SOCKS_NUM);
-    return NULL;
-  }
   if(sock_type != PTPD_SOCK_RAW_ETHERNET)
   {
     TRACE_WRAP("sock_type=%u\n", sock_type);
@@ -224,30 +218,36 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags, wr_sockaddr_t *b
   if(halexp_get_port_state(&pstate, bind_addr->if_name) < 0)
     return NULL;
 
-  wr_sockets[sidx].fd = sidx;
-  memcpy(&wr_sockets[sidx].bind_addr, bind_addr, sizeof(wr_sockaddr_t));
+  memcpy(&sock->bind_addr, bind_addr, sizeof(wr_sockaddr_t));
   /*get mac from endpoint*/
   get_mac_addr(mac);
-  memcpy(wr_sockets[sidx].local_mac, mac, 6);
-  TRACE_WRAP("%s: local_mac= %02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, wr_sockets[sidx].local_mac[0], wr_sockets[sidx].local_mac[1], wr_sockets[sidx].local_mac[2], wr_sockets[sidx].local_mac[3],
-                                                            wr_sockets[sidx].local_mac[4], wr_sockets[sidx].local_mac[5], wr_sockets[sidx].local_mac[6], wr_sockets[sidx].local_mac[7]);
+  memcpy(&sock->local_mac, mac, 6);
+  TRACE_WRAP("%s: local_mac= %02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, sock->local_mac[0], sock->local_mac[1], sock->local_mac[2], sock->local_mac[3],
+                                                            sock->local_mac[4], sock->local_mac[5], sock->local_mac[6], sock->local_mac[7]);
 
-  wr_sockets[sidx].clock_period = pstate.clock_period;
-  wr_sockets[sidx].phase_transition = pstate.t2_phase_transition;
-  wr_sockets[sidx].dmtd_phase = pstate.phase_val;
+  sock->clock_period = pstate.clock_period;
+  sock->phase_transition = pstate.t2_phase_transition;
+  sock->dmtd_phase = pstate.phase_val;
 
   /*tmo_init() in WRSW*/
-  wr_sockets[sidx].dmtd_update_tmo.start_tics = timer_get_tics();
-  wr_sockets[sidx].dmtd_update_tmo.timeout = 1000; 
+  sock->dmtd_update_tmo.start_tics = timer_get_tics();
+  sock->dmtd_update_tmo.timeout = 1000; 
 
   /*packet queue*/
-  wr_sockets[sidx].queue.head = wr_sockets[sidx].queue.tail = 0;
-  wr_sockets[sidx].queue.n = 0;
+  sock->queue.head = sock->queue.tail = 0;
+  sock->queue.n = 0;
+  sock->in_use = 1;
 
-  sidx++;
+  return (wr_socket_t*)(sock);
+}
 
-  TRACE_WRAP("create_socket done %d\n",sidx);
-  return (wr_socket_t*)(wr_sockets + sidx);
+int ptpd_netif_close_socket(wr_socket_t *sock)
+{
+	struct my_socket *s = (struct my_socket *) sock;
+	
+	TRACE_WRAP("CloseSocket\n");
+	if(s) s->in_use = 0;
+	return 0;
 }
 
 int ptpd_netif_get_ifName(char *ifname, int number)
@@ -382,47 +382,41 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
           size_t data_length, wr_timestamp_t *rx_timestamp)
 {
-  uint8_t sidx, i;
-  struct my_socket *my_sock;
+  uint8_t i;
+  struct my_socket *my_sock = (struct my_socket *)sock;
   uint32_t cpy, size, remain;
   ethhdr_t *header;
   struct hw_timestamp hwts;
 
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   my_sock = (struct my_socket*) sock;
-  sidx = my_sock->fd;
-  //TRACE_WRAP("%s: sidx=%d\n", __FUNCTION__, sidx);
-  if(sidx >= SOCKS_NUM)
-    return -1;
 
   /*check if there is something to fetch*/
-  if( wr_sockets[sidx].queue.n==0 )
+  if( my_sock->queue.n==0 )
   {
     //TRACE_WRAP("%s: queue is empty\n", __FUNCTION__);
     return 0;
   }
 
   /*fetch size*/
-  size = *(wr_sockets[sidx].queue.buf + wr_sockets[sidx].queue.tail);
-  wr_sockets[sidx].queue.tail = (wr_sockets[sidx].queue.tail + 1) % SOCKQ_SIZE;
-  wr_sockets[sidx].queue.n--;
-  //TRACE_WRAP("%s: size=%d, tail=%d, n=%d\n", __FUNCTION__, size, wr_sockets[sidx].queue.tail, wr_sockets[sidx].queue.n);
+  size = *(my_sock->queue.buf + my_sock->queue.tail);
+  my_sock->queue.tail = (my_sock->queue.tail + 1) % SOCKQ_SIZE;
+  my_sock->queue.n--;
+  //TRACE_WRAP("%s: size=%d, tail=%d, n=%d\n", __FUNCTION__, size, my_sock->queue.tail, my_sock->queue.n);
 
   /*fetch packet*/
   remain = size;
   while(remain)
   {
-    cpy = min(remain, SOCKQ_SIZE-wr_sockets[sidx].queue.tail);
+    cpy = min(remain, SOCKQ_SIZE-my_sock->queue.tail);
     //TRACE_WRAP("%s: remain=%d, cpy=%d\n", __FUNCTION__, remain, cpy);
     memcpy( pkg + size - remain,
-            wr_sockets[sidx].queue.buf + wr_sockets[sidx].queue.tail,
+            my_sock->queue.buf + my_sock->queue.tail,
             cpy);
-    wr_sockets[sidx].queue.tail = (wr_sockets[sidx].queue.tail + cpy) % SOCKQ_SIZE;
-    wr_sockets[sidx].queue.n -= cpy;
+    my_sock->queue.tail = (my_sock->queue.tail + cpy) % SOCKQ_SIZE;
+    my_sock->queue.n -= cpy;
     remain -= cpy;
   }
-  //TRACE_WRAP("%s: remain=%d, tail=%d, head=%d\n", __FUNCTION__, remain, wr_sockets[sidx].queue.tail, wr_sockets[sidx].queue.head);
+  //TRACE_WRAP("%s: remain=%d, tail=%d, head=%d\n", __FUNCTION__, remain, my_sock->queue.tail, my_sock->queue.head);
   //TRACE_WRAP("got: ");
  
 
@@ -522,6 +516,7 @@ int update_rx_queues(void)
   uint8_t sidx, recvd, size;
   uint8_t cpy, i;
   ethhdr_t *hdr;
+  struct my_socket *sock = NULL;
 
   //TRACE_WRAP("%s\n", __FUNCTION__);
 
@@ -537,20 +532,23 @@ int update_rx_queues(void)
   //                                                          hdr->dstmac[6],hdr->dstmac[7]);
   /*received frame, find the right socket*/
   for(sidx=0; sidx<SOCKS_NUM; sidx++)
-  {
-    if( memcmp(hdr->dstmac, wr_sockets[sidx].bind_addr.mac, 6)==0 )
+    if( wr_sockets[sidx].in_use && !memcmp(hdr->dstmac, wr_sockets[sidx].bind_addr.mac, 6))
+    {
+      sock = &wr_sockets[sidx];
       break;  /*they match*/
-  }
-  if(sidx==SOCKS_NUM)
+    }
+
+
+  if(!sock)
   {
-    TRACE_ERR("%s: could not find socket for packet\n", __FUNCTION__);
+    TRACE_WRAP("%s: could not find socket for packet\n", __FUNCTION__);
     return -1;
   }
 
   size = ETH_HEADER_SIZE+recvd+sizeof(struct hw_timestamp);
-  if( size+sizeof(uint8_t) > (SOCKQ_SIZE-wr_sockets[sidx].queue.n) )
+  if( size+sizeof(uint8_t) > (SOCKQ_SIZE-sock->queue.n) )
   {
-    TRACE_ERR("%s: queue for socket %d full; size=%d, n=%d\n", __FUNCTION__, sidx, size, wr_sockets[sidx].queue.n);
+    TRACE_WRAP("%s: queue for socket %d full; size=%d, n=%d\n", __FUNCTION__, sidx, size, sock->queue.n);
     return -1;
   }
   
@@ -571,12 +569,12 @@ int update_rx_queues(void)
 
   while(size) 
   {
-    cpy = min(size, SOCKQ_SIZE-wr_sockets[sidx].queue.head);
-    memcpy( wr_sockets[sidx].queue.buf + wr_sockets[sidx].queue.head, 
+    cpy = min(size, SOCKQ_SIZE-sock->queue.head);
+    memcpy( sock->queue.buf + sock->queue.head, 
             pkg + sizeof(uint8_t) + ETH_HEADER_SIZE+recvd+sizeof(struct hw_timestamp) - size, 
             cpy);
-    wr_sockets[sidx].queue.head = (wr_sockets[sidx].queue.head+cpy) % SOCKQ_SIZE;
-    wr_sockets[sidx].queue.n += cpy;
+    sock->queue.head = (sock->queue.head+cpy) % SOCKQ_SIZE;
+    sock->queue.n += cpy;
     size -= cpy;
   }
   
