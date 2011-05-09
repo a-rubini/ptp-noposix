@@ -4,6 +4,7 @@
 
 void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
+#ifndef WRPC_EXTRA_SLIM
   static int start = 1;
   static char sbuf[SCREEN_BUFSZ];
   char *s;
@@ -53,4 +54,5 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   }
 
   write(1, sbuf, rtOpts->csvStats ? len : SCREEN_MAXSZ + 1);
+#endif
 }
