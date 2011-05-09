@@ -39,7 +39,7 @@ void wr_servo_enable_tracking(int enable)
 
 static void dump_timestamp(char *what, wr_timestamp_t ts)
 {
-	fprintf(stderr, "%s = %lld:%d:%d\n", what, ts.utc, ts.nsec, ts.phase);
+	fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
 }
 
 static int64_t ts_to_picos(wr_timestamp_t ts)
@@ -133,10 +133,17 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
 			ts.phase += extra_nsec * 1000;
 		}
 	}
+	
+/*	if(ts.nsec < 0) {
+	 	ts.nsec += 125000000;
+	 	ts.utc--;
+	}*/
 
 
 	return ts;
 }
+
+static int got_sync = 0;
 
 int wr_servo_init(PtpClock *clock)
 {
@@ -157,8 +164,9 @@ int wr_servo_init(PtpClock *clock)
 	// fixme: full precision
 	s->delta_tx_m = ((int32_t)clock->grandmasterDeltaTx.scaledPicoseconds.lsb) >> 16;
 	s->delta_rx_m = ((int32_t)clock->grandmasterDeltaRx.scaledPicoseconds.lsb) >> 16;
-	s->delta_tx_s = ((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16;
-	s->delta_rx_s = ((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16;
+	s->delta_tx_s = ((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
+	s->delta_rx_s = ((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
+
 
 	cur_servo_state.delta_tx_m = (int64_t)s->delta_tx_m;
 	cur_servo_state.delta_rx_m = (int64_t)s->delta_rx_m;
@@ -179,6 +187,7 @@ int wr_servo_init(PtpClock *clock)
 
 	servo_state_valid = 1;
 	cur_servo_state.valid = 1;
+	got_sync = 0;
 	return 0;
 }
 
@@ -199,12 +208,20 @@ int wr_servo_man_adjust_phase(int phase)
 	return phase;
 }
 
+
 int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 
 	s->t1 = timeint_to_wr(t1);
 	s->t2 = timeint_to_wr(t2);
+
+/*	PTPD_TRACE(TRACE_SERVO, "got_sync\m");
+		dump_timestamp("sync->t1", s->t1);
+		dump_timestamp("sync->t2", s->t2);*/
+
+	got_sync = 1;
+
 	return 0;
 }
 
@@ -230,12 +247,17 @@ int wr_servo_update(PtpClock *clock)
 	wr_timestamp_t ts_offset, ts_offset_hw /*, ts_phase_adjust */;
 	hexp_pps_params_t adjust;
 
+	if(!got_sync)
+		return 0;
+		
+	got_sync = 0;
+
 	if (0) { /* enable for debugging */
-		dump_timestamp("t1", s->t1);
-		dump_timestamp("t2", s->t2);
-		dump_timestamp("t3", s->t3);
-		dump_timestamp("t4", s->t4);
-		dump_timestamp("mdelay", s->mu);
+		dump_timestamp("->t1", s->t1);
+		dump_timestamp("->t2", s->t2);
+		dump_timestamp("->t3", s->t3);
+		dump_timestamp("->t4", s->t4);
+		dump_timestamp("->mdelay", s->mu);
 	}
 
 	s->mu = ts_sub(ts_sub(s->t4, s->t1), ts_sub(s->t3, s->t2));
@@ -247,7 +269,8 @@ int wr_servo_update(PtpClock *clock)
 		+ ((ts_to_picos(s->mu) - big_delta_fix) >> 1) 
 		+ s->delta_tx_m + s->delta_rx_s + ph_adjust;
 
-	PTPD_TRACE(TRACE_SERVO, "delay_ms [ps] = %lld\n", delay_ms_fix);
+	PTPD_TRACE(TRACE_SERVO, "delay_ms [ps] = %d\n", (int32_t) delay_ms_fix);
+	PTPD_TRACE(TRACE_SERVO, "mu = %d mu - deltas  = %d\n", (int32_t) ts_to_picos(s->mu), (int32_t)ts_to_picos(s->mu) - (int32_t)big_delta_fix);
 
 	ts_offset = ts_add(ts_sub(s->t1, s->t2), picos_to_ts(delay_ms_fix));
 	ts_offset_hw = ts_hardwarize(ts_offset);
