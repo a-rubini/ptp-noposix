@@ -183,6 +183,7 @@ int ptpd_netif_init()
 	return PTPD_NETIF_OK;
 }
 
+
 wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 				      wr_sockaddr_t *bind_addr)
 {
@@ -288,6 +289,17 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	tmo_init(&s->dmtd_update_tmo, DMTD_UPDATE_INTERVAL);
 
 	return (wr_socket_t*)s;
+}
+
+int ptpd_netif_close_socket(wr_socket_t *sock)
+{
+	struct my_socket *s = (struct my_socket *) sock;
+
+	if(!s)
+		return 0;
+		
+	close(s->fd);
+	return 0;
 }
 
 static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp);
