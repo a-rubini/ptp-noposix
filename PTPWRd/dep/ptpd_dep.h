@@ -6,22 +6,11 @@
 * \brief Functions used in ptpdv2 which are platform-dependent
  */
 
+#include <stdio.h>
 #include <stdlib.h>		/* needed by sys.c, rand and RAND_MAX */
-//#include <stdio.h>
 #include <string.h>
 #include <unistd.h>		/* sys.c: write, wr_protocol.c: usleep */
-//#include <math.h>
-//#include <errno.h>
-//#include <signal.h>
-//#include <fcntl.h>
-//#include <sys/stat.h>
 #include <time.h>		/* bmc: time, sys.c: nanosleep */
-//#include <limits.h>
-//#include <sys/time.h>
-//#include <sys/socket.h>
-//#include <sys/select.h>
-//#include <sys/ioctl.h>
-//#include <arpa/inet.h>
 
 //#include "ptpd_netif.h"
 
@@ -29,15 +18,16 @@
  /** \name System messages*/
  /**\{*/
 
-#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
+/*#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
 #define PERROR(x, ...) fprintf(stderr, "(ptpd error) " x ": %m\n", ##__VA_ARGS__)
-#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)
+#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)*/
 /** \}*/
 
 /** \name Debug messages*/
  /**\{*/
 
-#ifdef PTPD_DBGV
+
+/*#ifdef PTPD_DBGV
 #define PTPD_DBG
 #define DBGV(x, ...) fprintf(stderr, "(DBG [%s()]) " x,__func__, ##__VA_ARGS__)
 #else
@@ -51,7 +41,8 @@
 #define DBGNPI(x, ...)  fprintf(stderr, "(ptpd debug) " x, ##__VA_ARGS__)
 #else
 #define DBGNPI(x, ...)
-#endif
+#endif*/
+
 
 /** \}*/
 
@@ -202,8 +193,7 @@ Boolean timerExpired(IntervalTimer *itimer);
 /* includes */
 
 
-
-/* debugging facilities */
+/*
 //this DBG we use when there is PtpClock* in the function
 #ifdef PTPD_DBG
 # ifdef PTPD_DBG_S_FUN
@@ -227,6 +217,6 @@ Boolean timerExpired(IntervalTimer *itimer);
 #else
 #define DBGM(x, ...)
 #endif
-
+*/
 
 #endif /*PTPD_DEP_H_*/
