@@ -50,8 +50,6 @@ extern int usleep(unsigned useconds);
 static inline void ptpd_init_exports() {}
 static inline void ptpd_handle_wripc() {}
 
-#endif /* hosted */
-
 #define PPS_WIDTH 1000000
 
 #define printf(x, ...) mprintf(x, ##__VA_ARGS__)
@@ -60,5 +58,9 @@ static inline void ptpd_handle_wripc() {}
 //#define DBG(x, ...) mprintf(x, ##__VA_ARGS__)
 
 int usleep(unsigned useconds);
+
+
+#endif /* hosted */
+
 
 #endif /* __PTPD_WRAPPERS_H__ */
