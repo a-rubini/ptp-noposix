@@ -86,7 +86,7 @@ FREE_OBJS += libposix/freestanding-wrapper.o
 check:
 	@for n in $(CHECKVARS); do \
 	    if [ -z "$$(eval echo \$$$$n)" ]; then \
-	        echo "Please set $n" >& 2; exit 1; \
+	        echo "Please set $$n" >& 2; exit 1; \
 	    fi \
 	done
 
