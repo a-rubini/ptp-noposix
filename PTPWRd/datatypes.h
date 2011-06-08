@@ -485,7 +485,7 @@ typedef struct {
 	 * stored in deltaTx and deltaRx)
 	 * it's TRUE
 	 */
-	Boolean isCalibrated; //WRPTPv2: portCalibrated
+	Boolean calibrated; //changed to V2
 
 	/*
 	 * Fixed elays

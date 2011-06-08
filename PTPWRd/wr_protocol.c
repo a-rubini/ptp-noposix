@@ -220,7 +220,7 @@ Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock )
     ptpClock->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (deltaRx >> 16);
     ptpClock->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (deltaRx << 16);
 
-    ptpClock->isCalibrated = TRUE;
+    ptpClock->calibrated = TRUE;
 
     return TRUE;
 
@@ -470,7 +470,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    issueWRManagement(CALIBRATED,rtOpts, ptpClock);
 #endif	    
 	    toWRState(WRS_CALIBRATED, rtOpts, ptpClock);
-	    ptpClock->isCalibrated = TRUE;
+	    ptpClock->calibrated = TRUE;
 
 
 
@@ -550,7 +550,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   case WRS_WR_LINK_ON:
 	    /*
 	     * While entering the state, we sent WR_MODE_ON to the Master and set wrModeON TRUE and assuming that Master
-	     * is calibrated, set grandmaster to wrModeON and isCalibrated, see (toWRSlaveState())
+	     * is calibrated, set grandmaster to wrModeON and calibrated, see (toWRSlaveState())
 	     */
 
 
@@ -751,7 +751,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     DBGWRFSM("entering  WRS_REQ_CALIBRATION\n");
 
-    if( ptpClock->isCalibrated == TRUE)
+    if( ptpClock->calibrated == TRUE)
     {
       /*
        * NO CALIBRATION NEEDED !!!!!

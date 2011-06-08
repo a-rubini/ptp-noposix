@@ -478,7 +478,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	if(  linkUP == FALSE )
 	{
 		ptpClock->wrModeON = FALSE;
-		ptpClock->isCalibrated = FALSE;
+		ptpClock->calibrated = FALSE;
 		//ptpClock->record_update = TRUE;
 		if(ptpClock->wrMode == WR_MASTER)
 		   ptpClock->wrMode = NON_WR;
@@ -2103,7 +2103,7 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 		  \n\t\tcalibrationPeriod      = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpClock->isCalibrated,			\
+			    !ptpClock->calibrated,			\
 			    (unsigned long long)ptpClock->calibrationPeriod, \
 			    printf_bits(ptpClock->calibrationPattern),	\
 			    (unsigned)ptpClock->calibrationPatternLen);
@@ -2157,7 +2157,7 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 		  \n\t\tcalibrationPeriod      = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpClock->isCalibrated,			\
+			    !ptpClock->calibrated,			\
 			    (unsigned long long)ptpClock->calibrationPeriod, \
 			    printf_bits(ptpClock->calibrationPattern),	\
 			    (unsigned)ptpClock->calibrationPatternLen);

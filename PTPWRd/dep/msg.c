@@ -237,7 +237,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 
 	  
 
-	  if (ptpClock->isCalibrated)
+	  if (ptpClock->calibrated)
 	    wr_flags = WR_IS_CALIBRATED | wr_flags;
 
 	  if (ptpClock->wrModeON)
@@ -783,7 +783,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 
 
 
-	    if(ptpClock->isCalibrated)
+	    if(ptpClock->calibrated)
 	    {
 	      put_be16(buf+54, 0x0000);
 	      DBGM(" calibrationSendPattern........ FALSE \n");
@@ -925,7 +925,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 
 
 
-	    if(ptpClock->isCalibrated)
+	    if(ptpClock->calibrated)
 	    {
 	      put_be16(buf+56, 0x0000);
 	      DBGM(" calibrationSendPattern........ FALSE \n");
