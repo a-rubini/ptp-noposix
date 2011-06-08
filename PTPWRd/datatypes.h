@@ -314,7 +314,7 @@ typedef struct {
 	//WRPTPv2: move these to portDS
 	Boolean parentIsWRnode; 
 	Boolean parentWrModeON; 
-	Boolean grandmasterIsCalibrated;
+	Boolean parentCalibrated;
 	Enumeration8 parentWrNodeMode; //WRPTPv2
 
 	FixedDelta grandmasterDeltaTx; //WRPTPv2: parentPortDeltaTx

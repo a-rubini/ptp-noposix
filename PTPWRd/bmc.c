@@ -210,12 +210,12 @@ void m1(PtpClock *ptpClock)
 	ptpClock->parentWrConfig      	  = ptpClock->wrConfig;
 	ptpClock->parentIsWRnode     = (ptpClock->wrConfig != NON_WR) ;
 	ptpClock->parentWrModeON     = ptpClock->wrModeON;
-	ptpClock->grandmasterIsCalibrated = ptpClock->calibrated;
+	ptpClock->parentCalibrated = ptpClock->calibrated;
 #else
 	ptpClock->parentWrNodeMode   = ptpClock->wrMode;
 	ptpClock->parentIsWRnode     = (ptpClock->wrMode != NON_WR) ;
 	ptpClock->parentWrModeON     = ptpClock->wrModeON;
-	ptpClock->grandmasterIsCalibrated = ptpClock->calibrated;
+	ptpClock->parentCalibrated = ptpClock->calibrated;
 #endif	
 
 	/*Time Properties data set*/
@@ -245,11 +245,11 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	/*White Rabbit*/
 	ptpClock->parentIsWRnode    	 = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpClock->parentWrModeON     	  = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
-	ptpClock->grandmasterIsCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
+	ptpClock->parentCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
 	DBGBMC(" S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
 	DBGBMC(" S1: parentIsWRnode............ 0x%x\n", ptpClock->parentIsWRnode);
 	DBGBMC(" S1: parentWrModeON............ 0x%x\n", ptpClock->parentWrModeON);
-	DBGBMC(" S1: grandmasterIsCalibrated... 0x%x\n", ptpClock->grandmasterIsCalibrated);	
+	DBGBMC(" S1: parentCalibrated.......... 0x%x\n", ptpClock->parentCalibrated);	
 #ifdef WRPTPv2
 	ptpClock->parentWrConfig      =   announce->wr_flags & WR_NODE_MODE;
 	DBGBMC(" S1: parentWrConfig.......  0x%x\n", ptpClock->parentWrConfig);
