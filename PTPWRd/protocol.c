@@ -94,8 +94,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       /*
       fixme:
 
-      if(currentPtpClockData->wrNodeMode == WR_MASTER && currentPtpClockData->portIdentity.portNumber  == 7 || \
-	 currentPtpClockData->wrNodeMode == WR_SLAVE  && currentPtpClockData->portIdentity.portNumber  == 10  )
+      if(currentPtpClockData->wrMode == WR_MASTER && currentPtpClockData->portIdentity.portNumber  == 7 || \
+	 currentPtpClockData->wrMode == WR_SLAVE  && currentPtpClockData->portIdentity.portNumber  == 10  )
       */
       do
       {
@@ -289,7 +289,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     * First we check whether the port is WR Slave enabled
     * and the parentPort is WR Master enabled
     *****************************************************/
-    if( ptpClock->wrNodeMode            == WR_SLAVE   &&
+    if( ptpClock->wrMode            == WR_SLAVE   &&
        (ptpClock->portWrConfig          == WR_S_ONLY  || \
 	ptpClock->portWrConfig          == WR_M_AND_S)&& \
 	(ptpClock->parentPortWrConfig   == WR_M_ONLY  || \
@@ -305,13 +305,13 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	break;
       }
     }
-    else if(ptpClock->wrNodeMode != WR_MASTER) 
+    else if(ptpClock->wrMode != WR_MASTER) 
     {// one of the ports on the link is not WR-enabled
-      ptpClock->wrNodeMode = NON_WR;
+      ptpClock->wrMode = NON_WR;
     }
     
 #else
-    if( ptpClock->wrNodeMode            == WR_SLAVE  && \
+    if( ptpClock->wrMode            == WR_SLAVE  && \
         ptpClock->grandmasterWrNodeMode == WR_MASTER && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->isWRmode             == FALSE     ))
@@ -335,7 +335,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      *
      */
     
-    if(ptpClock->wrNodeMode == WR_MASTER)
+    if(ptpClock->wrMode == WR_MASTER)
     {
       DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
       
@@ -449,7 +449,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
   if(ptpClock->portWrConfig != NON_WR)
 #else
-  if(ptpClock->wrNodeMode != NON_WR)
+  if(ptpClock->wrMode != NON_WR)
 #endif    
   {
     initWRcalibration(ptpClock->netPath.ifaceName, ptpClock);
@@ -480,8 +480,8 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		ptpClock->isWRmode = FALSE;
 		ptpClock->isCalibrated = FALSE;
 		//ptpClock->record_update = TRUE;
-		if(ptpClock->wrNodeMode == WR_MASTER)
-		   ptpClock->wrNodeMode = NON_WR;
+		if(ptpClock->wrMode == WR_MASTER)
+		   ptpClock->wrMode = NON_WR;
 		
 
 		/* if the link goes down, go to FAULTY state immediately */
@@ -528,12 +528,12 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					   (ptpClock->parentPortWrConfig    == WR_M_ONLY  || \
 					    ptpClock->parentPortWrConfig    == WR_M_AND_S))
 					{
-					  DBG("wrNodeMode <= WR_SLAVE\n");
-					  ptpClock->wrNodeMode  = WR_SLAVE;
+					  DBG("wrMode <= WR_SLAVE\n");
+					  ptpClock->wrMode  = WR_SLAVE;
 					}
 					*/
 					/* Candidate for WR Slave */
-					ptpClock->wrNodeMode  = WR_SLAVE;
+					ptpClock->wrMode  = WR_SLAVE;
 					DBG("recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
 					DBG("recommended wrMode = WR_SLAVE\n");
 					toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
@@ -561,7 +561,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		 		  */
 		 
 				  if(ptpClock->portState	    == PTP_SLAVE && \
-				     ptpClock->wrNodeMode           == WR_SLAVE  && \
+				     ptpClock->wrMode           == WR_SLAVE  && \
 		   		    (ptpClock->grandmasterIsWRmode  == FALSE     || \
 		   		     ptpClock->isWRmode             == FALSE     ))
 		 		  {
@@ -600,7 +600,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 		/* Execute WR protocol state machine */
 
-		if(ptpClock->wrNodeMode == WR_SLAVE || ptpClock->wrNodeMode == WR_MASTER)
+		if(ptpClock->wrMode == WR_SLAVE || ptpClock->wrMode == WR_MASTER)
 			/* handling messages inside: handle()*/
 			doWRState(rtOpts, ptpClock);
 		else
@@ -625,7 +625,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 			DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
 			ptpClock->number_foreign_records = 0;
 			ptpClock->foreign_record_i = 0;
-			ptpClock->wrNodeMode = NON_WR;
+			ptpClock->wrMode = NON_WR;
 
 			if(!ptpClock->slaveOnly && ptpClock->clockQuality.clockClass != 255  )
 			{
@@ -892,7 +892,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		/* White Rabbit Extension */
 		//TODO: maybe change to portWrConfig
-		if(ptpClock->wrNodeMode != NON_WR)
+		if(ptpClock->wrMode != NON_WR)
 		{
 			DBGV("Handle Announce: drop messages other than management in WR mode\n");
 			return;
@@ -989,7 +989,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 		case PTP_UNCALIBRATED:
 			/* White Rabbit */
-			if(ptpClock->wrNodeMode != NON_WR)
+			if(ptpClock->wrMode != NON_WR)
 			{
 				DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
 				return;
@@ -1102,7 +1102,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		case PTP_UNCALIBRATED:
 
 		  /*White Rabbit */
-		  if(ptpClock->wrNodeMode != NON_WR)
+		  if(ptpClock->wrMode != NON_WR)
 		  {
 		    DBGV("Handleannounce WR mode: disregaurd messages other than management \n");
 		    return;
@@ -1740,7 +1740,7 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	* which identifies itself and the calibration is statrted
 	* if the calibration is already being done, just ignore this
 	*/
-	if(ptpClock->wrNodeMode        == WR_MASTER &&
+	if(ptpClock->wrMode        == WR_MASTER &&
 	   ptpClock->msgTmpManagementId == SLAVE_PRESENT && 
 	   ptpClock->portState          != PTP_UNCALIBRATED )
 	  toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
@@ -1824,8 +1824,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	   ptpClock->portWrConfig      == WR_M_AND_S     ))
 	{
 	     ///////// fucken important !! /////////////
-	     DBGWRFSM("wrNodeMode <= WR_MASTER\n");
-	     ptpClock->wrNodeMode = WR_MASTER;
+	     DBGWRFSM("wrMode <= WR_MASTER\n");
+	     ptpClock->wrMode = WR_MASTER;
 	     ///////////////////////////////////////////
 	     toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
 	}
@@ -1847,7 +1847,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 #ifdef WRPTPv2
 	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrNodeMode != NON_WR)
+	if (ptpClock->wrMode != NON_WR)
 #endif
 	
 		announce_len = WR_ANNOUNCE_LENGTH;
@@ -1862,7 +1862,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	}
 	else
 	{
-		if (ptpClock->wrNodeMode != NON_WR)
+		if (ptpClock->wrMode != NON_WR)
 		  DBG("issue  ..... WR ANNOUNCE : succedded \n");
 		else
 		  DBG("issue  ..... ANNOUNCE : succedded \n");

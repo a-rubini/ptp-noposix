@@ -256,7 +256,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 #ifdef WRPTPv2
 	   rtOpts->portWrConfig = WR_S_ONLY;
 #else
-	   rtOpts->wrNodeMode = WR_SLAVE;
+	   rtOpts->wrMode = WR_SLAVE;
 #endif	   
 
 	   DBGNPI("WR Slave\n");
@@ -266,7 +266,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 #ifdef WRPTPv2
 	   rtOpts->portWrConfig = WR_M_ONLY;
 #else     
-	   rtOpts->wrNodeMode = WR_MASTER;
+	   rtOpts->wrMode = WR_MASTER;
 #endif	   
 
 	   DBGNPI("WR Master\n");

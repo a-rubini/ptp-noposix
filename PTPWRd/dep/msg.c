@@ -186,7 +186,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 #ifdef WRPTPv2
 	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrNodeMode != NON_WR)
+	if (ptpClock->wrMode != NON_WR)
 #endif	  
 	   put_be16(buf + 2,WR_ANNOUNCE_LENGTH);
 	else
@@ -227,12 +227,12 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  *(UInteger16*)(buf+74) = flip16(ANN_SUFIX);
 	  wr_flags = wr_flags | ptpClock->portWrConfig;
 #else
-	if (ptpClock->wrNodeMode != NON_WR)
+	if (ptpClock->wrMode != NON_WR)
 	{
 	  *(UInteger16*)(buf+64) = flip16(WR_TLV_TYPE);
 	  *(UInteger16*)(buf+66) = flip16(WR_ANNOUNCE_TLV_LENGTH);
 	  
-	  wr_flags = wr_flags | ptpClock->wrNodeMode;
+	  wr_flags = wr_flags | ptpClock->wrMode;
 #endif
 
 	  
@@ -253,7 +253,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 #ifdef WRPTPv2
 	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrNodeMode != NON_WR)
+	if (ptpClock->wrMode != NON_WR)
 #endif	  
 	  DBGM(" messageLength................. %u\n", WR_ANNOUNCE_LENGTH);
 	else
@@ -290,7 +290,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
 	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", ANN_SUFIX);
 #else
-	if (ptpClock->wrNodeMode != NON_WR)
+	if (ptpClock->wrMode != NON_WR)
 	{
 	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", WR_TLV_TYPE);
 	  DBGM(" [WR suffix] tlv_length........ %d\n",   WR_ANNOUNCE_TLV_LENGTH);
@@ -732,7 +732,7 @@ void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_managementId)
 {
 
-	if (ptpClock->wrNodeMode == NON_WR)
+	if (ptpClock->wrMode == NON_WR)
 	  return 0;
 
 	/*changes in header*/
@@ -871,7 +871,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrMessageID)
 {
 
-	if (ptpClock->wrNodeMode == NON_WR || \
+	if (ptpClock->wrMode == NON_WR || \
 	    wrMessageID          == ANN_SUFIX)
 	  return 0;
 

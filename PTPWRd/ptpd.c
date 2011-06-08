@@ -31,7 +31,7 @@ RunTimeOpts rtOpts = {
 
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
-   .wrNodeMode 		= NON_WR,
+   .wrMode 		= NON_WR,
    .calibrationPeriod     = WR_DEFAULT_CAL_PERIOD,
    .calibrationPattern    = WR_DEFAULT_CAL_PATTERN,
    .calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN,
@@ -66,12 +66,12 @@ int main(int argc, char **argv)
     for(i = 0; i < rtOpts.portNumber; i++)
     {
 
-      if(i == 0 && rtOpts.wrNodeMode == WR_SLAVE)
-	DBG("wrNodeMode    [port = %d] ........ Slave \n",i+1);
-      else if(rtOpts.wrNodeMode != NON_WR)
-	DBG("wrNodeMode    [port = %d] ........ Master\n",i+1);
+      if(i == 0 && rtOpts.wrMode == WR_SLAVE)
+	DBG("wrMode    [port = %d] ........ Slave \n",i+1);
+      else if(rtOpts.wrMode != NON_WR)
+	DBG("wrMode    [port = %d] ........ Master\n",i+1);
       else
-	DBG("wrNodeMode    [port = %d] ........ NON WR\n",i+1);
+	DBG("wrMode    [port = %d] ........ NON WR\n",i+1);
     }
     if(rtOpts.portNumber == 1)
 	DBG("running as ...................... single port node\n");
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
 
 
-//    if(rtOpts.wrNodeMode == WR_SLAVE)
+//    if(rtOpts.wrMode == WR_SLAVE)
 //    	ptpd_init_exports();
 
   /* do the protocol engine */

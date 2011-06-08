@@ -65,7 +65,7 @@ void wrTimetoutManage(UInteger8,UInteger8, RunTimeOpts *rtOpts,
   this function checks if wr timer has expired for a current WR state
 */
 void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts,
-		    PtpClock *ptpClock, Enumeration8 wrNodeMode);
+		    PtpClock *ptpClock, Enumeration8 wrMode);
 
 /*
   this function comes as a consequence of implementing substates.

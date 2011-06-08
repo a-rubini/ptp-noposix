@@ -191,7 +191,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
    if(rtOpts->portWrConfig == NON_WR)
 #else
-   if(rtOpts->wrNodeMode == NON_WR)
+   if(rtOpts->wrMode == NON_WR)
 #endif     
    {
      switch(pstate.mode)
@@ -199,37 +199,37 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
        case HEXP_PORT_MODE_WR_M_AND_S:
 
-	  DBG("wrNodeMode(auto config) ....... MASTER & SLAVE\n");
+	  DBG("wrMode(auto config) ....... MASTER & SLAVE\n");
 	  ptpClock->portWrConfig = WR_M_AND_S;
 	  break;
 #endif	  
 	case HEXP_PORT_MODE_WR_MASTER:
-	   DBG("wrNodeMode(auto config) ....... MASTER\n");
+	   DBG("wrMode(auto config) ....... MASTER\n");
 #ifdef WRPTPv2
 	   ptpClock->portWrConfig = WR_M_ONLY;
 #else	   
-	   ptpClock->wrNodeMode = WR_MASTER;
+	   ptpClock->wrMode = WR_MASTER;
 #endif	   
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_WR_SLAVE:
-	   DBG("wrNodeMode(auto config) ........ SLAVE\n");
+	   DBG("wrMode(auto config) ........ SLAVE\n");
 #ifdef WRPTPv2
 //TODO: change
 	   ptpClock->portWrConfig = WR_S_ONLY;
 #else	   
-	   ptpClock->wrNodeMode = WR_SLAVE;
+	   ptpClock->wrMode = WR_SLAVE;
 #endif	   
 	   ptpd_init_exports();
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_NON_WR:
 	default:
-	   DBG("wrNodeMode(auto config) ........ NON_WR\n");
+	   DBG("wrMode(auto config) ........ NON_WR\n");
 #ifdef WRPTPv2
 	   ptpClock->portWrConfig = NON_WR;
 #else	   
-	   ptpClock->wrNodeMode = NON_WR;
+	   ptpClock->wrMode = NON_WR;
 #endif	   
 	   //tmp solution
 	   break;
@@ -239,9 +239,9 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
      ptpClock->portWrConfig = rtOpts->portWrConfig;
 #else
-     ptpClock->wrNodeMode = rtOpts->wrNodeMode;
+     ptpClock->wrMode = rtOpts->wrMode;
 #endif     
-     DBG("wrNodeMode (............ FORCE ON STARTUP\n");
+     DBG("wrMode (............ FORCE ON STARTUP\n");
    }
 
 

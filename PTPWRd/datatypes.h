@@ -451,14 +451,14 @@ typedef struct {
 	 * Its important that the node knows what it is,
 	 * by default PTPd runs in NON_WR
 	 */
-	Enumeration8 wrNodeMode; //WRPTPv2: portWrConfig
+	Enumeration8 wrMode; //WRPTPv2: 
 
 	/*
 	 * tell us whether we work in WR
 	 * mode at the moment
 	 * starts with FALSE
 	 */
-	Boolean isWRmode; //WRPTPv2: portWrMode
+	Boolean isWRmode; //WRPTPv2: 
 #ifdef WRPTPv2	
 	/*
 	 * Indicates current WR Mode of the port.
@@ -467,7 +467,7 @@ typedef struct {
 	 * WR_SLAVE
 	 * WR_MASTER
 	 */	
-	Enumeration8 portWrMode;
+	//Enumeration8 portWrMode;
 
 	/*
 	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
@@ -614,7 +614,7 @@ typedef struct {
 
 	/********* White Rabbit ********/
 	UInteger16	portNumber;
-	Enumeration8	wrNodeMode;
+	Enumeration8	wrMode;
 	UInteger32	calibrationPeriod;
 	UInteger32	calibrationPattern;
 	UInteger16	calibrationPatternLen;

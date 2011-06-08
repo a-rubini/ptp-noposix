@@ -158,7 +158,7 @@ void wrTimetoutManage(UInteger8 enteringState, UInteger8 exitingState, RunTimeOp
 /*
 this function checks if wr timer has expired for a current WR state
 */
-void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpClock, Enumeration8 wrNodeMode)
+void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpClock, Enumeration8 wrMode)
 {
   /*WRS_IDLE state does not expire */
   if(currentState == WRS_IDLE)
@@ -177,7 +177,7 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
 	ptpClock->isWRmode = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpClock);
 
-	if(wrNodeMode == WR_MASTER)
+	if(wrMode == WR_MASTER)
 	  toState(PTP_MASTER, rtOpts, ptpClock);
 	else
 	  toState(PTP_SLAVE, rtOpts, ptpClock);
@@ -373,7 +373,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       //substate 0  	- locking_enable failed when called while entering this state (toWRSlaveState()) so we
       //		  we need to try again
 
-        if(ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
+        if(ptpd_netif_locking_enable(ptpClock->wrMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
 	  {
 	    DBGWRFSM("LockingSuccess\n");
 	    ptpClock->wrPortState = WRS_S_LOCK_1; //success, go ahead
@@ -383,14 +383,14 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       //substate 1 	- polling HW
       case WRS_S_LOCK_1:
 
-	 if(ptpd_netif_locking_poll(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_READY)
+	 if(ptpd_netif_locking_poll(ptpClock->wrMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_READY)
 	    ptpClock->wrPortState = WRS_S_LOCK_2; //next level achieved
 
 	 break; //try again
 
       //substate 2 	- somehow, HW disagree to disable locking, so try again, and again...until timeout
       case WRS_S_LOCK_2:
-	  if(ptpd_netif_locking_disable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK);
+	  if(ptpd_netif_locking_disable(ptpClock->wrMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK);
 	    toWRState(WRS_LOCKED, rtOpts, ptpClock);
 	  break;
   /**********************************  M_LOCK  ***************************************************************************/
@@ -480,16 +480,16 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    handle(rtOpts, ptpClock);
 
 #ifdef WRPTPv2    
-	    if(ptpClock->msgTmpWrMessageID == CALIBRATE && ptpClock->wrNodeMode == WR_MASTER)
+	    if(ptpClock->msgTmpWrMessageID == CALIBRATE && ptpClock->wrMode == WR_MASTER)
 	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpClock);
 	    
-	    if(ptpClock->msgTmpWrMessageID == WR_MODE_ON && ptpClock->wrNodeMode == WR_SLAVE)
+	    if(ptpClock->msgTmpWrMessageID == WR_MODE_ON && ptpClock->wrMode == WR_SLAVE)
 	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpClock);
 #else
-	    if(ptpClock->msgTmpManagementId == CALIBRATE && ptpClock->wrNodeMode == WR_MASTER)
+	    if(ptpClock->msgTmpManagementId == CALIBRATE && ptpClock->wrMode == WR_MASTER)
 	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpClock);
 
-	    if(ptpClock->msgTmpManagementId == WR_MODE_ON && ptpClock->wrNodeMode == WR_SLAVE)
+	    if(ptpClock->msgTmpManagementId == WR_MODE_ON && ptpClock->wrMode == WR_SLAVE)
 	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpClock);
 #endif
 	    break;
@@ -534,9 +534,9 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
       case WRS_RESP_CALIB_REQ_3:
 
-	  if(ptpClock->wrNodeMode == WR_MASTER)
+	  if(ptpClock->wrMode == WR_MASTER)
 	    toWRState(WRS_WR_LINK_ON, rtOpts, ptpClock);
-	  else if(ptpClock->wrNodeMode == WR_SLAVE)
+	  else if(ptpClock->wrMode == WR_SLAVE)
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpClock);
 	  else
 	  {
@@ -554,9 +554,9 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	     */
 
 
-	    if(ptpClock->wrNodeMode == WR_SLAVE)
+	    if(ptpClock->wrMode == WR_SLAVE)
 	      toState(PTP_SLAVE, rtOpts, ptpClock);
-	    else if(ptpClock->wrNodeMode == WR_MASTER)
+	    else if(ptpClock->wrMode == WR_MASTER)
 	      toState(PTP_MASTER, rtOpts, ptpClock);
 	    else
 	      DBGWRFSM("SHIT !!!\n");
@@ -581,7 +581,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   UInteger8 currentState = returnCurrentWRMainState(ptpClock);
 
   /* handling timeouts globally, may chage state*/
-  wrTimerExpired(currentState,rtOpts,ptpClock,ptpClock->wrNodeMode);
+  wrTimerExpired(currentState,rtOpts,ptpClock,ptpClock->wrMode);
 
 }
 
@@ -614,9 +614,9 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     DBGWRFSM("\n");
     DBGWRFSM("\n");
     DBGWRFSM("\n");
-    if(ptpClock->wrNodeMode== WR_MASTER)
+    if(ptpClock->wrMode== WR_MASTER)
     DBGWRFSM("                            W R   M A S T E R\n");
-    else if(ptpClock->wrNodeMode== WR_SLAVE)
+    else if(ptpClock->wrMode== WR_SLAVE)
     DBGWRFSM("                             W R   S L A V E \n");
     else
     DBGWRFSM("                        I SHOULD NOT SHOW THIS MSG !!! \n");
@@ -709,7 +709,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     DBGWRFSM("entering  WR_LOCK (modded?)\n");
 
 
-    if( ptpd_netif_locking_enable(ptpClock->wrNodeMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
+    if( ptpd_netif_locking_enable(ptpClock->wrMode, ptpClock->netPath.ifaceName) == PTPD_NETIF_OK)
       ptpClock->wrPortState = WRS_S_LOCK_1; //go to substate 1
     else
      ptpClock->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
@@ -833,7 +833,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
     ptpClock->isWRmode = TRUE;
 
-    if(ptpClock->wrNodeMode == WR_MASTER)
+    if(ptpClock->wrMode == WR_MASTER)
 #ifdef WRPTPv2
       issueWRSignalingMsg(WR_MODE_ON,rtOpts, ptpClock);
 #else      

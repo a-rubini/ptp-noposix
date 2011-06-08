@@ -39,15 +39,15 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	/* If priority not defined at the runtime, set it high for the WR master*/
 #ifdef WRPTPv2	
-	// initial value of wrNodeMode 
+	// initial value of wrMode 
 	
-	ptpClock->wrNodeMode = NON_WR;
+	ptpClock->wrMode = NON_WR;
 	
 	
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->portWrConfig != NON_WR)
 	  ptpClock->priority1 = WR_PRIORITY1;
 #else
-	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrNodeMode == WR_MASTER)
+	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrMode == WR_MASTER)
 	  ptpClock->priority1 = WR_MASTER_PRIORITY1;
 #endif	  
 	  
@@ -90,7 +90,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
 	if(ptpClock->portWrConfig != NON_WR)
 #else
-	if(ptpClock->wrNodeMode != NON_WR)
+	if(ptpClock->wrMode != NON_WR)
 #endif	  
 	{
 	  /* we want White Rabbit daemon, so here we are */
@@ -107,9 +107,9 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2
             // do nothing, we want it to be standard :)
 #else
-	    if( ptpClock->wrNodeMode == WR_MASTER)
+	    if( ptpClock->wrMode == WR_MASTER)
 	      ptpClock->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
-	    else if(ptpClock->wrNodeMode == WR_SLAVE)
+	    else if(ptpClock->wrMode == WR_SLAVE)
 	      ptpClock->clockQuality.clockClass = WR_SLAVE_CLOCK_CLASS;
 #endif	    
 	  }
@@ -124,20 +124,20 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 // 	     * true for WR, but must be enough for the time being)
 // 	     * so the first port is the one which can be WR Slave
 // 	     */
-// 	    ptpClock->wrNodeMode     		  = rtOpts->wrNodeMode;
+// 	    ptpClock->wrMode     		  = rtOpts->wrMode;
 // 	  }
 // 	  else
 // 	  {
 // 	    /* All the other ports except port = 1 are
 // 	     * WR Masters and no discussion about that
 // 	     */
-// 	    ptpClock->wrNodeMode                 = WR_MASTER;
+// 	    ptpClock->wrMode                 = WR_MASTER;
 // 	  }
 	}
 	else
 	{
 	  /* normal PTP daemon on all ports */
-	  //ptpClock->wrNodeMode                   = NON_WR;
+	  //ptpClock->wrMode                   = NON_WR;
 	}
 
 	ptpClock->isWRmode      		 = FALSE;
@@ -212,8 +212,8 @@ void m1(PtpClock *ptpClock)
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #else
-	ptpClock->grandmasterWrNodeMode   = ptpClock->wrNodeMode;
-	ptpClock->grandmasterIsWRnode     = (ptpClock->wrNodeMode != NON_WR) ;
+	ptpClock->grandmasterWrNodeMode   = ptpClock->wrMode;
+	ptpClock->grandmasterIsWRnode     = (ptpClock->wrMode != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #endif	
@@ -292,7 +292,7 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
 
 #else
-	announce->wr_flags = (announce->wr_flags | ptpClock->wrNodeMode) & WR_NODE_MODE  ;
+	announce->wr_flags = (announce->wr_flags | ptpClock->wrMode) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
 #endif	
