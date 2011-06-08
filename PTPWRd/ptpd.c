@@ -32,7 +32,7 @@ RunTimeOpts rtOpts = {
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
    .wrMode 		= NON_WR,
-   .calibrationPeriod     = WR_DEFAULT_CAL_PERIOD,
+   .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
    .calibrationPattern    = WR_DEFAULT_CAL_PATTERN,
    .calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN,
    .E2E_mode 		= TRUE,

@@ -165,7 +165,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->wrPortState = PTPWR_IDLE;
 #endif
 
-	ptpClock->calibrationPeriod = rtOpts->calibrationPeriod;
+	ptpClock->calPeriod = rtOpts->calPeriod;
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
 	ptpClock->calibrationPatternLen = rtOpts->calibrationPatternLen;
 

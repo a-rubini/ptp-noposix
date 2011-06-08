@@ -793,7 +793,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 	      put_be16(buf+54, 0x0001);
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
-	    put_be32(buf+56, ptpClock->calibrationPeriod);
+	    put_be32(buf+56, ptpClock->calPeriod);
 	    put_be32(buf+60, ptpClock->calibrationPattern);
 	    put_be16(buf+64, ptpClock->calibrationPatternLen);
 	    len = 12;
@@ -802,14 +802,14 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
  	  case SLAVE_CALIBRATE:
  	  case MASTER_CALIBRATE:
 
-	    put_be32(buf+54, ptpClock->calibrationPeriod);
+	    put_be32(buf+54, ptpClock->calPeriod);
 	    put_be32(buf+58, ptpClock->calibrationPattern);
 	    put_be16(buf+62, ptpClock->calibrationPatternLen);
 	    len = 10;
 
 #endif
 
-	    DBGM(" calibrationPeriod............. %u [us]\n", ptpClock->calibrationPeriod);
+	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
 	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
 
@@ -935,13 +935,13 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	      put_be16(buf+56, 0x0001);
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
-	    put_be32(buf+58, ptpClock->calibrationPeriod);
+	    put_be32(buf+58, ptpClock->calPeriod);
 	    put_be32(buf+62, ptpClock->calibrationPattern);
 	    put_be16(buf+66, ptpClock->calibrationPatternLen);
 	    len = 20;
 
 
-	    DBGM(" calibrationPeriod............. %u [us]\n", ptpClock->calibrationPeriod);
+	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
 	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
 
@@ -1080,7 +1080,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 		DBGM(" calibrationSendPattern........ FALSE \n");
 
 
-	      DBGM(" calibrationPeriod............. %u [us]\n", ptpClock->calibrationPeriod);
+	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
 	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
 
@@ -1188,7 +1188,7 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 
 #endif
 
-	      DBGM(" calibrationPeriod............. %u [us]\n", ptpClock->calibrationPeriod);
+	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
 	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
 

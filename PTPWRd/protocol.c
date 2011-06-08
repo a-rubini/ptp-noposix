@@ -1686,7 +1686,7 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 		DBG("WR Management msg [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
-	\n\tcalibrationPeriod     = %32lld us		\
+	\n\tcalPeriod             = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
 	\n\tcalibrationPatternLen = %32d bits",\
 		    ptpClock->otherNodeCalibrationSendPattern,	  \
@@ -1770,7 +1770,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 		DBG("handle ..... WR_SIGNALING, [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
-	\n\tcalibrationPeriod     = %32lld us		\
+	\n\tcalPeriod    	  = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
 	\n\tcalibrationPatternLen = %32d bits\n",\
 		    ptpClock->otherNodeCalibrationSendPattern,	  \
@@ -2100,11 +2100,11 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 		case CALIBRATE:
 			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
-		  \n\t\tcalibrationPeriod      = %32lld us		\
+		  \n\t\tcalPeriod    	       = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
 			    !ptpClock->calibrated,			\
-			    (unsigned long long)ptpClock->calibrationPeriod, \
+			    (unsigned long long)ptpClock->calPeriod, \
 			    printf_bits(ptpClock->calibrationPattern),	\
 			    (unsigned)ptpClock->calibrationPatternLen);
 
@@ -2154,11 +2154,11 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 		case CALIBRATE:
 			DBG("\n\nissue WR Management msg [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
-		  \n\t\tcalibrationPeriod      = %32lld us		\
+		  \n\t\tcalPeriod      	       = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
 			    !ptpClock->calibrated,			\
-			    (unsigned long long)ptpClock->calibrationPeriod, \
+			    (unsigned long long)ptpClock->calPeriod, \
 			    printf_bits(ptpClock->calibrationPattern),	\
 			    (unsigned)ptpClock->calibrationPatternLen);
 

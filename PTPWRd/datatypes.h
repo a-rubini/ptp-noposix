@@ -498,7 +498,7 @@ typedef struct {
 	 * current port
 	 */
 
-	UInteger32 calibrationPeriod;//[us]  //WRPTPv2: portCalPeriod
+	UInteger32 calPeriod;//[us]  //WRPTPv2: portCalPeriod
 	UInteger32 calibrationPattern;       //WRPTPv2: portCalPattern
 	UInteger16 calibrationPatternLen;    //WRPTPv2: portCalPatternLen
   
@@ -615,7 +615,7 @@ typedef struct {
 	/********* White Rabbit ********/
 	UInteger16	portNumber;
 	Enumeration8	wrMode;
-	UInteger32	calibrationPeriod;
+	UInteger32	calPeriod;
 	UInteger32	calibrationPattern;
 	UInteger16	calibrationPatternLen;
 	//tmp
