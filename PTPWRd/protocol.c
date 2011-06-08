@@ -479,12 +479,15 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	{
 		ptpClock->isWRmode = FALSE;
 		ptpClock->isCalibrated = FALSE;
-		ptpClock->record_update = TRUE;
+		//ptpClock->record_update = TRUE;
+		if(ptpClock->wrNodeMode == WR_MASTER)
+		   ptpClock->wrNodeMode = NON_WR;
+		
 
 		/* if the link goes down, go to FAULTY state immediately */
 
-		toState(PTP_FAULTY, rtOpts, ptpClock);
-		return;
+		//toState(PTP_FAULTY, rtOpts, ptpClock);
+		//return;
 	}
 
 	ptpClock->message_activity = FALSE;
@@ -614,20 +617,22 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_PASSIVE:
 	case PTP_SLAVE:
 
-		handle(rtOpts, ptpClock);
+		//if( linkUP == TRUE)
+		  handle(rtOpts, ptpClock);
 
 		if(timerExpired(&ptpClock->timers.announceReceipt) || linkUP == FALSE)
 		{
 			DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
 			ptpClock->number_foreign_records = 0;
 			ptpClock->foreign_record_i = 0;
+			ptpClock->wrNodeMode = NON_WR;
 
 			if(!ptpClock->slaveOnly && ptpClock->clockQuality.clockClass != 255  )
 			{
 				m1(ptpClock);
 				toState(PTP_MASTER, rtOpts, ptpClock);
 			}
-			else if (ptpClock->portState != PTP_LISTENING)
+			else if (ptpClock->portState != PTP_LISTENING) //???/
 				toState(PTP_LISTENING, rtOpts, ptpClock);
 		}
 
@@ -651,12 +656,13 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	case PTP_MASTER:
 
-		handle(rtOpts, ptpClock);
+		//if( linkUP == TRUE)
+		  handle(rtOpts, ptpClock);
 
 		if(timerExpired(&ptpClock->timers.sync))
 		{
 
-			DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n");
+			DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n"); 
 			issueSync(rtOpts, ptpClock);
 			issueFollowup(rtOpts,ptpClock);
 		}
@@ -684,7 +690,8 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 
 	case PTP_DISABLED:
-		handle(rtOpts, ptpClock);
+		//if( linkUP == TRUE)
+		  handle(rtOpts, ptpClock);
 		break;
 
 	default:

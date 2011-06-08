@@ -209,7 +209,7 @@ Boolean timerExpired(IntervalTimer *itimer);
 # ifdef PTPD_DBG_S_FUN
 #  define DBG(x, ...)  fprintf(stderr, "(DBG [p=%d, %15s()]) " x, ptpClock->portIdentity.portNumber,__func__, ##__VA_ARGS__)
 # else
-#  define DBG(x, ...)  fprintf(stderr, "(DBG [p=%d]) " x, ptpClock->portIdentity.portNumber, ##__VA_ARGS__)
+#  define DBG(x, ...)  fprintf(stderr, "(DBG [p=%d] wrMode: %s%s%s) " x, ptpClock->portIdentity.portNumber,(ptpClock->isWRmode== TRUE ? "ON->" : "OFF "),(ptpClock->wrNodeMode== WR_MASTER ? "MASTER" : ""),(ptpClock->wrNodeMode== WR_SLAVE ? "SLAVE" : ""), ##__VA_ARGS__)
 # endif
 #else
 # define DBG(x, ...)
