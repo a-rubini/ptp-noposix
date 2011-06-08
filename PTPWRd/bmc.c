@@ -207,12 +207,12 @@ void m1(PtpClock *ptpClock)
 
 	/*White Rabbit*/
 #ifdef WRPTPv2
-	ptpClock->parentPortWrConfig      = ptpClock->wrConfig;
+	ptpClock->parentWrConfig      	  = ptpClock->wrConfig;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrConfig != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->wrModeON;
 	ptpClock->grandmasterIsCalibrated = ptpClock->calibrated;
 #else
-	ptpClock->grandmasterWrNodeMode   = ptpClock->wrMode;
+	ptpClock->parentWrNodeMode   = ptpClock->wrMode;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrMode != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->wrModeON;
 	ptpClock->grandmasterIsCalibrated = ptpClock->calibrated;
@@ -251,11 +251,11 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpClock *ptpClock)
 	DBGBMC(" S1: grandmasterIsWRmode....... 0x%x\n", ptpClock->grandmasterIsWRmode);
 	DBGBMC(" S1: grandmasterIsCalibrated... 0x%x\n", ptpClock->grandmasterIsCalibrated);	
 #ifdef WRPTPv2
-	ptpClock->parentPortWrConfig      =   announce->wr_flags & WR_NODE_MODE;
-	DBGBMC(" S1: parentPortWrConfig.......  0x%x\n", ptpClock->parentPortWrConfig);
+	ptpClock->parentWrConfig      =   announce->wr_flags & WR_NODE_MODE;
+	DBGBMC(" S1: parentWrConfig.......  0x%x\n", ptpClock->parentWrConfig);
 #else
-	ptpClock->grandmasterWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
-	DBGBMC(" S1: grandmasterWrNodeMode....  0x%x\n",ptpClock->grandmasterWrNodeMode);
+	ptpClock->parentWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
+	DBGBMC(" S1: parentWrNodeMode....  0x%x\n",ptpClock->parentWrNodeMode);
 #endif
 
 	

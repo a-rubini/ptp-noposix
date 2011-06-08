@@ -292,8 +292,8 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     if( ptpClock->wrMode            == WR_SLAVE   &&
        (ptpClock->wrConfig          == WR_S_ONLY  || \
 	ptpClock->wrConfig          == WR_M_AND_S)&& \
-	(ptpClock->parentPortWrConfig   == WR_M_ONLY  || \
-	ptpClock->parentPortWrConfig    == WR_M_AND_S))
+	(ptpClock->parentWrConfig   == WR_M_ONLY  || \
+	ptpClock->parentWrConfig    == WR_M_AND_S))
     {
         /* now we check whether WR Link Setup is needed */
 	if(ptpClock->grandmasterIsWRmode  == FALSE     || \
@@ -312,7 +312,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     
 #else
     if( ptpClock->wrMode            == WR_SLAVE  && \
-        ptpClock->grandmasterWrNodeMode == WR_MASTER && \
+        ptpClock->parentWrNodeMode == WR_MASTER && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->wrModeON             == FALSE     ))
     {
@@ -525,8 +525,8 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					/*
 					if((ptpClock->wrConfig          == WR_S_ONLY  || \
 					    ptpClock->wrConfig          == WR_M_AND_S)&& \
-					   (ptpClock->parentPortWrConfig    == WR_M_ONLY  || \
-					    ptpClock->parentPortWrConfig    == WR_M_AND_S))
+					   (ptpClock->parentWrConfig    == WR_M_ONLY  || \
+					    ptpClock->parentWrConfig    == WR_M_AND_S))
 					{
 					  DBG("wrMode <= WR_SLAVE\n");
 					  ptpClock->wrMode  = WR_SLAVE;

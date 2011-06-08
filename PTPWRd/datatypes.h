@@ -293,7 +293,7 @@ typedef struct {
 
 #ifdef WRPTPv2
 	UInteger16 primarySlavePortNumber;
-	Enumeration8 parentPortWrConfig; 
+	Enumeration8 parentWrConfig; 
 #endif
 /******* Parent data set *******/
 
@@ -315,7 +315,7 @@ typedef struct {
 	Boolean grandmasterIsWRnode; 
 	Boolean grandmasterIsWRmode; //WRPTPv2: parentPortWrMode
 	Boolean grandmasterIsCalibrated; //WRPTPv2: parentPortCalibrated
-	Enumeration8 grandmasterWrNodeMode; //WRPTPv2:parentPortWrConfig
+	Enumeration8 parentWrNodeMode; //WRPTPv2:parentWrConfig
 
 	FixedDelta grandmasterDeltaTx; //WRPTPv2: parentPortDeltaTx
 	FixedDelta grandmasterDeltaRx; //WRPTPv2: parentPortDeltaRx
