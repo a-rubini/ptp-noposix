@@ -297,7 +297,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     {
         /* now we check whether WR Link Setup is needed */
 	if(ptpClock->grandmasterIsWRmode  == FALSE     || \
-	   ptpClock->isWRmode             == FALSE     )
+	   ptpClock->wrModeON             == FALSE     )
       {
 	toWRState(WRS_PRESENT, rtOpts, ptpClock);
 	ptpClock->portState = PTP_UNCALIBRATED;
@@ -314,7 +314,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     if( ptpClock->wrMode            == WR_SLAVE  && \
         ptpClock->grandmasterWrNodeMode == WR_MASTER && \
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
-         ptpClock->isWRmode             == FALSE     ))
+         ptpClock->wrModeON             == FALSE     ))
     {
           
       
@@ -477,7 +477,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	if(  linkUP == FALSE )
 	{
-		ptpClock->isWRmode = FALSE;
+		ptpClock->wrModeON = FALSE;
 		ptpClock->isCalibrated = FALSE;
 		//ptpClock->record_update = TRUE;
 		if(ptpClock->wrMode == WR_MASTER)
@@ -556,20 +556,20 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 				  *            (wr_flags), and the WR Slave will verify **here**  
 				  *            that re-synch is needed,
 				  *
-		 		  * WR Slave: the need for re-synch, indicated by isWRmode==FALSE,  
+		 		  * WR Slave: the need for re-synch, indicated by wrModeON==FALSE,  
 		 		  *           will be evaluated here
 		 		  */
 		 
 				  if(ptpClock->portState	    == PTP_SLAVE && \
 				     ptpClock->wrMode           == WR_SLAVE  && \
 		   		    (ptpClock->grandmasterIsWRmode  == FALSE     || \
-		   		     ptpClock->isWRmode             == FALSE     ))
+		   		     ptpClock->wrModeON             == FALSE     ))
 		 		  {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
 				      if(ptpClock->grandmasterIsWRmode  == FALSE)
 					DBG("parent node left White Rabbit Mode- WR Master-forced");
 					DBG(" re-synchronization\n");
-				      if(ptpClock->isWRmode             == FALSE)
+				      if(ptpClock->wrModeON             == FALSE)
 					DBG("this node left White Rabbit Mode - WR Slave-forced ");
 					DBG("re-synchronization\n");
 				      

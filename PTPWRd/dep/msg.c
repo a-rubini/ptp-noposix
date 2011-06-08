@@ -240,7 +240,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  if (ptpClock->isCalibrated)
 	    wr_flags = WR_IS_CALIBRATED | wr_flags;
 
-	  if (ptpClock->isWRmode)
+	  if (ptpClock->wrModeON)
 	    wr_flags = WR_IS_WR_MODE | wr_flags;
 #ifdef WRPTPv2
 	  *(UInteger16*)(buf+76) = flip16(wr_flags);

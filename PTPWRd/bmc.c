@@ -140,7 +140,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	  //ptpClock->wrMode                   = NON_WR;
 	}
 
-	ptpClock->isWRmode      		 = FALSE;
+	ptpClock->wrModeON      		 = FALSE;
 
 	/*this one should be set at runtime*/
 	ptpClock->isCalibrated  		 = FALSE;
@@ -209,12 +209,12 @@ void m1(PtpClock *ptpClock)
 #ifdef WRPTPv2
 	ptpClock->parentPortWrConfig      = ptpClock->wrConfig;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrConfig != NON_WR) ;
-	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
+	ptpClock->grandmasterIsWRmode     = ptpClock->wrModeON;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #else
 	ptpClock->grandmasterWrNodeMode   = ptpClock->wrMode;
 	ptpClock->grandmasterIsWRnode     = (ptpClock->wrMode != NON_WR) ;
-	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
+	ptpClock->grandmasterIsWRmode     = ptpClock->wrModeON;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #endif	
 
@@ -289,12 +289,12 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 #ifdef WRPTPv2
 	announce->wr_flags = (announce->wr_flags | ptpClock->wrConfig) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
-	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
+	announce->wr_flags =  announce->wr_flags | ptpClock->wrModeON     << 3;
 
 #else
 	announce->wr_flags = (announce->wr_flags | ptpClock->wrMode) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
-	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
+	announce->wr_flags =  announce->wr_flags | ptpClock->wrModeON     << 3;
 #endif	
 }
 

@@ -458,7 +458,7 @@ typedef struct {
 	 * mode at the moment
 	 * starts with FALSE
 	 */
-	Boolean isWRmode; //WRPTPv2: 
+	Boolean wrModeON; //WRPTPv2: 
 #ifdef WRPTPv2	
 	/*
 	 * Indicates current WR Mode of the port.

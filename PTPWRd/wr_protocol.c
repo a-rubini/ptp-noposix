@@ -174,7 +174,7 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
       else
       {
 	DBG("WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", currentState,ptpClock->currentWRstateCnt );
-	ptpClock->isWRmode = FALSE;
+	ptpClock->wrModeON = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpClock);
 
 	if(wrMode == WR_MASTER)
@@ -549,8 +549,8 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   /**********************************  WRS_WR_LINK_ON ***************************************************************************/
   case WRS_WR_LINK_ON:
 	    /*
-	     * While entering the state, we sent WR_MODE_ON to the Master and set isWRmode TRUE and assuming that Master
-	     * is calibrated, set grandmaster to isWRmode and isCalibrated, see (toWRSlaveState())
+	     * While entering the state, we sent WR_MODE_ON to the Master and set wrModeON TRUE and assuming that Master
+	     * is calibrated, set grandmaster to wrModeON and isCalibrated, see (toWRSlaveState())
 	     */
 
 
@@ -831,7 +831,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   case WRS_WR_LINK_ON:
     DBGWRFSM("entering  WRS_LINK_ON\n");
 
-    ptpClock->isWRmode = TRUE;
+    ptpClock->wrModeON = TRUE;
 
     if(ptpClock->wrMode == WR_MASTER)
 #ifdef WRPTPv2
