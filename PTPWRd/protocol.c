@@ -1700,8 +1700,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		DBG("WR Management msg [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:
@@ -1784,8 +1784,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		DBG("handle ..... WR_SIGNALING [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:

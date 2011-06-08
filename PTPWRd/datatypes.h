@@ -315,10 +315,10 @@ typedef struct {
 	Boolean parentIsWRnode; 
 	Boolean parentWrModeON; 
 	Boolean parentCalibrated;
-	Enumeration8 parentWrNodeMode; //WRPTPv2
+	Enumeration8 parentWrNodeMode; 
 
-	FixedDelta grandmasterDeltaTx; //WRPTPv2: parentPortDeltaTx
-	FixedDelta grandmasterDeltaRx; //WRPTPv2: parentPortDeltaRx
+	FixedDelta parentDeltaTx; 
+	FixedDelta parentDeltaRx; //WRPTPv2: parentPortDeltaRx
 
 /******* Global time properties data set *********/
 
