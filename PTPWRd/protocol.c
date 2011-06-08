@@ -204,7 +204,15 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     timerStop(&ptpClock->timers.announceReceipt);
       
     break;
-
+  case PTP_UNCALIBRATED:
+    /*
+     * add here transition to WR_IDLE state of WR FSM
+     * this is to accommodate the fact that PTP FSM can, by itself
+     * want to leave the state (timeout, or BMC) before WR FSM finishes
+     *
+     * toWRstate(IDLE, ...);
+     *
+     */
   default:
     break;
   }

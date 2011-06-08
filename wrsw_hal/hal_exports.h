@@ -64,6 +64,7 @@ typedef struct {
 } hexp_pps_params_t;
 
 /* Port modes (hexp_port_state_t.mode) */
+#define HEXP_PORT_MODE_WR_M_AND_S 4
 #define HEXP_PORT_MODE_WR_MASTER 1
 #define HEXP_PORT_MODE_WR_SLAVE 2
 #define HEXP_PORT_MODE_NON_WR 3

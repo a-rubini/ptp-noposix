@@ -298,6 +298,32 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 #endif	
 }
 
+char* clockDescription(MsgHeader *header, MsgAnnounce *announce)
+{
+	char *tmp;
+	char wrConfig[10];
+	
+	if(announce->wr_flags & WR_M_ONLY)
+	  strcpy(wrConfig,"WR_M_ONLY\0");
+	else if(announce->wr_flags & WR_S_ONLY)
+	 strcpy(wrConfig,"WR_S_ONLY\0");
+	else if(announce->wr_flags & WR_M_AND_S)
+	  strcpy(wrConfig,"WR_M_AND_S\0");
+	else
+	  strcpy(wrConfig,"NON_WR\0");
+
+ 	sprintf(tmp, " [clkId=%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx port=%d wrConfig=%s] ",
+ 	    header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
+ 	    header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
+ 	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
+	    header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7],
+ 	    header->sourcePortIdentity.portNumber,   
+ 	    wrConfig
+ 	    );
+
+	return tmp;
+
+}
 
 /*Data set comparison bewteen two foreign masters (9.3.4 fig 27)
  * return similar to memcmp() */
@@ -305,7 +331,38 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 								MsgHeader *headerB,MsgAnnounce *announceB,PtpClock *ptpClock)
 {
-	DBGV("Data set comparison \n");
+	/*
+	 * This implementation is not precisely as in the standard !@!!!!!
+	 * see: page 90, Figure 28
+	 * The return (non-error) values should be 4
+	 * 1) A bettter then B
+	 * 2) B better then A
+	 * 3) A better by topology than B
+	 * 4) B better by topology then A
+	 * 
+	 * then, error values
+	 * 5) error-1: Receiver=Sender
+	 * 6) error-2: A=B
+	 *
+	 * in this implementation:
+	 * (1) = (3)
+	 * (2) = (4)
+	 * (5) = (6)
+	 *
+	 * If I'm not mistaken, it will cause problems in the low-most decision of
+	 * State Decision Algorithm (SDA): "Ebest better by topology than Erbest"
+	 * If Ebest is absolutely better (A+1>B) than Erbest, it is not
+	 * better by topology, so the decision should be NO, and the state
+	 * should be MASTER, but in this implementation it will be PASSIVE.....
+	 * see IEEE book, page 83, case 5
+	 * this is true, provided that the State Decision Alg (SDA) is implemented as in 
+	 * the standard, but it is not ! It seems that it is only for Ordinary Clock, or..
+	 * I do not understand something :)
+	 *
+	 */  
+	DBGBMC("DCA: Data set comparison \n");
+	//DBGBMC("DCA: Comparing A%s with B%s\n",clockDescription(headerA,announceA),clockDescription(headerB,announceB));
+	
 	short comp = 0;
 #ifndef WRPTPv2	
 	if(announceA->wr_flags & WR_MASTER)
@@ -339,26 +396,31 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 	/*Identity comparison*/
 	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH))
 	{
+		DBGBMC("DCA: Grandmasters are identical\n");
 		//Algorithm part2 Fig 28
 		if (announceA->stepsRemoved > announceB->stepsRemoved+1)
 		{
+		    DBGBMC("DCA: .. B better than A \n");
 		    return 1;// B better than A
 		}
 		else if (announceB->stepsRemoved > announceA->stepsRemoved+1)
 		{
+		    DBGBMC("DCA: .. A better than B \n");
 		    return -1;//A better than B
 		}
 		else //A within 1 of B
 		{
+			DBGBMC("DCA: .. A within 1 of B \n");
 			if (announceA->stepsRemoved > announceB->stepsRemoved)
 			{
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				    DBG("Sender=Receiver : Error -1");
+				    DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
 				    return 0;
 				}
 				else
 				{
+				    DBGBMC("DCA: .. .. B better than A \n");
 				    return 1;
 				}
 
@@ -367,27 +429,29 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			{
 				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				  	DBG("Sender=Receiver : Error -1");
+				  	DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
 					return 0;
 				}
 				else
-				{
+				{	DBGBMC("DCA: .. .. A better than B \n");
 				  	return -1;
 				}
 			}
 			else // steps removed A = steps removed B
 			{
+				DBGBMC("DCA: .. steps removed A = steps removed B \n");
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-					DBG("Sender=Receiver : Error -2");
+					DBG("DCA: .. Sender=Receiver : Error -2");
 					return 0;
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{
+					DBGBMC("DCA: .. .. A better than B \n");
 					return -1;
 				}
 				else
-				{
+				{	DBGBMC("DCA: .. .. B better than A \n");
 					return 1;
 				}
 			}
@@ -396,31 +460,36 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 	}
 	else //GrandMaster are not identical
 	{
-
+		DBGBMC("DCA: GrandMaster are not identical\n");
 		if(announceA->grandmasterPriority1 == announceB->grandmasterPriority1)
 		{
-
+			DBGBMC("DCA: .. A->Priority1 == B->Priority1 == %d\n",announceB->grandmasterPriority1);
 			if (announceA->grandmasterClockQuality.clockClass == announceB->grandmasterClockQuality.clockClass)
 			{
-
+				DBGBMC("DCA: .. .. A->clockClass == B->clockClass == %d\n",announceB->grandmasterClockQuality.clockClass);
 				if (announceA->grandmasterClockQuality.clockAccuracy == announceB->grandmasterClockQuality.clockAccuracy)
 				{
-
+					DBGBMC("DCA: .. .. .. A->clockAccuracy == B->clockAccuracy == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
 					if (announceA->grandmasterClockQuality.offsetScaledLogVariance == announceB->grandmasterClockQuality.offsetScaledLogVariance)
 					{
+						DBGBMC("DCA: .. .. .. .. A->offsetScaledLogVariance == B->offsetScaledLogVariance == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
 						if (announceA->grandmasterPriority2 == announceB->grandmasterPriority2)
 						{
+							DBGBMC("DCA: .. .. .. .. .. A->Priority2 == B->Priority2 == %d\n",announceB->grandmasterPriority2);
 							comp = memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
 							if (comp < 0)
 							{
+								DBGBMC("DCA: .. .. .. .. .. .. A better than B by clock ID\n");
 								return -1;
 							}
 							else if (comp > 0)
 							{
+								DBGBMC("DCA: .. .. .. .. .. .. B better than A clock ID\n");
 								return 1;
 							}
 							else
 							{
+								DBGBMC("DCA: .. .. .. .. .. .. not good: clock ID\n");
 								return 0;
 							}
 						}
@@ -429,14 +498,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 							comp =memcmp(&announceA->grandmasterPriority2,&announceB->grandmasterPriority2,1);
 							if (comp < 0)
 							{
+								DBGBMC("DCA: .. .. .. .. .. A better than B by Priority2\n");
 								return -1;
 							}
 							else if (comp > 0)
 							{
+								DBGBMC("DCA: .. .. .. .. .. B better than A by Priority2\n");
 								return 1;
 							}
 							else
 							{
+								DBGBMC("DCA: .. .. .. .. .. not good: Priority2\n");
 								return 0;
 							}
 						}
@@ -444,17 +516,19 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 
 					else //offsetScaledLogVariance are not identical
 					{
-						comp= memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
+						comp= memcmp(&announceA->grandmasterClockQuality.offsetScaledLogVariance,&announceB->grandmasterClockQuality.offsetScaledLogVariance,1);
 						if (comp < 0)
 						{
+							DBGBMC("DCA: .. .. .. .. A better than B by offsetScaledLogVariance\n");
 							return -1;
 						}
 						else if (comp > 0)
 						{
+							DBGBMC("DCA: .. .. .. .. B better than A by offsetScaledLogVariance\n");
 							return 1;
 						}
 						else
-						{
+						{	DBGBMC("DCA: .. .. .. .. not good: offsetScaledLogVariance\n");
 							return 0;
 						}
 					}
@@ -466,14 +540,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 					comp = memcmp(&announceA->grandmasterClockQuality.clockAccuracy,&announceB->grandmasterClockQuality.clockAccuracy,1);
 					if (comp < 0)
 					{
+						DBGBMC("DCA: .. .. .. A better than B by clockAccuracy\n");
 						return -1;
 					}
 					else if (comp > 0)
 					{
+						DBGBMC("DCA: .. .. .. B better than A by clockAccuracy\n");
 						return 1;
 					}
 					else
-					{
+					{	
+						DBGBMC("DCA: .. .. .. not good: clockAccuracy\n");
 						return 0;
 					}
 				}
@@ -485,14 +562,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 				comp =  memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
 				if (comp < 0)
 				{
+					DBGBMC("DCA: .. .. A better than B by clockClass\n");
 					return -1;
 				}
 				else if (comp > 0)
 				{
+					DBGBMC("DCA: .. .. B better than A by clockClass\n");
 					return 1;
 				}
 				else
 				{
+					DBGBMC("DCA: .. .. not good:  clockClass\n");
 					return 0;
 				}
 			}
@@ -503,14 +583,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			comp =  memcmp(&announceA->grandmasterPriority1,&announceB->grandmasterPriority1,1);
 			if (comp < 0)
 			{
+				DBGBMC("DCA: .. A better than B by Priority1\n");
 				return -1;
 			}
 			else if (comp > 0)
 			{
+				DBGBMC("DCA: .. B better than A by Priority1\n");
 				return 1;
 			}
 			else
 			{
+				DBGBMC("DCA: .. not good: Priority1\n");
 				return 0;
 			}
 		}
@@ -522,9 +605,10 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 /*State decision algorithm 9.3.3 Fig 26*/
 UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts *rtOpts,PtpClock *ptpClock)
 {
-
+	DBGBMC("SDA: State Decision Algorith,\n");
 	if (rtOpts->slaveOnly)
 	{
+		DBGBMC("SDA: .. Slave Only Mode: PTP_SLAVE\n");
 		s1(header,announce,ptpClock);
 
 		  return PTP_SLAVE;
@@ -532,45 +616,62 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 
 	if ((!ptpClock->number_foreign_records) && (ptpClock->portState == PTP_LISTENING))
 	{
+		DBGBMC("SDA: .. No foreing nasters : PTP_LISTENING\n");
 		return PTP_LISTENING;
 	}
-
+	
 	copyD0(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,ptpClock);
 
 	if (ptpClock->clockQuality.clockClass < 128)
 	{
+		DBGBMC("SDA: .. clockClass < 128\n");
 		if ((bmcDataSetComparison(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,header,announce,ptpClock)<0))
 		{
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
 			m1(ptpClock);
 			return PTP_MASTER;
 		}
 		else if ((bmcDataSetComparison(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,header,announce,ptpClock)>0))
 		{
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1: PTP_PASSIVE =modify=>> PTP_MASTER\n");
 			s1(header,announce,ptpClock);
 			return PTP_PASSIVE;
 		}
 		else
 		{
-			DBG("Error in bmcDataSetComparison..\n");
+			DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
 		}
 	}
 
 	else
 	{
-
+		/*
+		 * This implementation is not precisely as in the standard !@!!!!!
+		 * see: page 87, Figure 26
+		 * it seems that it is foreseen only for ordinary clocks, since the
+		 * condition: "Erbest same as Ebest" defaults to YES
+		 *
+		 */
+		DBGBMC("SDA: .. clockClass > 128\n");
 		if ((bmcDataSetComparison(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,header,announce,ptpClock))<0)
-		{
+		{		
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
 			m1(ptpClock);
 			return PTP_MASTER;
 		}
 		else if ((bmcDataSetComparison(&ptpClock->msgTmpHeader,&ptpClock->msgTmp.announce,header,announce,ptpClock)>0))
 		{
+			/*
+			 * For a boundary clock we should have more staff here !!!!!!!!
+			 * see: page 87, Figure 26
+			 */
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => m1: PTP_SLAVE\n");
 			s1(header,announce,ptpClock);
 			return PTP_SLAVE;
 		}
 		else
 		{
-			DBG("Error in bmcDataSetComparison..\n");
+			DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
 		}
 
 	}
@@ -580,7 +681,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce,RunTimeOpts 
 
 UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *ptpClock )
 {
-	DBG("Best Master Clock Algorithm @ working\n");
+	DBG("BMC: Best Master Clock Algorithm @ working\n");
 	Integer16 i,best;
 
 
@@ -588,8 +689,10 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *
 
 	if (!ptpClock->number_foreign_records)
 	{
+		DBGBMC("BMC: .. no foreign masters\n");
 		if (ptpClock->portState == PTP_MASTER)
 		{
+			DBGBMC("BMC: .. .. m1: PTP_MASTER\n");
 			m1(ptpClock);
 			return ptpClock->portState;
 		}
@@ -597,14 +700,16 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpClock *
 
 	for (i=1,best = 0; i<ptpClock->number_foreign_records;i++)
 	{
+		DBGBMC("BMC: .. looking at %d foreign master\n",i);
 		if ((bmcDataSetComparison(&foreignMaster[i].header,&foreignMaster[i].announce,
 								 &foreignMaster[best].header,&foreignMaster[best].announce,ptpClock)) < 0)
 		{
+			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
 			best = i;
 		}
 	}
 
-	DBG("Best record : %d \n",best);
+	DBGBMC("BMC: the best foreign master index: %d\n",best);
 	ptpClock->foreign_record_best = best;
 
 

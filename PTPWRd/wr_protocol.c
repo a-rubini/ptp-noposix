@@ -608,12 +608,22 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   switch(ptpClock->wrPortState)
   {
   case WRS_IDLE:
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
     DBGWRFSM("exiting WRS_IDLE\n");
     DBGWRFSM("^^^^^^^^^^^^^^^^ starting White Rabbit State Machine^^^^^^^^^^^^^^^^^^\n");
     DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    if(ptpClock->wrNodeMode== WR_MASTER)
+    DBGWRFSM("                            W R   M A S T E R\n");
+    else if(ptpClock->wrNodeMode== WR_SLAVE)
+    DBGWRFSM("                             W R   S L A V E \n");
+    else
+    DBGWRFSM("                        I SHOULD NOT SHOW THIS MSG !!! \n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");
+    DBGWRFSM("\n");    
     break;
 
   case WRS_PRESENT:

@@ -75,10 +75,11 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	    );
 	DBGM(" correctionfield.msb........... %d\n", header->correctionfield.msb);
 	DBGM(" correctionfield.lsb........... %d\n", (unsigned int)header->correctionfield.lsb);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
 	    header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
-	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5]
+	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
+	    header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]
 	    );
 	DBGM(" portNumber.................... %d\n", header->sourcePortIdentity.portNumber);
 	DBGM(" sequenceId.................... %d\n", header->sequenceId);
@@ -113,10 +114,11 @@ void msgPackHeader(void *buf, PtpClock *ptpClock)
 	  DBGM(" flagField..................... %x\n", TWO_STEP_FLAG);
 	else
 	  DBGM(" flagField..................... %x\n", 0);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
 	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5]);
+	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
+	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
 	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
 	DBGM(" logMessageInterval............ %d\n", 0x7F);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
@@ -145,10 +147,11 @@ void msgPackSync(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	DBGM(" messageLength................. %u\n", SYNC_LENGTH);
 	DBGM(" sentSyncSequenceId............ %u\n", ptpClock->sentSyncSequenceId);
 	DBGM(" logSyncInterval............... %u\n", ptpClock->logSyncInterval);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
 	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5]);
+	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
+	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
 	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
 	DBGM(" originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
 	DBGM(" originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
@@ -257,10 +260,11 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  DBGM(" messageLength................. %u\n", ANNOUNCE_LENGTH);
 	DBGM(" sentSyncSequenceId............ %u\n", ptpClock->sentAnnounceSequenceId);
 	DBGM(" logSyncInterval............... %u\n", ptpClock->logAnnounceInterval);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
 	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5]);
+	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
+	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
 	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
 	DBGM(" currentUtcOffset.............. %d\n", ptpClock->currentUtcOffset);
 	DBGM(" grandmasterPriority1.......... %d\n", ptpClock->grandmasterPriority1);
@@ -268,10 +272,11 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	DBGM(" clockAccuracy................. %d\n", ptpClock->clockQuality.clockAccuracy);
 	DBGM(" offsetScaledLogVariance....... %d\n", ptpClock->clockQuality.offsetScaledLogVariance);
 	DBGM(" grandmasterPriority2.......... %d\n", ptpClock->grandmasterPriority2);
-	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->grandmasterIdentity[0], ptpClock->grandmasterIdentity[1],
 	    ptpClock->grandmasterIdentity[2], ptpClock->grandmasterIdentity[3],
-	    ptpClock->grandmasterIdentity[4], ptpClock->grandmasterIdentity[5]);
+	    ptpClock->grandmasterIdentity[4], ptpClock->grandmasterIdentity[5],
+	    ptpClock->grandmasterIdentity[6], ptpClock->grandmasterIdentity[7]);
 	DBGM(" stepsRemoved.................. %d\n", ptpClock->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", ptpClock->timeSource);
 #ifdef WRPTPv2	
@@ -383,10 +388,11 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	DBGM(" clockAccuracy................. %d\n", announce->grandmasterClockQuality.clockAccuracy);
 	DBGM(" offsetScaledLogVariance....... %d\n", announce->grandmasterClockQuality.offsetScaledLogVariance);
 	DBGM(" grandmasterPriority2.......... %d\n", announce->grandmasterPriority2);
-	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    announce->grandmasterIdentity[0], announce->grandmasterIdentity[1],
 	    announce->grandmasterIdentity[2], announce->grandmasterIdentity[3],
-	    announce->grandmasterIdentity[4], announce->grandmasterIdentity[5]);
+	    announce->grandmasterIdentity[4], announce->grandmasterIdentity[5],
+	    announce->grandmasterIdentity[6], announce->grandmasterIdentity[7]);
 	DBGM(" stepsRemoved.................. %d\n", announce->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", announce->timeSource);
 	if (messageLen > ANNOUNCE_LENGTH)
@@ -557,13 +563,15 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
 	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", 0xFFFF & (ptpClock->current_rx_ts.utc >> 32));
 	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", 0xFFFFFFFF & ptpClock->current_rx_ts.utc);
 	DBGM(" delayReceiptTimestamp.nsecs... %d\n", ptpClock->current_rx_ts.nsec);
-	DBGM(" requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0],
 	    header->sourcePortIdentity.clockIdentity[1],
 	    header->sourcePortIdentity.clockIdentity[2],
 	    header->sourcePortIdentity.clockIdentity[3],
 	    header->sourcePortIdentity.clockIdentity[4],
-	    header->sourcePortIdentity.clockIdentity[5]
+	    header->sourcePortIdentity.clockIdentity[5],
+	    header->sourcePortIdentity.clockIdentity[6],
+	    header->sourcePortIdentity.clockIdentity[7]
 	    );
 	DBGM(" requestingSourcePortId........ %u\n", header->sourcePortIdentity.portNumber);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
@@ -642,13 +650,15 @@ void msgUnpackDelayResp(void *buf,MsgDelayResp *resp)
 	DBGM(" receiveTimestamp.secs.msb......%d\n", resp->receiveTimestamp.secondsField.msb);
 	DBGM(" receiveTimestamp.secs.lsb..... %d\n", resp->receiveTimestamp.secondsField.lsb);
 	DBGM(" receiveTimestamp.nsecs........ %d\n", resp->receiveTimestamp.nanosecondsField);
-	DBGM(" requestingPortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" requestingPortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    resp->requestingPortIdentity.clockIdentity[0],
 	    resp->requestingPortIdentity.clockIdentity[1],
 	    resp->requestingPortIdentity.clockIdentity[2],
 	    resp->requestingPortIdentity.clockIdentity[3],
 	    resp->requestingPortIdentity.clockIdentity[4],
-	    resp->requestingPortIdentity.clockIdentity[5]
+	    resp->requestingPortIdentity.clockIdentity[5],
+	    resp->requestingPortIdentity.clockIdentity[6],
+	    resp->requestingPortIdentity.clockIdentity[7]
 	    );
 	DBGM(" requestingSourcePortId........ %u\n", resp->requestingPortIdentity.portNumber);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
@@ -751,13 +761,15 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 	*(Integer16*)(buf+48) = flip16(WR_TLV_TYPE);
 
 	DBGM("------------ msgPackWRManagement-------\n");
-	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->parentPortIdentity.clockIdentity[0],
 	    ptpClock->parentPortIdentity.clockIdentity[1],
 	    ptpClock->parentPortIdentity.clockIdentity[2],
 	    ptpClock->parentPortIdentity.clockIdentity[3],
 	    ptpClock->parentPortIdentity.clockIdentity[4],
-	    ptpClock->parentPortIdentity.clockIdentity[5]
+	    ptpClock->parentPortIdentity.clockIdentity[5],
+	    ptpClock->parentPortIdentity.clockIdentity[6],
+	    ptpClock->parentPortIdentity.clockIdentity[7]
 	    );
 	DBGM(" recipient's PortId............ %u\n", ptpClock->parentPortIdentity.portNumber);
 	DBGM(" management CMD................ %u\n", WR_CMD);
@@ -888,13 +900,15 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	
 
 	DBGM("------------ msgPackWRSignalingMSG-------\n");
-	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpClock->parentPortIdentity.clockIdentity[0],
 	    ptpClock->parentPortIdentity.clockIdentity[1],
 	    ptpClock->parentPortIdentity.clockIdentity[2],
 	    ptpClock->parentPortIdentity.clockIdentity[3],
 	    ptpClock->parentPortIdentity.clockIdentity[4],
-	    ptpClock->parentPortIdentity.clockIdentity[5]
+	    ptpClock->parentPortIdentity.clockIdentity[5],
+	    ptpClock->parentPortIdentity.clockIdentity[6],
+	    ptpClock->parentPortIdentity.clockIdentity[7]
 	    );
 	DBGM(" recipient's PortId............ %u\n", ptpClock->parentPortIdentity.portNumber);
 	DBGM(" tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
@@ -1029,13 +1043,15 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 
 	DBGM("------------ msgUnpackWRSignalingMsg-------\n");
-	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    signalingMsg->targetPortIdentity.clockIdentity[0],
 	    signalingMsg->targetPortIdentity.clockIdentity[1],
 	    signalingMsg->targetPortIdentity.clockIdentity[2],
 	    signalingMsg->targetPortIdentity.clockIdentity[3],
 	    signalingMsg->targetPortIdentity.clockIdentity[4],
-	    signalingMsg->targetPortIdentity.clockIdentity[5]
+	    signalingMsg->targetPortIdentity.clockIdentity[5],
+	    signalingMsg->targetPortIdentity.clockIdentity[6],
+	    signalingMsg->targetPortIdentity.clockIdentity[7]
 	    );
 	DBGM(" target PortId................. %u\n", signalingMsg->targetPortIdentity.portNumber);
 	DBGM(" tlv_type...................... 0x%x\n", tlv_type);
@@ -1129,13 +1145,15 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 
 
 	DBGM("------------ msgUnpackWRManagement-------\n");
-	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    management->targetPortIdentity.clockIdentity[0],
 	    management->targetPortIdentity.clockIdentity[1],
 	    management->targetPortIdentity.clockIdentity[2],
 	    management->targetPortIdentity.clockIdentity[3],
 	    management->targetPortIdentity.clockIdentity[4],
-	    management->targetPortIdentity.clockIdentity[5]
+	    management->targetPortIdentity.clockIdentity[5],
+	    management->targetPortIdentity.clockIdentity[6],
+	    management->targetPortIdentity.clockIdentity[7]
 	    );
 	DBGM(" target PortId................. %u\n", management->targetPortIdentity.portNumber);
 	DBGM(" management CMD................ %u\n", management->actionField);

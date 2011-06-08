@@ -196,6 +196,13 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    {
      switch(pstate.mode)
      {
+#ifdef WRPTPv2
+       case HEXP_PORT_MODE_WR_M_AND_S:
+
+	  DBG("wrNodeMode(auto config) ....... MASTER & SLAVE\n");
+	  ptpClock->portWrConfig = WR_M_AND_S;
+	  break;
+#endif	  
 	case HEXP_PORT_MODE_WR_MASTER:
 	   DBG("wrNodeMode(auto config) ....... MASTER\n");
 #ifdef WRPTPv2
