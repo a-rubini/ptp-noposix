@@ -44,7 +44,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->wrMode = NON_WR;
 	
 	
-	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->portWrConfig != NON_WR)
+	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrConfig != NON_WR)
 	  ptpClock->priority1 = WR_PRIORITY1;
 #else
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrMode == WR_MASTER)
@@ -88,7 +88,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->number_foreign_records = 0;
 	ptpClock->max_foreign_records = rtOpts->max_foreign_records;
 #ifdef WRPTPv2
-	if(ptpClock->portWrConfig != NON_WR)
+	if(ptpClock->wrConfig != NON_WR)
 #else
 	if(ptpClock->wrMode != NON_WR)
 #endif	  
@@ -207,8 +207,8 @@ void m1(PtpClock *ptpClock)
 
 	/*White Rabbit*/
 #ifdef WRPTPv2
-	ptpClock->parentPortWrConfig      = ptpClock->portWrConfig;
-	ptpClock->grandmasterIsWRnode     = (ptpClock->portWrConfig != NON_WR) ;
+	ptpClock->parentPortWrConfig      = ptpClock->wrConfig;
+	ptpClock->grandmasterIsWRnode     = (ptpClock->wrConfig != NON_WR) ;
 	ptpClock->grandmasterIsWRmode     = ptpClock->isWRmode;
 	ptpClock->grandmasterIsCalibrated = ptpClock->isCalibrated;
 #else
@@ -287,7 +287,7 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpClock *ptpClock)
 
 	/*White Rabbit*/
 #ifdef WRPTPv2
-	announce->wr_flags = (announce->wr_flags | ptpClock->portWrConfig) & WR_NODE_MODE  ;
+	announce->wr_flags = (announce->wr_flags | ptpClock->wrConfig) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isCalibrated << 2;
 	announce->wr_flags =  announce->wr_flags | ptpClock->isWRmode     << 3;
 

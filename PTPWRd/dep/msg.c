@@ -184,7 +184,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x0B; //Table 19
 #ifdef WRPTPv2
-	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
+	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
 #else
 	if (ptpClock->wrMode != NON_WR)
 #endif	  
@@ -214,7 +214,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	 */
 	UInteger16 wr_flags = 0;
 #ifdef WRPTPv2
-	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)	
+	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)	
 	{
 
   	  *(UInteger16*)(buf+64) = flip16(TLV_TYPE_ORG_EXTENSION);
@@ -225,7 +225,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  *(UInteger16*)(buf+72) = flip16((0xFFFF & (WR_TLV_MAGIC_NUMBER    << 8 | WR_TLV_WR_VERSION_NUMBER)));
 	  //wrMessageId
 	  *(UInteger16*)(buf+74) = flip16(ANN_SUFIX);
-	  wr_flags = wr_flags | ptpClock->portWrConfig;
+	  wr_flags = wr_flags | ptpClock->wrConfig;
 #else
 	if (ptpClock->wrMode != NON_WR)
 	{
@@ -251,7 +251,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 
 	DBGM("------------ msgPackAnnounce ----------\n");
 #ifdef WRPTPv2
-	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
+	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
 #else
 	if (ptpClock->wrMode != NON_WR)
 #endif	  
@@ -280,7 +280,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	DBGM(" stepsRemoved.................. %d\n", ptpClock->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", ptpClock->timeSource);
 #ifdef WRPTPv2	
-	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
+	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
 	{
 
 	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", TLV_TYPE_ORG_EXTENSION);

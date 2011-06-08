@@ -290,8 +290,8 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     * and the parentPort is WR Master enabled
     *****************************************************/
     if( ptpClock->wrMode            == WR_SLAVE   &&
-       (ptpClock->portWrConfig          == WR_S_ONLY  || \
-	ptpClock->portWrConfig          == WR_M_AND_S)&& \
+       (ptpClock->wrConfig          == WR_S_ONLY  || \
+	ptpClock->wrConfig          == WR_M_AND_S)&& \
 	(ptpClock->parentPortWrConfig   == WR_M_ONLY  || \
 	ptpClock->parentPortWrConfig    == WR_M_AND_S))
     {
@@ -447,7 +447,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
   msgPackHeader(ptpClock->msgObuf, ptpClock);
 
 #ifdef WRPTPv2
-  if(ptpClock->portWrConfig != NON_WR)
+  if(ptpClock->wrConfig != NON_WR)
 #else
   if(ptpClock->wrMode != NON_WR)
 #endif    
@@ -523,8 +523,8 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 					* as specified in PTP state machine: Figure 23, 78p
 					*/
 					/*
-					if((ptpClock->portWrConfig          == WR_S_ONLY  || \
-					    ptpClock->portWrConfig          == WR_M_AND_S)&& \
+					if((ptpClock->wrConfig          == WR_S_ONLY  || \
+					    ptpClock->wrConfig          == WR_M_AND_S)&& \
 					   (ptpClock->parentPortWrConfig    == WR_M_ONLY  || \
 					    ptpClock->parentPortWrConfig    == WR_M_AND_S))
 					{
@@ -891,7 +891,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	case PTP_UNCALIBRATED:
 
 		/* White Rabbit Extension */
-		//TODO: maybe change to portWrConfig
+		//TODO: maybe change to wrConfig
 		if(ptpClock->wrMode != NON_WR)
 		{
 			DBGV("Handle Announce: drop messages other than management in WR mode\n");
@@ -1820,8 +1820,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	/* here we deternime that a node should be WR_MASTER */
 	if(ptpClock->portState         == PTP_MASTER    && \
 	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && \
-	  (ptpClock->portWrConfig      == WR_M_ONLY     || 
-	   ptpClock->portWrConfig      == WR_M_AND_S     ))
+	  (ptpClock->wrConfig      == WR_M_ONLY     || 
+	   ptpClock->wrConfig      == WR_M_AND_S     ))
 	{
 	     ///////// fucken important !! /////////////
 	     DBGWRFSM("wrMode <= WR_MASTER\n");
@@ -1845,7 +1845,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 
 	msgPackAnnounce(ptpClock->msgObuf,ptpClock);
 #ifdef WRPTPv2
-	if (ptpClock->portWrConfig != NON_WR && ptpClock->portWrConfig != WR_S_ONLY)
+	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
 #else
 	if (ptpClock->wrMode != NON_WR)
 #endif

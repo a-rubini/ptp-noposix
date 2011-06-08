@@ -254,7 +254,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
    case 'S':
 #ifdef WRPTPv2
-	   rtOpts->portWrConfig = WR_S_ONLY;
+	   rtOpts->wrConfig = WR_S_ONLY;
 #else
 	   rtOpts->wrMode = WR_SLAVE;
 #endif	   
@@ -264,7 +264,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
    case 'M':
 #ifdef WRPTPv2
-	   rtOpts->portWrConfig = WR_M_ONLY;
+	   rtOpts->wrConfig = WR_M_ONLY;
 #else     
 	   rtOpts->wrMode = WR_MASTER;
 #endif	   

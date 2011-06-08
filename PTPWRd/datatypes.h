@@ -477,7 +477,7 @@ typedef struct {
 	 * WR_M_ONLY
 	 * WR_M_AND_S
 	 */	
-	Enumeration8 portWrConfig;	
+	Enumeration8 wrConfig;	
 #endif	
 	/*
 	 * If port is aware of it's
@@ -630,7 +630,7 @@ typedef struct {
 	 * WR_M_ONLY
 	 * WR_M_AND_S
 	 */	
-	Enumeration8 portWrConfig;	
+	Enumeration8 wrConfig;	
 #endif
 } RunTimeOpts;
 
