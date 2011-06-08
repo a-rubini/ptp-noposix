@@ -840,7 +840,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
       issueWRManagement(WR_MODE_ON,rtOpts, ptpClock);
 #endif
     /*Assume that Master is calibrated and in WR mode, it will be verified with the next Annonce msg*/
-    ptpClock->grandmasterIsWRmode     = TRUE;
+    ptpClock->parentWrModeON     = TRUE;
     ptpClock->grandmasterIsCalibrated = TRUE;
 
     ptpClock->wrPortState = WRS_WR_LINK_ON;

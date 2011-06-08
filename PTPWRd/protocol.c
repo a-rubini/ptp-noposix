@@ -296,7 +296,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->parentWrConfig    == WR_M_AND_S))
     {
         /* now we check whether WR Link Setup is needed */
-	if(ptpClock->grandmasterIsWRmode  == FALSE     || \
+	if(ptpClock->parentWrModeON  == FALSE     || \
 	   ptpClock->wrModeON             == FALSE     )
       {
 	toWRState(WRS_PRESENT, rtOpts, ptpClock);
@@ -313,7 +313,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #else
     if( ptpClock->wrMode            == WR_SLAVE  && \
         ptpClock->parentWrNodeMode == WR_MASTER && \
-        (ptpClock->grandmasterIsWRmode  == FALSE     || \
+        (ptpClock->parentWrModeON  == FALSE     || \
          ptpClock->wrModeON             == FALSE     ))
     {
           
@@ -562,11 +562,11 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		 
 				  if(ptpClock->portState	    == PTP_SLAVE && \
 				     ptpClock->wrMode           == WR_SLAVE  && \
-		   		    (ptpClock->grandmasterIsWRmode  == FALSE     || \
+		   		    (ptpClock->parentWrModeON  == FALSE     || \
 		   		     ptpClock->wrModeON             == FALSE     ))
 		 		  {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
-				      if(ptpClock->grandmasterIsWRmode  == FALSE)
+				      if(ptpClock->parentWrModeON  == FALSE)
 					DBG("parent node left White Rabbit Mode- WR Master-forced");
 					DBG(" re-synchronization\n");
 				      if(ptpClock->wrModeON             == FALSE)
