@@ -497,11 +497,17 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /**********************************  WRS_RESP_CALIB_REQ  ***************************************************************************/
   case WRS_RESP_CALIB_REQ:
 
-
+#ifdef 	WRPTPv2						
+	  if( ptpd_netif_calibration_pattern_enable( 	ptpClock->netPath.ifaceName, \
+							ptpClock->otherNodeCalPeriod, \
+							0, \
+							0) == PTPD_NETIF_OK)
+#else
 	  if( ptpd_netif_calibration_pattern_enable( 	ptpClock->netPath.ifaceName, \
 							ptpClock->otherNodeCalPeriod, \
 							ptpClock->otherNodeCalibrationPattern, \
 							ptpClock->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
+#endif
 	    ptpClock->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
 	  else
 	    break;   //try again
@@ -809,10 +815,18 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
        * the other node needs calibration, so
        * turn on calibration pattern
        */
+
+#ifdef 	WRPTPv2
+	if( ptpd_netif_calibration_pattern_enable( ptpClock->netPath.ifaceName, \
+				ptpClock->otherNodeCalPeriod, \
+				0, 0) == PTPD_NETIF_OK)
+#else
 	if( ptpd_netif_calibration_pattern_enable( ptpClock->netPath.ifaceName, \
 				ptpClock->otherNodeCalPeriod, \
 				ptpClock->otherNodeCalibrationPattern, \
 				ptpClock->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
+
+#endif
 	  ptpClock->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
 	else
 	  ptpClock->wrPortState = WRS_RESP_CALIB_REQ;   //try again

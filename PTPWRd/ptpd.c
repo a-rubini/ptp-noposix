@@ -31,11 +31,22 @@ RunTimeOpts rtOpts = {
 
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
-   .wrMode 		= NON_WR,
    .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
+#ifndef WRPTPv2 
+   .wrMode 		  = NON_WR,
    .calibrationPattern    = WR_DEFAULT_CAL_PATTERN,
    .calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN,
+#endif
    .E2E_mode 		= TRUE,
+   
+#ifdef WRPTPv2 
+   .wrConfig		= NON_WR, //autodetection
+   .wrStateRetry	= WR_DEFAULT_STATE_REPEAT,
+   .wrStateTimeout	= WR_DEFAULT_STATE_TIMEOUT_MS,
+   .deltasKnown		= WR_DEFAULT_DELTAS_KNOWN,
+   .knownDeltaTx	= WR_DEFAULT_DELTA_TX,
+   .knownDeltaRx	= WR_DEFAULT_DELTA_RX,
+#endif
    /********************************************************/
 };
 
@@ -66,12 +77,24 @@ int main(int argc, char **argv)
     for(i = 0; i < rtOpts.portNumber; i++)
     {
 
+#ifdef  WRPTPv2     
+      if(i == 0 && rtOpts.wrConfig == WR_M_AND_S)
+	DBG("wrConfig  [port = %d] ........ Master and Slave \n",i+1);
+      if(i == 0 && rtOpts.wrConfig == WR_SLAVE)
+	DBG("wrConfig  [port = %d] ........ Slave \n",i+1);
+      else if(rtOpts.wrConfig != NON_WR)
+	DBG("wrConfig  [port = %d] ........ Master\n",i+1);
+      else
+	DBG("wrConfig  [port = %d] ........ NON WR\n",i+1);
+#else
       if(i == 0 && rtOpts.wrMode == WR_SLAVE)
 	DBG("wrMode    [port = %d] ........ Slave \n",i+1);
       else if(rtOpts.wrMode != NON_WR)
 	DBG("wrMode    [port = %d] ........ Master\n",i+1);
       else
 	DBG("wrMode    [port = %d] ........ NON WR\n",i+1);
+ 
+#endif
     }
     if(rtOpts.portNumber == 1)
 	DBG("running as ...................... single port node\n");

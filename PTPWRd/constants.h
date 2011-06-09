@@ -152,6 +152,10 @@
 
 #define WR_SIGNALING_MSG_BASE_LENGTH	48
 
+#define WR_DEFAULT_DELTAS_KNOWN		FALSE
+#define WR_DEFAULT_DELTA_TX		0
+#define WR_DEFAULT_DELTA_RX		0
+
 #endif
 
 /** \}*/

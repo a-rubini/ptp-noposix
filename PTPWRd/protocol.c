@@ -1686,13 +1686,9 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 		DBG("WR Management msg [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
-	\n\tcalPeriod             = %32lld us		\
-	\n\tcalibrationPattern    = %s			\
-	\n\tcalibrationPatternLen = %32d bits",\
+	\n\tcalPeriod             = %32lld us\n",\
 		    ptpClock->otherNodeCalSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalPeriod, \
-		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
-		    (unsigned)ptpClock->otherNodeCalibrationPatternLen);
+		    (unsigned long long)ptpClock->otherNodeCalPeriod);
 		break;
 
 	case CALIBRATED:
@@ -1770,13 +1766,9 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 		DBG("handle ..... WR_SIGNALING, [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
-	\n\tcalPeriod    	  = %32lld us		\
-	\n\tcalibrationPattern    = %s			\
-	\n\tcalibrationPatternLen = %32d bits\n",\
+	\n\tcalPeriod    	  = %32lld us\n",\
 		    ptpClock->otherNodeCalSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalPeriod, \
-		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
-		    (unsigned)ptpClock->otherNodeCalibrationPatternLen);
+		    (unsigned long long)ptpClock->otherNodeCalPeriod);
 		break;
 
 	case CALIBRATED:
@@ -2098,6 +2090,13 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 		switch(wrMessageID)
 		{
 		case CALIBRATE:
+#ifdef WRPTPv2			  
+			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
+		  \n\t\tcalibrationSendPattern = %32x			\
+		  \n\t\tcalPeriod    	       = %32lld us\n\n",	\
+			    !ptpClock->calibrated,			\
+			    (unsigned long long)ptpClock->calPeriod);
+#else
 			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalPeriod    	       = %32lld us		\
@@ -2108,6 +2107,7 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 			    printf_bits(ptpClock->calibrationPattern),	\
 			    (unsigned)ptpClock->calibrationPatternLen);
 
+#endif
 			break;
 
 		case CALIBRATED:

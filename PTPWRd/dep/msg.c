@@ -794,25 +794,31 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
 	    put_be32(buf+56, ptpClock->calPeriod);
+#ifndef WRPTPv2	    
 	    put_be32(buf+60, ptpClock->calibrationPattern);
 	    put_be16(buf+64, ptpClock->calibrationPatternLen);
-	    len = 12;
+#endif
+	    len = 12; // TODO
+
 
 #else
  	  case SLAVE_CALIBRATE:
  	  case MASTER_CALIBRATE:
 
 	    put_be32(buf+54, ptpClock->calPeriod);
+#ifndef WRPTPv2		    
 	    put_be32(buf+58, ptpClock->calibrationPattern);
 	    put_be16(buf+62, ptpClock->calibrationPatternLen);
-	    len = 10;
+#endif	    
+	    len = 10; //TODO
 
 #endif
 
 	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+#ifndef WRPTPv2		    
 	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
-
+#endif
 
 
 	    break;
@@ -936,15 +942,18 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
 	    put_be32(buf+58, ptpClock->calPeriod);
+#ifndef WRPTPv2		    
 	    put_be32(buf+62, ptpClock->calibrationPattern);
 	    put_be16(buf+66, ptpClock->calibrationPatternLen);
+#endif	    
 	    len = 20;
 
 
 	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+#ifndef WRPTPv2		    
 	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
-
+#endif
 
 
 	    break;
@@ -1071,9 +1080,10 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	      ptpClock->otherNodeCalSendPattern= get_be16(buf+56);
 	      ptpClock->otherNodeCalPeriod     = get_be32(buf+58);
+#ifndef WRPTPv2      
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+62);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+66);
-
+#endif
 	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
@@ -1081,9 +1091,10 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 
 	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+#ifndef WRPTPv2		      
 	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
-
+#endif
 	      break;
 
 	    case CALIBRATED:
@@ -1170,9 +1181,10 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 
 	      ptpClock->otherNodeCalSendPattern= get_be16(buf+54);
 	      ptpClock->otherNodeCalPeriod     = get_be32(buf+56);
+# ifndef WRPTPv2      	      
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+60);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+64);
-
+# endif
 	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
@@ -1183,15 +1195,18 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
  	    case SLAVE_CALIBRATE:
 
 	      ptpClock->otherNodeCalPeriod     = get_be32(buf+54);
+# ifndef WRPTPv2      	      
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+58);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+62);
+# endif
 
 #endif
 
 	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+#ifndef WRPTPv2		      
 	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
-
+#endif
 	      break;
 
 #ifdef NEW_SINGLE_WRFSM

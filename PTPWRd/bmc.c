@@ -40,8 +40,11 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	/* If priority not defined at the runtime, set it high for the WR master*/
 #ifdef WRPTPv2	
 	// initial value of wrMode 
-	
 	ptpClock->wrMode = NON_WR;
+// 	ptpClock->
+// 	ptpClock->
+// 	ptpClock->
+// 	ptpClock->
 	
 	
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrConfig != NON_WR)
@@ -166,9 +169,12 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #endif
 
 	ptpClock->calPeriod = rtOpts->calPeriod;
+	
+#ifndef WRPTPv2		
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
 	ptpClock->calibrationPatternLen = rtOpts->calibrationPatternLen;
-
+#endif
+	
 	for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
 	  {
 	    ptpClock->wrTimeouts[i] = WR_DEFAULT_STATE_TIMEOUT_MS;

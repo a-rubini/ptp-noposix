@@ -293,7 +293,7 @@ typedef struct {
 
 #ifdef WRPTPv2
 	UInteger16 primarySlavePortNumber;
-	Enumeration8 parentWrConfig; 
+
 #endif
 /******* Parent data set *******/
 
@@ -336,7 +336,58 @@ typedef struct {
 
 	/*Static members*/
 	PortIdentity portIdentity;
+#ifdef WRPTPv2
 
+	/*
+	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
+	 * Can be:
+	 * NON_WR
+	 * WR_S_ONLY
+	 * WR_M_ONLY
+	 * WR_M_AND_S
+	 */	
+	Enumeration8 wrConfig;	
+
+	/*
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * they are stored in this static fields, if they are not known, 
+	 * the filds shall be set to 0x0
+	 */	
+	FixedDelta knownDeltaTx; 
+	FixedDelta knownDeltaRx; 
+	
+	/*
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * a TRUE value of deltasKnown indicates it and validates the values of
+	 * knownDeltaTx and knownDeltaRx
+	 */		
+	Boolean deltasKnown;
+	
+	/*
+	 * Determines the timeout (in microseconds) for 
+	 * an execution of a state of the WR State Machine
+	 * (excluding REQ_CALIBRATION and CAL_REQ_RESP, if calPeriod known)
+	 */	
+	UInteger32 wrStateTimeout; 
+
+	/*
+	 * Determines the number of times a state of WR State Machine is re-entered 
+	 * (as a consequence of wrStateTimeout expiration) before the WR Link Setup is abandoned. 
+	 * If the number of the given state execution retries equals wrStateRetry, 
+	 * the EXC\_TIMEOUT\_RETRY event is generated (see \ref{sec:wrEventsAndConditions}).
+	 */	
+	UInteger8 wrStateRetry;
+	
+	/*
+	 * The wrConfig of the parent port (send with Announce msg)
+	 */	
+	Enumeration8 parentWrConfig; 
+#endif
+	/*
+	 * Calibration parameters of the current port
+	 */
+	UInteger32 calPeriod;//[us]
+	
 	/*Dynamic members*/
 	Enumeration8 portState;
 	Integer8 logMinDelayReqInterval;
@@ -459,26 +510,7 @@ typedef struct {
 	 * starts with FALSE
 	 */
 	Boolean wrModeON; 
-#ifdef WRPTPv2	
-	/*
-	 * Indicates current WR Mode of the port.
-	 * Can be:
-	 * NON_WR
-	 * WR_SLAVE
-	 * WR_MASTER
-	 */	
-	//Enumeration8 portWrMode;
 
-	/*
-	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
-	 * Can be:
-	 * NON_WR
-	 * WR_S_ONLY
-	 * WR_M_ONLY
-	 * WR_M_AND_S
-	 */	
-	Enumeration8 wrConfig;	
-#endif	
 	/*
 	 * If port is aware of it's
 	 * fixed delays (they are measured and
@@ -493,23 +525,18 @@ typedef struct {
 	FixedDelta deltaTx; 
 	FixedDelta deltaRx; 
 
-	/*
-	 * Calibration parameters of the
-	 * current port
-	 */
-
-	UInteger32 calPeriod;//[us]  //WRPTPv2: portCalPeriod
-	
+#ifndef WRPTPv2
 	UInteger32 calibrationPattern;       //WRPTPv2: portCalPattern
 	UInteger16 calibrationPatternLen;    //WRPTPv2: portCalPatternLen
-  
+#endif
+
 	UInteger16 otherNodeCalSendPattern; //WRPTPv2: parentPortCalSendPattern ??
 	UInteger32 otherNodeCalPeriod;      //WRPTPv2: parentPortCalPeriod
 	
-	
+#ifndef WRPTPv2	
 	UInteger32 otherNodeCalibrationPattern;     //WRPTPv2: parentPortCalPattern
 	UInteger16 otherNodeCalibrationPatternLen;  //WRPTPv2: parentPortCalPatternLen
-
+#endif
 	/*
 	 * used to implemetn two-step clock
 	 * this is implemented in WR differently than
@@ -617,23 +644,26 @@ typedef struct {
 
 	/********* White Rabbit ********/
 	UInteger16	portNumber;
-	Enumeration8	wrMode;
+
 	UInteger32	calPeriod;
+#ifndef WRPTPv2		
 	UInteger32	calibrationPattern;
 	UInteger16	calibrationPatternLen;
+	Enumeration8	wrMode;
+#endif	
 	//tmp
 	UInteger8	overrideClockIdentity;
 #ifdef WRPTPv2	
 
-	/*
-	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
-	 * Can be:
-	 * NON_WR
-	 * WR_S_ONLY
-	 * WR_M_ONLY
-	 * WR_M_AND_S
-	 */	
 	Enumeration8 wrConfig;	
+	
+	FixedDelta knownDeltaTx; 
+	FixedDelta knownDeltaRx; 
+	
+	Boolean deltasKnown;
+	
+	UInteger32 wrStateTimeout; 
+	UInteger8 wrStateRetry;
 #endif
 } RunTimeOpts;
 

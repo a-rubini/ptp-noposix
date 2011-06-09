@@ -67,7 +67,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDMASxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDMASBxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -110,6 +110,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
   "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
   "-M                WR: run PTP node as WR Master\n"
   "-S                WR: run PTP node as WR Slave\n"
+  "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
   "-q NUMBER         WR: if you want to use one eth interface for testing ptpd (run two which communicate) define here different port numbers (need to be > 1)\n"
   "-1 NAME           WR: network interface for port 1\n"
   "-2 NAME           WR: network interface for port 2\n"
@@ -271,6 +272,14 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
 	   DBGNPI("WR Master\n");
 	   break;
+#ifdef WRPTPv2
+
+   case 'B':
+	   rtOpts->wrConfig = WR_M_AND_S;
+	   DBGNPI("WR Master and Slave\n");
+	   break;	   
+#endif	   
+	   
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
