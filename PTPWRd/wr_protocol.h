@@ -90,5 +90,13 @@ char *printf_bits(UInteger32 bits);
 
 char *format_wr_timestamp(wr_timestamp_t ts);
 
+#ifdef WRPTPv2
+
+/*
+  It initializes White Rabbit dynamic data fields as 
+  defined in the WRSPEC, talbe 1
+*/
+Boolean initWrData(PtpClock *ptpClock);
+#endif
 
 #endif /*WR_PROTOCOL_H_*/

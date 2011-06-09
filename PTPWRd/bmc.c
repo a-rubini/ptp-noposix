@@ -39,9 +39,27 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	/* If priority not defined at the runtime, set it high for the WR master*/
 #ifdef WRPTPv2	
-	// initial value of wrMode 
-	ptpClock->wrMode = NON_WR;
+	/*
+	 * White Rabbit - init static data fields
+	 */
+	ptpClock->wrConfig			     = rtOpts->wrConfig;
+	ptpClock->deltasKnown			     = rtOpts->deltasKnown;
+	ptpClock->wrStateTimeout		     = rtOpts->wrStateTimeout;
+	ptpClock->wrStateRetry			     = rtOpts->wrStateRetry;
+	ptpClock->calPeriod			     = rtOpts->calPeriod;	
 	
+	ptpClock->knownDeltaTx.scaledPicoseconds.lsb = rtOpts->knownDeltaTx.scaledPicoseconds.lsb;
+	ptpClock->knownDeltaTx.scaledPicoseconds.msb = rtOpts->knownDeltaTx.scaledPicoseconds.msb;
+	
+	ptpClock->knownDeltaRx.scaledPicoseconds.lsb = rtOpts->knownDeltaRx.scaledPicoseconds.lsb;
+	ptpClock->knownDeltaRx.scaledPicoseconds.msb = rtOpts->knownDeltaRx.scaledPicoseconds.msb;
+	
+	ptpClock->primarySlavePortNumber = 0;
+	
+	/* 
+	 * White Rabbit - init dynamic data fields 
+	 */
+	initWrData(ptpClock);
 	
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrConfig != NON_WR)
 	  ptpClock->priority1 = WR_PRIORITY1;
@@ -138,7 +156,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	  /* normal PTP daemon on all ports */
 	  //ptpClock->wrMode                   = NON_WR;
 	}
-
+#ifndef WRPTPv2	
 	ptpClock->wrModeON      		 = FALSE;
 
 	/*this one should be set at runtime*/
@@ -148,7 +166,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->deltaRx.scaledPicoseconds.lsb	 = 0;
 	ptpClock->deltaRx.scaledPicoseconds.msb	 = 0;
 	/**/
-
+#endif
 	//ptpClock->tx_tag 		 = 0;
 	//ptpClock->new_tx_tag_read   		 = FALSE;
 
@@ -158,27 +176,33 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->pending_PDelayReq_tx_ts  = 0;
 	ptpClock->pending_PDelayResp_tx_ts = 0;
 
-#ifdef NEW_SINGLE_WRFSM
+#ifndef WRPTPv2		
+	
+# ifdef NEW_SINGLE_WRFSM
 	ptpClock->wrPortState = WRS_IDLE;
-#else
+# else
 	ptpClock->wrPortState = PTPWR_IDLE;
-#endif
+# endif
 
 	ptpClock->calPeriod = rtOpts->calPeriod;
 	
-#ifndef WRPTPv2		
+	
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
 	ptpClock->calibrationPatternLen = rtOpts->calibrationPatternLen;
 #endif
-	
+	//TODO:
 	for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
 	  {
+#ifdef WRPTPv2    
+	    ptpClock->wrTimeouts[i] = ptpClock->wrStateTimeout;
+#else
 	    ptpClock->wrTimeouts[i] = WR_DEFAULT_STATE_TIMEOUT_MS;
+#endif
 	  }
 
-	// fixme: locking timeout should be bigger
+	// TODO: fixme: locking timeout should be bigger
 
-	ptpClock->wrTimeouts[WRS_S_LOCK] = 10000;
+	ptpClock->wrTimeouts[WRS_S_LOCK]   = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_1] = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_2] = 10000;
 }

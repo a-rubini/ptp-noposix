@@ -869,3 +869,44 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 }
 
+#ifdef WRPTPv2
+/*
+  It initializes White Rabbit dynamic data fields as 
+  defined in the WRSPEC, talbe 1
+*/
+Boolean initWrData(PtpClock *ptpClock)
+{
+  ptpClock->wrMode 			   = NON_WR;
+  ptpClock->wrModeON    		   = FALSE;
+  ptpClock->wrPortState 		   = WRS_IDLE;
+  ptpClock->calibrated  		   = ptpClock->deltasKnown;
+
+  if(ptpClock->deltasKnown == TRUE)
+  {
+    ptpClock->deltaTx.scaledPicoseconds.lsb  = ptpClock->knownDeltaTx.scaledPicoseconds.lsb;
+    ptpClock->deltaTx.scaledPicoseconds.msb  = ptpClock->knownDeltaTx.scaledPicoseconds.msb;
+    ptpClock->deltaRx.scaledPicoseconds.lsb  = ptpClock->knownDeltaRx.scaledPicoseconds.lsb;
+    ptpClock->deltaRx.scaledPicoseconds.msb  = ptpClock->knownDeltaRx.scaledPicoseconds.msb;
+  }
+  else
+  {
+    ptpClock->deltaTx.scaledPicoseconds.lsb  = 0;
+    ptpClock->deltaTx.scaledPicoseconds.msb  = 0;
+    ptpClock->deltaRx.scaledPicoseconds.lsb  = 0;
+    ptpClock->deltaRx.scaledPicoseconds.msb  = 0;
+  }
+  ptpClock->parentWrConfig	 	  = NON_WR;
+  //ptpClock->parentWrMode 		  = NON_WR;
+  ptpClock->parentWrModeON		  = FALSE;
+  ptpClock->parentCalibrated		  = FALSE;
+  
+  ptpClock->otherNodeCalPeriod		  		= 0;
+  ptpClock->otherNodeCalSendPattern	  		= 0;
+  ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb  	= 0;
+  ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb  	= 0;
+  ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb  	= 0;
+  ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb  	= 0;
+  
+  
+}
+#endif
