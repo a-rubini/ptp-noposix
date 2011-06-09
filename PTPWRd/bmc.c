@@ -41,10 +41,6 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 #ifdef WRPTPv2	
 	// initial value of wrMode 
 	ptpClock->wrMode = NON_WR;
-// 	ptpClock->
-// 	ptpClock->
-// 	ptpClock->
-// 	ptpClock->
 	
 	
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpClock->wrConfig != NON_WR)

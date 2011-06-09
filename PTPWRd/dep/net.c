@@ -182,75 +182,105 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     ptpClock->port_uuid_field[4],\
     ptpClock->port_uuid_field[5]);
 
+#ifdef WRPTPv2 
 
+  ptpClock->wrConfig = rtOpts->wrConfig;
+  
+#else 
+/*moved to separate function*/
   // fixme: error handling
   halexp_get_port_state(&pstate, netPath->ifaceName);
 
 
   DBG(" netif_WR_mode = %d\n", pstate.mode);
-#ifdef WRPTPv2
-   if(rtOpts->wrConfig == NON_WR)
-#else
+
    if(rtOpts->wrMode == NON_WR)
-#endif     
    {
      switch(pstate.mode)
      {
-#ifdef WRPTPv2
-       case HEXP_PORT_MODE_WR_M_AND_S:
-
-	  DBG("wrMode(auto config) ....... MASTER & SLAVE\n");
-	  ptpClock->wrConfig = WR_M_AND_S;
-	  break;
-#endif	  
 	case HEXP_PORT_MODE_WR_MASTER:
 	   DBG("wrMode(auto config) ....... MASTER\n");
-#ifdef WRPTPv2
-	   ptpClock->wrConfig = WR_M_ONLY;
-#else	   
 	   ptpClock->wrMode = WR_MASTER;
-#endif	   
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_WR_SLAVE:
 	   DBG("wrMode(auto config) ........ SLAVE\n");
-#ifdef WRPTPv2
-//TODO: change
-	   ptpClock->wrConfig = WR_S_ONLY;
-#else	   
 	   ptpClock->wrMode = WR_SLAVE;
-#endif	   
 	   ptpd_init_exports();
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_NON_WR:
 	default:
 	   DBG("wrMode(auto config) ........ NON_WR\n");
-#ifdef WRPTPv2
-	   ptpClock->wrConfig = NON_WR;
-#else	   
 	   ptpClock->wrMode = NON_WR;
-#endif	   
 	   //tmp solution
 	   break;
      }
    }else
    {
-#ifdef WRPTPv2
-     ptpClock->wrConfig = rtOpts->wrConfig;
-#else
      ptpClock->wrMode = rtOpts->wrMode;
-#endif     
      DBG("wrMode (............ FORCE ON STARTUP\n");
    }
-
+#endif
 
   DBG("netInit: exiting OK\n");
 
   return TRUE;
 
 }
+/*
+ * auto detect port's wrConfig 
+ */
+Boolean autoDetectPortWrConfig(NetPath *netPath, PtpClock *ptpClock)
+{
+  hexp_port_state_t pstate;
+  
+  // fixme: error handling
+  halexp_get_port_state(&pstate, netPath->ifaceName);
 
+
+  DBG(" netif_WR_mode = %d\n", pstate.mode);
+
+  switch(pstate.mode)
+  {
+
+       case HEXP_PORT_MODE_WR_M_AND_S:
+
+	  DBG("wrConfig(auto config) ....... MASTER & SLAVE\n");
+	  ptpClock->wrConfig = WR_M_AND_S;
+	  ptpd_init_exports();
+	  break;
+
+       case HEXP_PORT_MODE_WR_MASTER:
+	   DBG("wrConfig(auto config) ....... MASTER\n");
+	   ptpClock->wrConfig = WR_M_ONLY;
+
+	   break;
+	case HEXP_PORT_MODE_WR_SLAVE:
+	   DBG("wrConfig(auto config) ........ SLAVE\n");
+
+	   ptpClock->wrConfig = WR_S_ONLY;
+	   ptpd_init_exports();
+	   //tmp solution
+	   break;
+	case HEXP_PORT_MODE_NON_WR:
+	  
+	  DBG("wrConfig(auto config) ........  NON_WR\n");
+	  
+	default:
+	  
+	   DBG("wrConfig(auto config) ........ auto detection failed: NON_WR\n");
+	   
+	   return FALSE;
+
+	   //tmp solution
+	   break;
+   }
+
+  return TRUE;
+
+
+}
 
 /*Check if data have been received*/
 int netSelect(TimeInternal *timeout, NetPath *netPath)

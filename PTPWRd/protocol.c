@@ -422,6 +422,11 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   netShutdown(&ptpClock->netPath);
 
+#ifndef WRPTPv2
+  ptpClock->wrConfig = rtOpts->wrConfig;
+#endif
+
+  /* network init */
   if(!netInit(&ptpClock->netPath, rtOpts, ptpClock))
   {
     ERROR("failed to initialize network\n");
@@ -431,9 +436,17 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   //   send_test(ptpClock);
 
-  /* initialize other stuff */
+  /* all the protocol (PTP + WRPTP) initialization */
   initData(rtOpts, ptpClock);
 
+#ifdef WRPTPv2
+  /* 
+   * attempt autodetection only if non wr config is set, 
+   * otherwise, the configured setting is forced
+   */
+  if(ptpClock->wrConfig == NON_WR)
+    autoDetectPortWrConfig(&ptpClock->netPath, ptpClock); //TODO handle error
+#endif
 
   /* Create the timers (standard PTP only, the WR ones are created in another function) */
   timerInit(&ptpClock->timers.sync, "Sync");

@@ -134,6 +134,7 @@ UInteger16 msgPackManagementResponse(void*,MsgHeader*,MsgManagement*,PtpClock*);
 
 Boolean netStartup();
 Boolean netInit(NetPath*,RunTimeOpts*,PtpClock*);
+Boolean autoDetectPortWrConfig(NetPath*, PtpClock*);
 Boolean netShutdown(NetPath*);
 int netSelect(TimeInternal*,NetPath*);
 
