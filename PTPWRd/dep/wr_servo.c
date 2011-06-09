@@ -185,9 +185,9 @@ int wr_servo_init(PtpClock *clock)
 	s->fiber_fix_alpha = pstate.fiber_fix_alpha;
 
 	// fixme: full precision
-	s->delta_tx_m = ((int32_t)clock->parentDeltaTx
+	s->delta_tx_m = ((int32_t)clock->otherNodeDeltaTx
 			 .scaledPicoseconds.lsb) >> 16;
-	s->delta_rx_m = ((int32_t)clock->parentDeltaRx
+	s->delta_rx_m = ((int32_t)clock->otherNodeDeltaRx
 			 .scaledPicoseconds.lsb) >> 16;
 	s->delta_tx_s = ((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16;
 	s->delta_rx_s = ((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16;

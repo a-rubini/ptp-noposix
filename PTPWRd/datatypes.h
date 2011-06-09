@@ -317,8 +317,8 @@ typedef struct {
 	Boolean parentCalibrated;
 	Enumeration8 parentWrNodeMode; 
 
-	FixedDelta parentDeltaTx; 
-	FixedDelta parentDeltaRx; //WRPTPv2: parentPortDeltaRx
+	FixedDelta otherNodeDeltaTx; 
+	FixedDelta otherNodeDeltaRx; //WRPTPv2: parentPortDeltaRx
 
 /******* Global time properties data set *********/
 
@@ -451,14 +451,14 @@ typedef struct {
 	 * Its important that the node knows what it is,
 	 * by default PTPd runs in NON_WR
 	 */
-	Enumeration8 wrMode; //WRPTPv2: 
+	Enumeration8 wrMode; 
 
 	/*
 	 * tell us whether we work in WR
 	 * mode at the moment
 	 * starts with FALSE
 	 */
-	Boolean wrModeON; //WRPTPv2: 
+	Boolean wrModeON; 
 #ifdef WRPTPv2	
 	/*
 	 * Indicates current WR Mode of the port.
@@ -485,13 +485,13 @@ typedef struct {
 	 * stored in deltaTx and deltaRx)
 	 * it's TRUE
 	 */
-	Boolean calibrated; //changed to V2
+	Boolean calibrated;
 
 	/*
 	 * Fixed elays
 	 */
-	FixedDelta deltaTx; //WRPTPv2: portDeltaTx
-	FixedDelta deltaRx; //WRPTPv2: portDeltaRx
+	FixedDelta deltaTx; 
+	FixedDelta deltaRx; 
 
 	/*
 	 * Calibration parameters of the
@@ -499,11 +499,14 @@ typedef struct {
 	 */
 
 	UInteger32 calPeriod;//[us]  //WRPTPv2: portCalPeriod
+	
 	UInteger32 calibrationPattern;       //WRPTPv2: portCalPattern
 	UInteger16 calibrationPatternLen;    //WRPTPv2: portCalPatternLen
   
-	UInteger16 otherNodeCalibrationSendPattern; //WRPTPv2: parentPortCalSendPattern ??
-	UInteger32 otherNodeCalibrationPeriod;      //WRPTPv2: parentPortCalPeriod
+	UInteger16 otherNodeCalSendPattern; //WRPTPv2: parentPortCalSendPattern ??
+	UInteger32 otherNodeCalPeriod;      //WRPTPv2: parentPortCalPeriod
+	
+	
 	UInteger32 otherNodeCalibrationPattern;     //WRPTPv2: parentPortCalPattern
 	UInteger16 otherNodeCalibrationPatternLen;  //WRPTPv2: parentPortCalPatternLen
 

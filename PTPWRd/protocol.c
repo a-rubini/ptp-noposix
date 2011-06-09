@@ -1689,8 +1689,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	\n\tcalPeriod             = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
 	\n\tcalibrationPatternLen = %32d bits",\
-		    ptpClock->otherNodeCalibrationSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalibrationPeriod, \
+		    ptpClock->otherNodeCalSendPattern,	  \
+		    (unsigned long long)ptpClock->otherNodeCalPeriod, \
 		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
 		    (unsigned)ptpClock->otherNodeCalibrationPatternLen);
 		break;
@@ -1700,8 +1700,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		DBG("WR Management msg [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:
@@ -1773,8 +1773,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	\n\tcalPeriod    	  = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
 	\n\tcalibrationPatternLen = %32d bits\n",\
-		    ptpClock->otherNodeCalibrationSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalibrationPeriod, \
+		    ptpClock->otherNodeCalSendPattern,	  \
+		    (unsigned long long)ptpClock->otherNodeCalPeriod, \
 		    printf_bits(ptpClock->otherNodeCalibrationPattern), \
 		    (unsigned)ptpClock->otherNodeCalibrationPatternLen);
 		break;
@@ -1784,8 +1784,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		DBG("handle ..... WR_SIGNALING [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:

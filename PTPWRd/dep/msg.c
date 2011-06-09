@@ -1069,12 +1069,12 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	    case CALIBRATE:
 
-	      ptpClock->otherNodeCalibrationSendPattern= get_be16(buf+56);
-	      ptpClock->otherNodeCalibrationPeriod     = get_be32(buf+58);
+	      ptpClock->otherNodeCalSendPattern= get_be16(buf+56);
+	      ptpClock->otherNodeCalPeriod     = get_be32(buf+58);
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+62);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+66);
 
-	      if(ptpClock->otherNodeCalibrationSendPattern & SEND_CALIBRATION_PATTERN)
+	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
 		DBGM(" calibrationSendPattern........ FALSE \n");
@@ -1088,18 +1088,18 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	    case CALIBRATED:
 	      /*delta TX*/
-	      ptpClock->parentDeltaTx.scaledPicoseconds.msb = get_be32(buf+56);
-	      ptpClock->parentDeltaTx.scaledPicoseconds.lsb = get_be32(buf+60);
+	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+56);
+	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+60);
 
 	      /*delta RX*/
-	      ptpClock->parentDeltaRx.scaledPicoseconds.msb = get_be32(buf+64);
-	      ptpClock->parentDeltaRx.scaledPicoseconds.lsb = get_be32(buf+68);
+	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+64);
+	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+68);
 
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->parentDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->parentDeltaTx.scaledPicoseconds.lsb);
+	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb);
+	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb);
 
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->parentDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
+	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb);
+	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
 
 	      break;
 
@@ -1168,12 +1168,12 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 #ifdef NEW_SINGLE_WRFSM
 	    case CALIBRATE:
 
-	      ptpClock->otherNodeCalibrationSendPattern= get_be16(buf+54);
-	      ptpClock->otherNodeCalibrationPeriod     = get_be32(buf+56);
+	      ptpClock->otherNodeCalSendPattern= get_be16(buf+54);
+	      ptpClock->otherNodeCalPeriod     = get_be32(buf+56);
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+60);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+64);
 
-	      if(ptpClock->otherNodeCalibrationSendPattern & SEND_CALIBRATION_PATTERN)
+	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
 		DBGM(" calibrationSendPattern........ FALSE \n");
@@ -1182,7 +1182,7 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
  	    case MASTER_CALIBRATE:
  	    case SLAVE_CALIBRATE:
 
-	      ptpClock->otherNodeCalibrationPeriod     = get_be32(buf+54);
+	      ptpClock->otherNodeCalPeriod     = get_be32(buf+54);
 	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+58);
 	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+62);
 
@@ -1201,18 +1201,18 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 	    case SLAVE_CALIBRATED:
 #endif
 	      /*delta TX*/
-	      ptpClock->parentDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
-	      ptpClock->parentDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);
+	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
+	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);
 
 	      /*delta RX*/
-	      ptpClock->parentDeltaRx.scaledPicoseconds.msb = get_be32(buf+62);
-	      ptpClock->parentDeltaRx.scaledPicoseconds.lsb = get_be32(buf+66);
+	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+62);
+	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+66);
 
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->parentDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->parentDeltaTx.scaledPicoseconds.lsb);
+	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb);
+	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb);
 
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->parentDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->parentDeltaRx.scaledPicoseconds.lsb);
+	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb);
+	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
 
 	      break;
 

@@ -499,7 +499,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
 	  if( ptpd_netif_calibration_pattern_enable( 	ptpClock->netPath.ifaceName, \
-							ptpClock->otherNodeCalibrationPeriod, \
+							ptpClock->otherNodeCalPeriod, \
 							ptpClock->otherNodeCalibrationPattern, \
 							ptpClock->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
 	    ptpClock->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
@@ -516,7 +516,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    if(ptpClock->msgTmpManagementId == CALIBRATED /* || timeout */)
 #endif	      
 	    {
-	      if(ptpClock->otherNodeCalibrationSendPattern ==  TRUE)
+	      if(ptpClock->otherNodeCalSendPattern ==  TRUE)
 		ptpClock->wrPortState = WRS_RESP_CALIB_REQ_2;
 	      else
 		ptpClock->wrPortState = WRS_RESP_CALIB_REQ_3;
@@ -803,14 +803,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
     // to send the pattern or not to send
     // here is the answer to the question.....
-    if(ptpClock->otherNodeCalibrationSendPattern == TRUE)
+    if(ptpClock->otherNodeCalSendPattern == TRUE)
     {
       /*
        * the other node needs calibration, so
        * turn on calibration pattern
        */
 	if( ptpd_netif_calibration_pattern_enable( ptpClock->netPath.ifaceName, \
-				ptpClock->otherNodeCalibrationPeriod, \
+				ptpClock->otherNodeCalPeriod, \
 				ptpClock->otherNodeCalibrationPattern, \
 				ptpClock->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
 	  ptpClock->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
