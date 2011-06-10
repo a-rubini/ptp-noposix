@@ -576,7 +576,10 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    toWRState(WRS_IDLE, rtOpts, ptpClock);
 #endif
 	    if(ptpClock->wrMode == WR_SLAVE)
-	      toState(PTP_SLAVE, rtOpts, ptpClock);
+	      /* 
+	       * this is MASTER_CLOCK_SELECTED event defined in PTP in 9.2.6.13
+	       */
+	      toState(PTP_SLAVE, rtOpts, ptpClock); 
 	    else if(ptpClock->wrMode == WR_MASTER)
 	      toState(PTP_MASTER, rtOpts, ptpClock);
 	    else
@@ -620,11 +623,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    */
   UInteger8 exitingState = returnCurrentWRMainState(ptpClock);
 
+#ifndef WRPTPv2  
   /******** WR TIMEOUT STAFF **********
    * turn of timeout of exitingState
    * turn out timeout of enteringState
    */
   wrTimetoutManage(enteringState,exitingState,rtOpts,ptpClock);
+#endif
+
 
 #ifdef WRPTPv2
   Enumeration8 tmpWrMode;
@@ -688,6 +694,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     DBGWRFSM("exiting WRS_REQ_CALIBRATION\n");     
    case WRS_REQ_CALIBRATION_1:
    case WRS_REQ_CALIBRATION_2:
+          
      break;
 
    case WRS_CALIBRATED:
@@ -791,6 +798,16 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     DBGWRFSM("entering  WRS_REQ_CALIBRATION\n");
 
+#ifdef WRPTPv2   
+    if(ptpClock->calPeriod > 0)
+    {
+       ptpClock->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpClock->calPeriod;
+       DBG("set wrTimeout of WRS_REQ_CALIBRATION based on calPeriod:  %u [us]\n", ptpClock->calPeriod);
+    }
+    else
+       ptpClock->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpClock->wrStateTimeout;
+#endif   
+   
     if( ptpClock->calibrated == TRUE)
     {
       /*
@@ -851,6 +868,16 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
        */
 
 #ifdef 	WRPTPv2
+
+	if(ptpClock->otherNodeCalPeriod > 0)
+	{
+	    ptpClock->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpClock->otherNodeCalPeriod;
+	    DBG("set wrTimeout of WRS_RESP_CALIB_REQ based on calPeriod:  %u [us]\n", ptpClock->otherNodeCalPeriod);
+	}
+	else
+	    ptpClock->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpClock->wrStateTimeout;
+	
+	
 	if( ptpd_netif_calibration_pattern_enable( ptpClock->netPath.ifaceName, \
 				ptpClock->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
@@ -900,6 +927,15 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
   }
 
+#ifndef WRPTPv2  
+  /******** WR TIMEOUT STAFF **********
+   * turn of timeout of exitingState
+   * turn out timeout of enteringState,
+   * called at the end, since we set timeouts of 
+   * WRS_RESP_CALIB_REQ and WRS_REQ_CALIBRATION states
+   */
+  wrTimetoutManage(enteringState,exitingState,rtOpts,ptpClock);
+#endif
 
 }
 

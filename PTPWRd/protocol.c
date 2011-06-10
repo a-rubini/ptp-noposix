@@ -306,7 +306,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     {
         /* now we check whether WR Link Setup is needed */
 	if(ptpClock->parentWrModeON  == FALSE     || \
-	   ptpClock->wrModeON             == FALSE     )
+	   ptpClock->wrModeON        == FALSE     )
       {
 
 	toWRState(WRS_PRESENT, rtOpts, ptpClock);
@@ -315,7 +315,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	break;
       }
     }
-    else if(ptpClock->wrMode != WR_MASTER) 
+    else
     {// one of the ports on the link is not WR-enabled
       ptpClock->wrMode = NON_WR;
     }
@@ -548,7 +548,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 			if(state != ptpClock->portState)
 			{
 				if(state == PTP_SLAVE        && (
-				   ptpClock->portState == PTP_LISTENING    ||
+				   ptpClock->portState == PTP_LISTENING    || 
 				   ptpClock->portState == PTP_PRE_MASTER   ||
 				   ptpClock->portState == PTP_MASTER       ||
 				   ptpClock->portState == PTP_PASSIVE      ||

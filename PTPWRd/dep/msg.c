@@ -1090,7 +1090,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 		DBGM(" calibrationSendPattern........ FALSE \n");
 
 
-	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->otherNodeCalPeriod);
 #ifndef WRPTPv2		      
 	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
 	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
