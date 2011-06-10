@@ -565,8 +565,16 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	     * While entering the state, we sent WR_MODE_ON to the Master and set wrModeON TRUE and assuming that Master
 	     * is calibrated, set grandmaster to wrModeON and calibrated, see (toWRSlaveState())
 	     */
-
-
+#ifdef WRPTPv2	    
+	    /*
+	     * kind-of non-pre-emption of WR FSM is
+	     * implemented by banning change of PTP state
+	     * in the toState() function if WR state is different then
+	     * WRS_IDLE. so we need to change the WR state first, before
+	     * changing PTP state
+	     */
+	    toWRState(WRS_IDLE, rtOpts, ptpClock);
+#endif
 	    if(ptpClock->wrMode == WR_SLAVE)
 	      toState(PTP_SLAVE, rtOpts, ptpClock);
 	    else if(ptpClock->wrMode == WR_MASTER)
@@ -574,8 +582,9 @@ void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	    else
 	      DBGWRFSM("SHIT !!!\n");
 
+#ifndef WRPTPv2
 	    toWRState(WRS_IDLE, rtOpts, ptpClock);
-
+#endif
 	    break;
 
 

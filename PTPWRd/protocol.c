@@ -165,6 +165,15 @@ void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
 
+#ifdef WRPTPv2	
+  /*
+   * kind-of non-pre-emption of WR FSM is
+   * implemented by banning change of PTP state
+   * if WR state is different then WRS_IDLE.
+   */
+  if(ptpClock->wrPortState !=WRS_IDLE)
+      return ;
+#endif  
   ptpClock->message_activity = TRUE;
 
   /**
@@ -515,7 +524,13 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_SLAVE:
 	case PTP_MASTER:
 		/*State decision Event*/
+#ifdef WRPTPv2
+		/*kind-of-non-WRFSM-preemption implementation*/
+		if(ptpClock->record_update && ptpClock->wrPortState == WRS_IDLE)
+#else
 		if(ptpClock->record_update)
+#endif		  
+		  
 		{
 			DBGV("event STATE_DECISION_EVENT\n");
 			ptpClock->record_update = FALSE;
@@ -577,8 +592,8 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		 		  */
 		 
 				  if(ptpClock->portState	    == PTP_SLAVE && \
-				     ptpClock->wrMode           == WR_SLAVE  && \
-		   		    (ptpClock->parentWrModeON  == FALSE     || \
+				     ptpClock->wrMode               == WR_SLAVE  && \
+		   		    (ptpClock->parentWrModeON       == FALSE     || \
 		   		     ptpClock->wrModeON             == FALSE     ))
 		 		  {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
@@ -615,16 +630,15 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		DBGV("state: PTP_UNCALIBRATED\n");
 
 		/* Execute WR protocol state machine */
-
+		
 		if(ptpClock->wrMode == WR_SLAVE || ptpClock->wrMode == WR_MASTER)
 			/* handling messages inside: handle()*/
 			doWRState(rtOpts, ptpClock);
 		else
 			toState(PTP_SLAVE, rtOpts, ptpClock);
-
-#ifdef WRPTPv2		
+#ifdef WRPTPv2	
 		ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
-#else		
+#else
 		ptpClock->msgTmpManagementId =  NULL_MANAGEMENT;
 #endif		
 		break;
@@ -673,8 +687,9 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_MASTER:
 
 		//if( linkUP == TRUE)
-		  handle(rtOpts, ptpClock);
 
+		handle(rtOpts, ptpClock);
+	  
 		if(timerExpired(&ptpClock->timers.sync))
 		{
 

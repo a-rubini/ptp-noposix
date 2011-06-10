@@ -3,8 +3,9 @@ TODO High Priority
 TODO-ptpx:
 - wrTimeouts - timeouts for LOCK state in initWrData() - check
 - move WR FSM to master in WR Master mode
-
-
+- change implementation of msg handle(), to accommdate the fact 
+  that the announce MSGs should be handled in all WR states... 
+- good idea for non-WRFSM-preemption implementation
 
 TODO:
 - flipping bits in msg.c !!!!!!!
