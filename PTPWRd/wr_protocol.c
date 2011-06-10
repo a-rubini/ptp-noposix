@@ -166,7 +166,11 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
   
   if(timerExpired(&ptpClock->wrTimers[currentState]))
   {
+#ifdef WRPTPv2
+      if (ptpClock->currentWRstateCnt < ptpClock->wrStateRetry )
+#else
       if (ptpClock->currentWRstateCnt < WR_DEFAULT_STATE_REPEAT )
+#endif
       {
 	DBG("WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpClock);
