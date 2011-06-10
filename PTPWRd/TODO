@@ -1,5 +1,10 @@
 TODO High Priority
 
+TODO-ptpx:
+- wrTimeouts - timeouts for LOCK state in initWrData() - check
+- move WR FSM to master in WR Master mode
+
+
 
 TODO:
 - flipping bits in msg.c !!!!!!!

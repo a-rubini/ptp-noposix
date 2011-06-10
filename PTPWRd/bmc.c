@@ -189,15 +189,11 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	
 	ptpClock->calibrationPattern = rtOpts->calibrationPattern;
 	ptpClock->calibrationPatternLen = rtOpts->calibrationPatternLen;
-#endif
+
 	//TODO:
 	for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
 	  {
-#ifdef WRPTPv2    
-	    ptpClock->wrTimeouts[i] = ptpClock->wrStateTimeout;
-#else
 	    ptpClock->wrTimeouts[i] = WR_DEFAULT_STATE_TIMEOUT_MS;
-#endif
 	  }
 
 	// TODO: fixme: locking timeout should be bigger
@@ -205,6 +201,7 @@ void initData(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	ptpClock->wrTimeouts[WRS_S_LOCK]   = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_1] = 10000;
 	ptpClock->wrTimeouts[WRS_S_LOCK_2] = 10000;
+#endif
 }
 
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/

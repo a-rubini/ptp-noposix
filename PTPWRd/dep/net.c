@@ -254,27 +254,22 @@ Boolean autoDetectPortWrConfig(NetPath *netPath, PtpClock *ptpClock)
        case HEXP_PORT_MODE_WR_MASTER:
 	   DBG("wrConfig(auto config) ....... MASTER\n");
 	   ptpClock->wrConfig = WR_M_ONLY;
-
 	   break;
 	case HEXP_PORT_MODE_WR_SLAVE:
 	   DBG("wrConfig(auto config) ........ SLAVE\n");
-
 	   ptpClock->wrConfig = WR_S_ONLY;
 	   ptpd_init_exports();
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_NON_WR:
-	  
 	  DBG("wrConfig(auto config) ........  NON_WR\n");
-	  
+	  ptpClock->wrConfig = NON_WR;
+	  break;
 	default:
-	  
-	   DBG("wrConfig(auto config) ........ auto detection failed: NON_WR\n");
-	   
-	   return FALSE;
-
-	   //tmp solution
-	   break;
+	  DBG("wrConfig(auto config) ........ auto detection failed: NON_WR\n");
+	  ptpClock->wrConfig = NON_WR;
+	  return FALSE;
+	  break;
    }
 
   return TRUE;

@@ -299,6 +299,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	if(ptpClock->parentWrModeON  == FALSE     || \
 	   ptpClock->wrModeON             == FALSE     )
       {
+
 	toWRState(WRS_PRESENT, rtOpts, ptpClock);
 	ptpClock->portState = PTP_UNCALIBRATED;
 	DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_SLAVE )\n");
@@ -444,8 +445,10 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    * attempt autodetection only if non wr config is set, 
    * otherwise, the configured setting is forced
    */
-  if(ptpClock->wrConfig == NON_WR)
+  if(ptpClock->wrConfig == WR_MODE_AUTO)
     autoDetectPortWrConfig(&ptpClock->netPath, ptpClock); //TODO handle error
+  else
+    DBG("wrConfig .............. FORCED configuration\n")  ;
 #endif
 
   /* Create the timers (standard PTP only, the WR ones are created in another function) */

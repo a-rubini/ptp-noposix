@@ -173,7 +173,9 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
       }
       else
       {
-	DBG("WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", currentState,ptpClock->currentWRstateCnt );
+	DBG("WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
+	currentState,ptpClock->currentWRstateCnt );
+	
 	ptpClock->wrModeON = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpClock);
 
@@ -181,6 +183,11 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpClock *ptpCl
 	  toState(PTP_MASTER, rtOpts, ptpClock);
 	else
 	  toState(PTP_SLAVE, rtOpts, ptpClock);
+	/*
+	 * RE-INITIALIZATION OF White Rabbit Data Sets
+	 * (chapter (Re-)Initialization of wrspec
+	 */	
+	initWrData(ptpClock);
       }
 
   }
@@ -610,10 +617,28 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    */
   wrTimetoutManage(enteringState,exitingState,rtOpts,ptpClock);
 
+#ifdef WRPTPv2
+  Enumeration8 tmpWrMode;
+#endif  
+  
   /* leaving state tasks */
   switch(ptpClock->wrPortState)
   {
   case WRS_IDLE:
+      
+    
+    /*
+     * RE-INITIALIZATION OF White Rabbit Data Sets
+     * (chapter (Re-)Initialization of wrspec
+     *
+     * with a "hack" to remember the desired wrMode,
+     * Fixme/TODO: do it nicer
+     */
+    tmpWrMode = ptpClock->wrMode;
+    initWrData(ptpClock);
+    ptpClock->wrMode = tmpWrMode; //re-set the desired wrMode    
+    
+    
     DBGWRFSM("exiting WRS_IDLE\n");
     DBGWRFSM("^^^^^^^^^^^^^^^^ starting White Rabbit State Machine^^^^^^^^^^^^^^^^^^\n");
     DBGWRFSM("\n");
@@ -873,9 +898,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /*
   It initializes White Rabbit dynamic data fields as 
   defined in the WRSPEC, talbe 1
+  Called in the places defined in the WRSpec, (Re-)Initialization 
+  section
 */
 Boolean initWrData(PtpClock *ptpClock)
 {
+  
+  DBG("White Rabbit data (re-)initialization\n");
+  int i=0;
   ptpClock->wrMode 			   = NON_WR;
   ptpClock->wrModeON    		   = FALSE;
   ptpClock->wrPortState 		   = WRS_IDLE;
@@ -907,6 +937,16 @@ Boolean initWrData(PtpClock *ptpClock)
   ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb  	= 0;
   ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb  	= 0;
   
+  for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
+  {
+    ptpClock->wrTimeouts[i] = ptpClock->wrStateTimeout;
+  }
+/*
+  // TODO: fixme: locking timeout should be bigger ????
+  ptpClock->wrTimeouts[WRS_S_LOCK]   = 10000;
+  ptpClock->wrTimeouts[WRS_S_LOCK_1] = 10000;
+  ptpClock->wrTimeouts[WRS_S_LOCK_2] = 10000;  
+*/  
   
 }
 #endif

@@ -270,10 +270,11 @@ enum {
 /*White Rabbit node */
 enum{
 #ifdef WRPTPv2
-	NON_WR    = 0x0,
-	WR_S_ONLY = 0x2, 
-	WR_M_ONLY = 0x1,
-	WR_M_AND_S= 0x3,
+	NON_WR      = 0x0,
+	WR_S_ONLY   = 0x2, 
+	WR_M_ONLY   = 0x1,
+	WR_M_AND_S  = 0x3,
+	WR_MODE_AUTO= 0x4, // only for ptpx - not in the spec
 #else
 	NON_WR    = 0x0,
 	WR_SLAVE  = PTPD_NETIF_RX, //2; just for convenient useage with ptpd_netif interface
