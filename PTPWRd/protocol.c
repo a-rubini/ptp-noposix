@@ -338,6 +338,11 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     }
 # endif      
 #endif 
+
+#ifndef WRPTPv2
+// moved to PTP Master state
+
+
     /*********** White Rabbit MASTER *************
      *
      * her we have case of master which
@@ -349,16 +354,16 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     {
       DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
       
-#ifdef NEW_SINGLE_WRFSM
+# ifdef NEW_SINGLE_WRFSM
       toWRState(WRS_M_LOCK, rtOpts, ptpClock);
-#else
+# else
       toWRMasterState(PTPWR_LOCK, rtOpts, ptpClock);
-#endif
+# endif
 
       ptpClock->portState = PTP_UNCALIBRATED;
       break;
     }
-
+#endif
     /* Standard PTP, go straight to SLAVE */
     DBG("PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
     ptpClock->portState  = PTP_SLAVE;
@@ -631,14 +636,21 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 		/* Execute WR protocol state machine */
 		
+#ifdef WRPTPv2	
+		if(ptpClock->wrMode == WR_SLAVE)
+			/* handling messages inside: handle()*/
+			doWRState(rtOpts, ptpClock);
+		else
+			toState(PTP_SLAVE, rtOpts, ptpClock);
+		
+		ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+#else
 		if(ptpClock->wrMode == WR_SLAVE || ptpClock->wrMode == WR_MASTER)
 			/* handling messages inside: handle()*/
 			doWRState(rtOpts, ptpClock);
 		else
 			toState(PTP_SLAVE, rtOpts, ptpClock);
-#ifdef WRPTPv2	
-		ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
-#else
+		
 		ptpClock->msgTmpManagementId =  NULL_MANAGEMENT;
 #endif		
 		break;
@@ -687,9 +699,20 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_MASTER:
 
 		//if( linkUP == TRUE)
-
+#ifdef WRPTPv2		
+		if(ptpClock->wrMode == WR_MASTER  && ptpClock->wrPortState != WRS_IDLE)
+		{
+			/* handling messages inside: handle()*/
+			doWRState(rtOpts, ptpClock);
+			ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+			break;
+		}
+		else
+			handle(rtOpts, ptpClock);
+#else		  
 		handle(rtOpts, ptpClock);
-	  
+#endif	  
+
 		if(timerExpired(&ptpClock->timers.sync))
 		{
 
@@ -713,7 +736,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 				issuePDelayReq(rtOpts,ptpClock);
 			}
 		}
-
 
 		if(ptpClock->slaveOnly || ptpClock->clockQuality.clockClass == 255)
 			toState(PTP_LISTENING, rtOpts, ptpClock);
@@ -1850,7 +1872,9 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	     DBGWRFSM("wrMode <= WR_MASTER\n");
 	     ptpClock->wrMode = WR_MASTER;
 	     ///////////////////////////////////////////
-	     toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+	     toWRState(WRS_M_LOCK, rtOpts, ptpClock);
+
+	     //toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
 	}
 
 		
