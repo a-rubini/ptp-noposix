@@ -88,54 +88,54 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
-/*Pack header message into OUT buffer of ptpClock*/
-void msgPackHeader(void *buf, PtpClock *ptpClock)
+/*Pack header message into OUT buffer of ptpPortDS*/
+void msgPackHeader(void *buf, PtpPortDS *ptpPortDS)
 {
 	Nibble transport                        = 0x0; //0x80; //(spec annex D)
 	*(UInteger8*)(buf+0)                    = transport;
-	*(UInteger4*)(buf+1)                    = ptpClock->versionNumber;
-	*(UInteger8*)(buf+4)                    = ptpClock->domainNumber;
+	*(UInteger4*)(buf+1)                    = ptpPortDS->versionNumber;
+	*(UInteger8*)(buf+4)                    = ptpPortDS->domainNumber;
 
-	if (ptpClock->twoStepFlag)
+	if (ptpPortDS->twoStepFlag)
 		*(UInteger8*)(buf+6)            = TWO_STEP_FLAG;
 
 	memset((buf+8),0,8);
-	memcpy((buf+20),ptpClock->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	memcpy((buf+20),ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 
-	put_be16(buf+28,ptpClock->portIdentity.portNumber);
+	put_be16(buf+28,ptpPortDS->portIdentity.portNumber);
 
 	*(UInteger8*)(buf+33)                   = 0x7F; //Default value (spec Table 24)
 
 	DBGM("------------ msgPackHeader --------\n");
 	DBGM(" transportSpecific............. %u\n", transport);
-	DBGM(" versionPTP.................... %u\n", ptpClock->versionNumber);
-	DBGM(" domainNumber.................. %u\n", ptpClock->domainNumber);
-	if (ptpClock->twoStepFlag)
+	DBGM(" versionPTP.................... %u\n", ptpPortDS->versionNumber);
+	DBGM(" domainNumber.................. %u\n", ptpPortDS->domainNumber);
+	if (ptpPortDS->twoStepFlag)
 	  DBGM(" flagField..................... %x\n", TWO_STEP_FLAG);
 	else
 	  DBGM(" flagField..................... %x\n", 0);
 	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
-	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
-	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
+	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
+	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
+	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
+	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
+	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
 	DBGM(" logMessageInterval............ %d\n", 0x7F);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
 
 
-/*Pack SYNC message into OUT buffer of ptpClock*/
-void msgPackSync(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
+/*Pack SYNC message into OUT buffer of ptpPortDS*/
+void msgPackSync(void *buf,Timestamp *originTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x00; //Table 19
 	put_be16(buf + 2, SYNC_LENGTH);
-	*(UInteger16*)(buf+30)=flip16(ptpClock->sentSyncSequenceId);
+	*(UInteger16*)(buf+30)=flip16(ptpPortDS->sentSyncSequenceId);
 	*(UInteger8*)(buf+32)=0x00; //Table 23
-	*(Integer8*)(buf+33) = ptpClock->logSyncInterval;
+	*(Integer8*)(buf+33) = ptpPortDS->logSyncInterval;
 	memset((buf+8),0,8);
 
 	/*Sync message*/
@@ -145,14 +145,14 @@ void msgPackSync(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 
 	DBGM("------------ msgPackSync ----------\n");
 	DBGM(" messageLength................. %u\n", SYNC_LENGTH);
-	DBGM(" sentSyncSequenceId............ %u\n", ptpClock->sentSyncSequenceId);
-	DBGM(" logSyncInterval............... %u\n", ptpClock->logSyncInterval);
+	DBGM(" sentSyncSequenceId............ %u\n", ptpPortDS->sentSyncSequenceId);
+	DBGM(" logSyncInterval............... %u\n", ptpPortDS->logSyncInterval);
 	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
-	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
-	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
+	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
+	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
+	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
+	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
+	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
 	DBGM(" originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
 	DBGM(" originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
 	DBGM(" originTimestamp.nsecs......... %d\n",  originTimestamp->nanosecondsField);
@@ -177,44 +177,44 @@ void msgUnpackSync(void *buf,MsgSync *sync)
 
 
 
-/*Pack Announce message into OUT buffer of ptpClock*/
-void msgPackAnnounce(void *buf,PtpClock *ptpClock)
+/*Pack Announce message into OUT buffer of ptpPortDS*/
+void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x0B; //Table 19
 #ifdef WRPTPv2
-	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
+	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrMode != NON_WR)
+	if (ptpPortDS->wrMode != NON_WR)
 #endif	  
 	   put_be16(buf + 2,WR_ANNOUNCE_LENGTH);
 	else
 	   put_be16(buf + 2,ANNOUNCE_LENGTH);
 
-	*(UInteger16*)(buf+30)=flip16(ptpClock->sentAnnounceSequenceId);
+	*(UInteger16*)(buf+30)=flip16(ptpPortDS->sentAnnounceSequenceId);
 	*(UInteger8*)(buf+32)=0x05; //Table 23
-	*(Integer8*)(buf+33) = ptpClock->logAnnounceInterval;
+	*(Integer8*)(buf+33) = ptpPortDS->logAnnounceInterval;
 
 	/*Announce message*/
 	memset((buf+34),0,10);
-	*(Integer16*)(buf+44)=flip16(ptpClock->currentUtcOffset);
+	*(Integer16*)(buf+44)=flip16(ptpPortDS->currentUtcOffset);
 
-	*(UInteger8*)(buf+47)=ptpClock->grandmasterPriority1;
-	*(UInteger8*)(buf+48)=ptpClock->clockQuality.clockClass;
-	*(Enumeration8*)(buf+49)=ptpClock->clockQuality.clockAccuracy;
-	*(UInteger16*)(buf+50)=flip16(ptpClock->clockQuality.offsetScaledLogVariance);
-	*(UInteger8*)(buf+52)=ptpClock->grandmasterPriority2;
-	memcpy((buf+53),ptpClock->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
-	*(UInteger16*)(buf+61)=flip16(ptpClock->stepsRemoved);
-	*(Enumeration8*)(buf+63)=ptpClock->timeSource;
+	*(UInteger8*)(buf+47)=ptpPortDS->grandmasterPriority1;
+	*(UInteger8*)(buf+48)=ptpPortDS->clockQuality.clockClass;
+	*(Enumeration8*)(buf+49)=ptpPortDS->clockQuality.clockAccuracy;
+	*(UInteger16*)(buf+50)=flip16(ptpPortDS->clockQuality.offsetScaledLogVariance);
+	*(UInteger8*)(buf+52)=ptpPortDS->grandmasterPriority2;
+	memcpy((buf+53),ptpPortDS->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
+	*(UInteger16*)(buf+61)=flip16(ptpPortDS->stepsRemoved);
+	*(Enumeration8*)(buf+63)=ptpPortDS->timeSource;
 
 	/*
 	 * White rabbit message in the suffix of PTP announce message
 	 */
 	UInteger16 wr_flags = 0;
 #ifdef WRPTPv2
-	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)	
+	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)	
 	{
 
   	  *(UInteger16*)(buf+64) = flip16(TLV_TYPE_ORG_EXTENSION);
@@ -225,22 +225,22 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  *(UInteger16*)(buf+72) = flip16((0xFFFF & (WR_TLV_MAGIC_NUMBER    << 8 | WR_TLV_WR_VERSION_NUMBER)));
 	  //wrMessageId
 	  *(UInteger16*)(buf+74) = flip16(ANN_SUFIX);
-	  wr_flags = wr_flags | ptpClock->wrConfig;
+	  wr_flags = wr_flags | ptpPortDS->wrConfig;
 #else
-	if (ptpClock->wrMode != NON_WR)
+	if (ptpPortDS->wrMode != NON_WR)
 	{
 	  *(UInteger16*)(buf+64) = flip16(WR_TLV_TYPE);
 	  *(UInteger16*)(buf+66) = flip16(WR_ANNOUNCE_TLV_LENGTH);
 	  
-	  wr_flags = wr_flags | ptpClock->wrMode;
+	  wr_flags = wr_flags | ptpPortDS->wrMode;
 #endif
 
 	  
 
-	  if (ptpClock->calibrated)
+	  if (ptpPortDS->calibrated)
 	    wr_flags = WR_IS_CALIBRATED | wr_flags;
 
-	  if (ptpClock->wrModeON)
+	  if (ptpPortDS->wrModeON)
 	    wr_flags = WR_IS_WR_MODE | wr_flags;
 #ifdef WRPTPv2
 	  *(UInteger16*)(buf+76) = flip16(wr_flags);
@@ -251,36 +251,36 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 
 	DBGM("------------ msgPackAnnounce ----------\n");
 #ifdef WRPTPv2
-	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
+	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrMode != NON_WR)
+	if (ptpPortDS->wrMode != NON_WR)
 #endif	  
 	  DBGM(" messageLength................. %u\n", WR_ANNOUNCE_LENGTH);
 	else
 	  DBGM(" messageLength................. %u\n", ANNOUNCE_LENGTH);
-	DBGM(" sentSyncSequenceId............ %u\n", ptpClock->sentAnnounceSequenceId);
-	DBGM(" logSyncInterval............... %u\n", ptpClock->logAnnounceInterval);
+	DBGM(" sentSyncSequenceId............ %u\n", ptpPortDS->sentAnnounceSequenceId);
+	DBGM(" logSyncInterval............... %u\n", ptpPortDS->logAnnounceInterval);
 	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->portIdentity.clockIdentity[0], ptpClock->portIdentity.clockIdentity[1],
-	    ptpClock->portIdentity.clockIdentity[2], ptpClock->portIdentity.clockIdentity[3],
-	    ptpClock->portIdentity.clockIdentity[4], ptpClock->portIdentity.clockIdentity[5],
-	    ptpClock->portIdentity.clockIdentity[6], ptpClock->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpClock->portIdentity.portNumber);
-	DBGM(" currentUtcOffset.............. %d\n", ptpClock->currentUtcOffset);
-	DBGM(" grandmasterPriority1.......... %d\n", ptpClock->grandmasterPriority1);
-	DBGM(" clockClass.................... %d\n", ptpClock->clockQuality.clockClass);
-	DBGM(" clockAccuracy................. %d\n", ptpClock->clockQuality.clockAccuracy);
-	DBGM(" offsetScaledLogVariance....... %d\n", ptpClock->clockQuality.offsetScaledLogVariance);
-	DBGM(" grandmasterPriority2.......... %d\n", ptpClock->grandmasterPriority2);
+	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
+	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
+	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
+	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
+	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
+	DBGM(" currentUtcOffset.............. %d\n", ptpPortDS->currentUtcOffset);
+	DBGM(" grandmasterPriority1.......... %d\n", ptpPortDS->grandmasterPriority1);
+	DBGM(" clockClass.................... %d\n", ptpPortDS->clockQuality.clockClass);
+	DBGM(" clockAccuracy................. %d\n", ptpPortDS->clockQuality.clockAccuracy);
+	DBGM(" offsetScaledLogVariance....... %d\n", ptpPortDS->clockQuality.offsetScaledLogVariance);
+	DBGM(" grandmasterPriority2.......... %d\n", ptpPortDS->grandmasterPriority2);
 	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->grandmasterIdentity[0], ptpClock->grandmasterIdentity[1],
-	    ptpClock->grandmasterIdentity[2], ptpClock->grandmasterIdentity[3],
-	    ptpClock->grandmasterIdentity[4], ptpClock->grandmasterIdentity[5],
-	    ptpClock->grandmasterIdentity[6], ptpClock->grandmasterIdentity[7]);
-	DBGM(" stepsRemoved.................. %d\n", ptpClock->stepsRemoved);
-	DBGM(" timeSource.................... %d\n", ptpClock->timeSource);
+	    ptpPortDS->grandmasterIdentity[0], ptpPortDS->grandmasterIdentity[1],
+	    ptpPortDS->grandmasterIdentity[2], ptpPortDS->grandmasterIdentity[3],
+	    ptpPortDS->grandmasterIdentity[4], ptpPortDS->grandmasterIdentity[5],
+	    ptpPortDS->grandmasterIdentity[6], ptpPortDS->grandmasterIdentity[7]);
+	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->stepsRemoved);
+	DBGM(" timeSource.................... %d\n", ptpPortDS->timeSource);
 #ifdef WRPTPv2	
-	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
+	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 	{
 
 	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
@@ -290,7 +290,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
 	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", ANN_SUFIX);
 #else
-	if (ptpClock->wrMode != NON_WR)
+	if (ptpPortDS->wrMode != NON_WR)
 	{
 	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", WR_TLV_TYPE);
 	  DBGM(" [WR suffix] tlv_length........ %d\n",   WR_ANNOUNCE_TLV_LENGTH);
@@ -321,7 +321,7 @@ void msgPackAnnounce(void *buf,PtpClock *ptpClock)
 
 }
 
-/*Unpack Announce message from IN buffer of ptpClock to msgtmp.Announce*/
+/*Unpack Announce message from IN buffer of ptpPortDS to msgtmp.Announce*/
 void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 {
 	UInteger16 tlv_type;
@@ -432,22 +432,22 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 }
 
 
-/*pack Follow_up message into OUT buffer of ptpClock*/
-void msgPackFollowUp(void *buf,PtpClock *ptpClock)
-//void msgPackFollowUp(void *buf,Timestamp *preciseOriginTimestamp,PtpClock *ptpClock)
+/*pack Follow_up message into OUT buffer of ptpPortDS*/
+void msgPackFollowUp(void *buf,PtpPortDS *ptpPortDS)
+//void msgPackFollowUp(void *buf,Timestamp *preciseOriginTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x08; //Table 19
 	put_be16(buf + 2, FOLLOW_UP_LENGTH);
-	*(UInteger16*)(buf+30)=flip16(ptpClock->sentSyncSequenceId-1);//sentSyncSequenceId has already been incremented in "issueSync"
+	*(UInteger16*)(buf+30)=flip16(ptpPortDS->sentSyncSequenceId-1);//sentSyncSequenceId has already been incremented in "issueSync"
 	*(UInteger8*)(buf+32)=0x02; //Table 23
-	*(Integer8*)(buf+33) = ptpClock->logSyncInterval;
+	*(Integer8*)(buf+33) = ptpPortDS->logSyncInterval;
 
 	/*Follow_up message*/
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpClock->synch_tx_ts.utc >> 32));
-	put_be32(buf+36,0xFFFFFFFF & ptpClock->synch_tx_ts.utc);
-	put_be32(buf+40, ptpClock->synch_tx_ts.nsec);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32));
+	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc);
+	put_be32(buf+40, ptpPortDS->synch_tx_ts.nsec);
 
 	/*
 	 * by ML: follow up msg can also have correction field,
@@ -455,15 +455,15 @@ void msgPackFollowUp(void *buf,PtpClock *ptpClock)
 	 */
 
 	DBGM("------------ msgPackFollowUp-------\n");
-	DBGM(" syncSequenceId ............... %u\n", ptpClock->sentSyncSequenceId-1);
-	DBGM(" logMinDelayReqInterval ....... %u\n", ptpClock->logSyncInterval);
-	DBGM(" syncTransTimestamp.secs.hi.... %d\n", 0xFFFF & (ptpClock->synch_tx_ts.utc >> 32));
-	DBGM(" syncTransTimestamp.secs.lo.... %d\n", 0xFFFFFFFF & ptpClock->synch_tx_ts.utc);
-	DBGM(" syncTransTimestamp.nsecs...... %d\n", ptpClock->synch_tx_ts.nsec);
+	DBGM(" syncSequenceId ............... %u\n", ptpPortDS->sentSyncSequenceId-1);
+	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logSyncInterval);
+	DBGM(" syncTransTimestamp.secs.hi.... %d\n", 0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32));
+	DBGM(" syncTransTimestamp.secs.lo.... %d\n", 0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc);
+	DBGM(" syncTransTimestamp.nsecs...... %d\n", ptpPortDS->synch_tx_ts.nsec);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
-/*Unpack Follow_up message from IN buffer of ptpClock to msgtmp.follow*/
+/*Unpack Follow_up message from IN buffer of ptpPortDS to msgtmp.follow*/
 void msgUnpackFollowUp(void *buf,MsgFollowUp *follow)
 {
 	follow->preciseOriginTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -479,14 +479,14 @@ void msgUnpackFollowUp(void *buf,MsgFollowUp *follow)
 }
 
 
-/*pack PdelayReq message into OUT buffer of ptpClock*/
-void msgPackPDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
+/*pack PdelayReq message into OUT buffer of ptpPortDS*/
+void msgPackPDelayReq(void *buf,Timestamp *originTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x02; //Table 19
 	put_be16(buf + 2, PDELAY_REQ_LENGTH);
-	*(UInteger16*)(buf+30)= flip16(ptpClock->sentPDelayReqSequenceId);
+	*(UInteger16*)(buf+30)= flip16(ptpPortDS->sentPDelayReqSequenceId);
 	*(UInteger8*)(buf+32) = 0x05; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
 	memset((buf+8),0,8);
@@ -499,14 +499,14 @@ void msgPackPDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	memset((buf+44),0,10); // RAZ reserved octets
 }
 
-/*pack delayReq message into OUT buffer of ptpClock*/
-void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
+/*pack delayReq message into OUT buffer of ptpPortDS*/
+void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x01; //Table 19
 	put_be16(buf + 2, DELAY_REQ_LENGTH);
-	*(UInteger16*)(buf+30)= flip16(ptpClock->sentDelayReqSequenceId);
+	*(UInteger16*)(buf+30)= flip16(ptpPortDS->sentDelayReqSequenceId);
 	*(UInteger8*)(buf+32) = 0x01; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
 	memset((buf+8),0,8);
@@ -517,7 +517,7 @@ void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 	*(UInteger32*)(buf+40) = flip32(originTimestamp->nanosecondsField);
 
 	DBGM("------------ msgPackDelayReq-------\n");
-	DBGM(" delayReqSequenceId ........... %u\n", ptpClock->sentDelayReqSequenceId);
+	DBGM(" delayReqSequenceId ........... %u\n", ptpPortDS->sentDelayReqSequenceId);
 	DBGM(" originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
 	DBGM(" originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
 	DBGM(" originTimestamp.nsecs......... %d\n", originTimestamp->nanosecondsField);
@@ -526,8 +526,8 @@ void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpClock *ptpClock)
 
 }
 
-/*pack delayResp message into OUT buffer of ptpClock*/
-void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
+/*pack delayResp message into OUT buffer of ptpPortDS*/
+void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
@@ -543,12 +543,12 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
 	*(UInteger16*)(buf+30)= flip16(header->sequenceId);
 
 	*(UInteger8*)(buf+32) = 0x03; //Table 23
-	*(Integer8*)(buf+33) = ptpClock->logMinDelayReqInterval; //Table 24
+	*(Integer8*)(buf+33) = ptpPortDS->logMinDelayReqInterval; //Table 24
 
 	/*Pdelay_resp message*/
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpClock->current_rx_ts.utc >> 32));
-	put_be32(buf+36, 0xFFFFFFFF & ptpClock->current_rx_ts.utc);
-	put_be32(buf+40, ptpClock->current_rx_ts.nsec);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32));
+	put_be32(buf+36, 0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	put_be32(buf+40, ptpPortDS->current_rx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 
@@ -559,10 +559,10 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
 	DBGM(" correctionfield.msb .......... %d\n", header->correctionfield.msb);
 	DBGM(" correctionfield.lsb........... %d\n", header->correctionfield.lsb);
 	DBGM(" sequenceId ................... %u\n", header->sequenceId);
-	DBGM(" logMinDelayReqInterval ....... %u\n", ptpClock->logMinDelayReqInterval);
-	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", 0xFFFF & (ptpClock->current_rx_ts.utc >> 32));
-	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", 0xFFFFFFFF & ptpClock->current_rx_ts.utc);
-	DBGM(" delayReceiptTimestamp.nsecs... %d\n", ptpClock->current_rx_ts.nsec);
+	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logMinDelayReqInterval);
+	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", 0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32));
+	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", 0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	DBGM(" delayReceiptTimestamp.nsecs... %d\n", ptpPortDS->current_rx_ts.nsec);
 	DBGM(" requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0],
 	    header->sourcePortIdentity.clockIdentity[1],
@@ -582,8 +582,8 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock)
 
 
 
-/*pack PdelayResp message into OUT buffer of ptpClock*/
-void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTimestamp,PtpClock *ptpClock)
+/*pack PdelayResp message into OUT buffer of ptpPortDS*/
+void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
@@ -602,9 +602,9 @@ void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTime
 // 	*(UInteger16*)(buf+34) = flip16(requestReceiptTimestamp->secondsField.msb);
 // 	*(UInteger32*)(buf+36) = flip32(requestReceiptTimestamp->secondsField.lsb);
 // 	*(UInteger32*)(buf+40) = flip32(requestReceiptTimestamp->nanosecondsField);
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpClock->current_rx_ts.utc >> 32 ));
-	put_be32(buf+36,0xFFFFFFFF & ptpClock->current_rx_ts.utc);
-	put_be32(buf+40, ptpClock->current_rx_ts.nsec);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32 ));
+	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	put_be32(buf+40, ptpPortDS->current_rx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	put_be16(buf + 52, header->sourcePortIdentity.portNumber);
@@ -612,7 +612,7 @@ void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTime
 }
 
 
-/*Unpack delayReq message from IN buffer of ptpClock to msgtmp.req*/
+/*Unpack delayReq message from IN buffer of ptpPortDS to msgtmp.req*/
 void msgUnpackDelayReq(void *buf,MsgDelayReq *delayreq)
 {
 	delayreq->originTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -628,7 +628,7 @@ void msgUnpackDelayReq(void *buf,MsgDelayReq *delayreq)
 }
 
 
-/*Unpack PdelayReq message from IN buffer of ptpClock to msgtmp.req*/
+/*Unpack PdelayReq message from IN buffer of ptpPortDS to msgtmp.req*/
 void msgUnpackPDelayReq(void *buf,MsgPDelayReq *pdelayreq)
 {
 	pdelayreq->originTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -637,7 +637,7 @@ void msgUnpackPDelayReq(void *buf,MsgPDelayReq *pdelayreq)
 }
 
 
-/*Unpack delayResp message from IN buffer of ptpClock to msgtmp.presp*/
+/*Unpack delayResp message from IN buffer of ptpPortDS to msgtmp.presp*/
 void msgUnpackDelayResp(void *buf,MsgDelayResp *resp)
 {
 	resp->receiveTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -666,7 +666,7 @@ void msgUnpackDelayResp(void *buf,MsgDelayResp *resp)
 }
 
 
-/*Unpack PdelayResp message from IN buffer of ptpClock to msgtmp.presp*/
+/*Unpack PdelayResp message from IN buffer of ptpPortDS to msgtmp.presp*/
 void msgUnpackPDelayResp(void *buf,MsgPDelayResp *presp)
 {
 // 	presp->requestReceiptTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -684,14 +684,14 @@ void msgUnpackPDelayResp(void *buf,MsgPDelayResp *presp)
 
 }
 
-/*pack PdelayRespfollowup message into OUT buffer of ptpClock*/
-void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOriginTimestamp,PtpClock *ptpClock)
+/*pack PdelayRespfollowup message into OUT buffer of ptpPortDS*/
+void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOriginTimestamp,PtpPortDS *ptpPortDS)
 {
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x0A; //Table 19
 	put_be16(buf + 2, PDELAY_RESP_FOLLOW_UP_LENGTH);
-	*(UInteger16*)(buf+30)= flip16(ptpClock->PdelayReqHeader.sequenceId);
+	*(UInteger16*)(buf+30)= flip16(ptpPortDS->PdelayReqHeader.sequenceId);
 	*(UInteger8*)(buf+32) = 0x05; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
 
@@ -704,15 +704,15 @@ void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOr
 // 	*(UInteger32*)(buf+36) = flip32(responseOriginTimestamp->secondsField.lsb);
 // 	*(UInteger32*)(buf+40) = flip32(responseOriginTimestamp->nanosecondsField);
 
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpClock->pDelayResp_tx_ts.utc >> 32));
-	put_be32(buf+36, 0xFFFFFFFF &  ptpClock->pDelayResp_tx_ts.utc);
-	put_be32(buf+40, ptpClock->pDelayResp_tx_ts.nsec);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->pDelayResp_tx_ts.utc >> 32));
+	put_be32(buf+36, 0xFFFFFFFF &  ptpPortDS->pDelayResp_tx_ts.utc);
+	put_be32(buf+40, ptpPortDS->pDelayResp_tx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	put_be16(buf + 52, header->sourcePortIdentity.portNumber);
 }
 
-/*Unpack PdelayResp message from IN buffer of ptpClock to msgtmp.presp*/
+/*Unpack PdelayResp message from IN buffer of ptpPortDS to msgtmp.presp*/
 void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 {
 // 	prespfollow->responseOriginTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
@@ -729,10 +729,10 @@ void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 
 
 
-UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_managementId)
+UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_managementId)
 {
 
-	if (ptpClock->wrMode == NON_WR)
+	if (ptpPortDS->wrMode == NON_WR)
 	  return 0;
 
 	/*changes in header*/
@@ -745,8 +745,8 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 
 	/*Management message*/
 	//target portIdentity
-	memcpy((buf+34),ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	put_be16(buf + 42,ptpClock->parentPortIdentity.portNumber);
+	memcpy((buf+34),ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	put_be16(buf + 42,ptpPortDS->parentPortIdentity.portNumber);
 
 	//Hops staff, we dont care at the moment
 	*(Integer8*)(buf+44) = 0;
@@ -762,16 +762,16 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 
 	DBGM("------------ msgPackWRManagement-------\n");
 	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->parentPortIdentity.clockIdentity[0],
-	    ptpClock->parentPortIdentity.clockIdentity[1],
-	    ptpClock->parentPortIdentity.clockIdentity[2],
-	    ptpClock->parentPortIdentity.clockIdentity[3],
-	    ptpClock->parentPortIdentity.clockIdentity[4],
-	    ptpClock->parentPortIdentity.clockIdentity[5],
-	    ptpClock->parentPortIdentity.clockIdentity[6],
-	    ptpClock->parentPortIdentity.clockIdentity[7]
+	    ptpPortDS->parentPortIdentity.clockIdentity[0],
+	    ptpPortDS->parentPortIdentity.clockIdentity[1],
+	    ptpPortDS->parentPortIdentity.clockIdentity[2],
+	    ptpPortDS->parentPortIdentity.clockIdentity[3],
+	    ptpPortDS->parentPortIdentity.clockIdentity[4],
+	    ptpPortDS->parentPortIdentity.clockIdentity[5],
+	    ptpPortDS->parentPortIdentity.clockIdentity[6],
+	    ptpPortDS->parentPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" recipient's PortId............ %u\n", ptpClock->parentPortIdentity.portNumber);
+	DBGM(" recipient's PortId............ %u\n", ptpPortDS->parentPortIdentity.portNumber);
 	DBGM(" management CMD................ %u\n", WR_CMD);
 	DBGM(" management ID................. 0x%x\n", wr_managementId);
 
@@ -783,7 +783,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 
 
 
-	    if(ptpClock->calibrated)
+	    if(ptpPortDS->calibrated)
 	    {
 	      put_be16(buf+54, 0x0000);
 	      DBGM(" calibrationSendPattern........ FALSE \n");
@@ -793,10 +793,10 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 	      put_be16(buf+54, 0x0001);
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
-	    put_be32(buf+56, ptpClock->calPeriod);
+	    put_be32(buf+56, ptpPortDS->calPeriod);
 #ifndef WRPTPv2	    
-	    put_be32(buf+60, ptpClock->calibrationPattern);
-	    put_be16(buf+64, ptpClock->calibrationPatternLen);
+	    put_be32(buf+60, ptpPortDS->calibrationPattern);
+	    put_be16(buf+64, ptpPortDS->calibrationPatternLen);
 #endif
 	    len = 12; // TODO
 
@@ -805,19 +805,19 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
  	  case SLAVE_CALIBRATE:
  	  case MASTER_CALIBRATE:
 
-	    put_be32(buf+54, ptpClock->calPeriod);
+	    put_be32(buf+54, ptpPortDS->calPeriod);
 #ifndef WRPTPv2		    
-	    put_be32(buf+58, ptpClock->calibrationPattern);
-	    put_be16(buf+62, ptpClock->calibrationPatternLen);
+	    put_be32(buf+58, ptpPortDS->calibrationPattern);
+	    put_be16(buf+62, ptpPortDS->calibrationPatternLen);
 #endif	    
 	    len = 10; //TODO
 
 #endif
 
-	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 #ifndef WRPTPv2		    
-	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
-	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
+	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
+	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
 #endif
 
 
@@ -832,18 +832,18 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 
 
 	    /*delta TX*/
-	    put_be32(buf+54, ptpClock->deltaTx.scaledPicoseconds.msb);
-	    put_be32(buf+58, ptpClock->deltaTx.scaledPicoseconds.lsb);
+	    put_be32(buf+54, ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	    put_be32(buf+58, ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 
 	    /*delta RX*/
-	    put_be32(buf+62, ptpClock->deltaRx.scaledPicoseconds.msb);
-	    put_be32(buf+66, ptpClock->deltaRx.scaledPicoseconds.lsb);
+	    put_be32(buf+62, ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	    put_be32(buf+66, ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->deltaTx.scaledPicoseconds.msb);
-	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->deltaTx.scaledPicoseconds.lsb);
+	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->deltaRx.scaledPicoseconds.msb);
-	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->deltaRx.scaledPicoseconds.lsb);
+	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
 
 	    len = 16;
@@ -874,10 +874,10 @@ UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock, Enumeration16 wr_ma
 	return (WR_MANAGEMENT_LENGTH + len);
 }
 #ifdef WRPTPv2
-UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrMessageID)
+UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID)
 {
 
-	if (ptpClock->wrMode == NON_WR || \
+	if (ptpPortDS->wrMode == NON_WR || \
 	    wrMessageID          == ANN_SUFIX)
 	  return 0;
 
@@ -890,8 +890,8 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	*(UInteger8*)(buf+32)=0x05; //Table 23 -> all other
 
 	//target portIdentity
-	memcpy((buf+34),ptpClock->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	put_be16(buf + 42,ptpClock->parentPortIdentity.portNumber);
+	memcpy((buf+34),ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	put_be16(buf + 42,ptpPortDS->parentPortIdentity.portNumber);
 
 
 	/*WR TLV*/
@@ -907,16 +907,16 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 
 	DBGM("------------ msgPackWRSignalingMSG-------\n");
 	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpClock->parentPortIdentity.clockIdentity[0],
-	    ptpClock->parentPortIdentity.clockIdentity[1],
-	    ptpClock->parentPortIdentity.clockIdentity[2],
-	    ptpClock->parentPortIdentity.clockIdentity[3],
-	    ptpClock->parentPortIdentity.clockIdentity[4],
-	    ptpClock->parentPortIdentity.clockIdentity[5],
-	    ptpClock->parentPortIdentity.clockIdentity[6],
-	    ptpClock->parentPortIdentity.clockIdentity[7]
+	    ptpPortDS->parentPortIdentity.clockIdentity[0],
+	    ptpPortDS->parentPortIdentity.clockIdentity[1],
+	    ptpPortDS->parentPortIdentity.clockIdentity[2],
+	    ptpPortDS->parentPortIdentity.clockIdentity[3],
+	    ptpPortDS->parentPortIdentity.clockIdentity[4],
+	    ptpPortDS->parentPortIdentity.clockIdentity[5],
+	    ptpPortDS->parentPortIdentity.clockIdentity[6],
+	    ptpPortDS->parentPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" recipient's PortId............ %u\n", ptpClock->parentPortIdentity.portNumber);
+	DBGM(" recipient's PortId............ %u\n", ptpPortDS->parentPortIdentity.portNumber);
 	DBGM(" tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
 	DBGM(" tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
 	DBGM(" tlv_organizID ................ 0x%x\n", WR_TLV_ORGANIZATION_ID);
@@ -931,7 +931,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 
 
 
-	    if(ptpClock->calibrated)
+	    if(ptpPortDS->calibrated)
 	    {
 	      put_be16(buf+56, 0x0000);
 	      DBGM(" calibrationSendPattern........ FALSE \n");
@@ -941,18 +941,18 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	      put_be16(buf+56, 0x0001);
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
-	    put_be32(buf+58, ptpClock->calPeriod);
+	    put_be32(buf+58, ptpPortDS->calPeriod);
 #ifndef WRPTPv2		    
-	    put_be32(buf+62, ptpClock->calibrationPattern);
-	    put_be16(buf+66, ptpClock->calibrationPatternLen);
+	    put_be32(buf+62, ptpPortDS->calibrationPattern);
+	    put_be16(buf+66, ptpPortDS->calibrationPatternLen);
 #endif	    
 	    len = 20;
 
 
-	    DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 #ifndef WRPTPv2		    
-	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
-	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
+	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
+	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
 #endif
 
 
@@ -962,18 +962,18 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 
 
 	    /*delta TX*/
-	    put_be32(buf+56, ptpClock->deltaTx.scaledPicoseconds.msb);
-	    put_be32(buf+60, ptpClock->deltaTx.scaledPicoseconds.lsb);
+	    put_be32(buf+56, ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	    put_be32(buf+60, ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 
 	    /*delta RX*/
-	    put_be32(buf+64, ptpClock->deltaRx.scaledPicoseconds.msb);
-	    put_be32(buf+68, ptpClock->deltaRx.scaledPicoseconds.lsb);
+	    put_be32(buf+64, ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	    put_be32(buf+68, ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->deltaTx.scaledPicoseconds.msb);
-	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->deltaTx.scaledPicoseconds.lsb);
+	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->deltaRx.scaledPicoseconds.msb);
-	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->deltaRx.scaledPicoseconds.lsb);
+	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
 
 	    len = 22;
@@ -1004,7 +1004,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrM
 	return (WR_SIGNALING_MSG_BASE_LENGTH + len);
 }
 
-void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, PtpClock *ptpClock )
+void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, PtpPortDS *ptpPortDS )
 {
 	UInteger16 tlv_type;
 	UInteger32 tlv_organizationID;
@@ -1078,39 +1078,39 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	    case CALIBRATE:
 
-	      ptpClock->otherNodeCalSendPattern= get_be16(buf+56);
-	      ptpClock->otherNodeCalPeriod     = get_be32(buf+58);
+	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+56);
+	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+58);
 #ifndef WRPTPv2      
-	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+62);
-	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+66);
+	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+62);
+	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+66);
 #endif
-	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
+	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
 		DBGM(" calibrationSendPattern........ FALSE \n");
 
 
-	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->otherNodeCalPeriod);
+	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->otherNodeCalPeriod);
 #ifndef WRPTPv2		      
-	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
-	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
+	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
+	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
 #endif
 	      break;
 
 	    case CALIBRATED:
 	      /*delta TX*/
-	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+56);
-	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+60);
+	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+56);
+	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+60);
 
 	      /*delta RX*/
-	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+64);
-	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+68);
+	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+64);
+	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+68);
 
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb);
+	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb);
+	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb);
 
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
+	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb);
+	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
 
 	      break;
 
@@ -1125,8 +1125,8 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 #endif /*WRPTPv2*/
 
-/*Unpack WR Management message from IN buffer of ptpClock to msgtmp.Announce*/
-void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *wr_managementId, PtpClock *ptpClock )
+/*Unpack WR Management message from IN buffer of ptpPortDS to msgtmp.Announce*/
+void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *wr_managementId, PtpPortDS *ptpPortDS )
 {
 
 
@@ -1179,13 +1179,13 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 #ifdef NEW_SINGLE_WRFSM
 	    case CALIBRATE:
 
-	      ptpClock->otherNodeCalSendPattern= get_be16(buf+54);
-	      ptpClock->otherNodeCalPeriod     = get_be32(buf+56);
+	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+54);
+	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+56);
 # ifndef WRPTPv2      	      
-	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+60);
-	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+64);
+	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+60);
+	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+64);
 # endif
-	      if(ptpClock->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
+	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
 		DBGM(" calibrationSendPattern........ FALSE \n");
@@ -1194,18 +1194,18 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
  	    case MASTER_CALIBRATE:
  	    case SLAVE_CALIBRATE:
 
-	      ptpClock->otherNodeCalPeriod     = get_be32(buf+54);
+	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+54);
 # ifndef WRPTPv2      	      
-	      ptpClock->otherNodeCalibrationPattern    = get_be32(buf+58);
-	      ptpClock->otherNodeCalibrationPatternLen = get_be16(buf+62);
+	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+58);
+	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+62);
 # endif
 
 #endif
 
-	      DBGM(" calPeriod..................... %u [us]\n", ptpClock->calPeriod);
+	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 #ifndef WRPTPv2		      
-	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpClock->calibrationPattern));
-	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpClock->calibrationPatternLen);
+	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
+	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
 #endif
 	      break;
 
@@ -1216,18 +1216,18 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 	    case SLAVE_CALIBRATED:
 #endif
 	      /*delta TX*/
-	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
-	      ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);
+	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
+	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);
 
 	      /*delta RX*/
-	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+62);
-	      ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+66);
+	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+62);
+	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+66);
 
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb);
+	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb);
+	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb);
 
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
+	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb);
+	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
 
 	      break;
 

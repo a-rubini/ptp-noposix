@@ -237,107 +237,107 @@ printf("\n");
 }
 
 
-/**\brief Display Default data set of a PtpClock*/
-void displayDefault (PtpClock *ptpClock){
+/**\brief Display Default data set of a PtpPortDS*/
+void displayDefault (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Default Data Set-- \n");
 printf("\n");
-printf("twoStepFlag : %d \n",ptpClock->twoStepFlag);
-clockIdentity_display(ptpClock->clockIdentity);
-printf("numberPorts : %d \n",ptpClock->numberPorts);
-clockQuality_display(&(ptpClock->clockQuality));
-printf("priority1 : %d \n",ptpClock->priority1);
-printf("priority2 : %d \n",ptpClock->priority2);
-printf("domainNumber : %d \n",ptpClock->domainNumber);
-printf("slaveOnly : %d \n",ptpClock->slaveOnly);
+printf("twoStepFlag : %d \n",ptpPortDS->twoStepFlag);
+clockIdentity_display(ptpPortDS->clockIdentity);
+printf("numberPorts : %d \n",ptpPortDS->numberPorts);
+clockQuality_display(&(ptpPortDS->clockQuality));
+printf("priority1 : %d \n",ptpPortDS->priority1);
+printf("priority2 : %d \n",ptpPortDS->priority2);
+printf("domainNumber : %d \n",ptpPortDS->domainNumber);
+printf("slaveOnly : %d \n",ptpPortDS->slaveOnly);
 printf("\n");
 }
 
 
-/**\brief Display Current data set of a PtpClock*/
-void displayCurrent (PtpClock *ptpClock){
+/**\brief Display Current data set of a PtpPortDS*/
+void displayCurrent (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Current Data Set-- \n");
 printf("\n");
 
-printf("stepsremoved : %d \n",ptpClock->stepsRemoved);
+printf("stepsremoved : %d \n",ptpPortDS->stepsRemoved);
 printf("Offset from master : \n");
-timeInternal_display(&ptpClock->offsetFromMaster);
+timeInternal_display(&ptpPortDS->offsetFromMaster);
 printf("Mean path delay : \n");
-timeInternal_display(&ptpClock->meanPathDelay);
+timeInternal_display(&ptpPortDS->meanPathDelay);
 printf("\n");
 }
 
 
 
-/**\brief Display Parent data set of a PtpClock*/
-void displayParent (PtpClock *ptpClock){
+/**\brief Display Parent data set of a PtpPortDS*/
+void displayParent (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Parent Data Set-- \n");
 printf("\n");
-portIdentity_display(&(ptpClock->parentPortIdentity));
-printf("parentStats : %d \n",ptpClock->parentStats);
-printf("observedParentOffsetScaledLogVariance : %d \n",ptpClock->observedParentOffsetScaledLogVariance);
-printf("observedParentClockPhaseChangeRate : %d \n",ptpClock->observedParentClockPhaseChangeRate);
+portIdentity_display(&(ptpPortDS->parentPortIdentity));
+printf("parentStats : %d \n",ptpPortDS->parentStats);
+printf("observedParentOffsetScaledLogVariance : %d \n",ptpPortDS->observedParentOffsetScaledLogVariance);
+printf("observedParentClockPhaseChangeRate : %d \n",ptpPortDS->observedParentClockPhaseChangeRate);
 printf("--GrandMaster--\n");
-clockIdentity_display(ptpClock->grandmasterIdentity);
-clockQuality_display(&ptpClock->grandmasterClockQuality);
-printf("grandmasterpriority1 : %d \n",ptpClock->grandmasterPriority1);
-printf("grandmasterpriority2 : %d \n",ptpClock->grandmasterPriority2);
+clockIdentity_display(ptpPortDS->grandmasterIdentity);
+clockQuality_display(&ptpPortDS->grandmasterClockQuality);
+printf("grandmasterpriority1 : %d \n",ptpPortDS->grandmasterPriority1);
+printf("grandmasterpriority2 : %d \n",ptpPortDS->grandmasterPriority2);
 printf("\n");
 }
 
-/**\brief Display Global data set of a PtpClock*/
-void displayGlobal (PtpClock *ptpClock){
+/**\brief Display Global data set of a PtpPortDS*/
+void displayGlobal (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Global Time Data Set-- \n");
 printf("\n");
 
-printf("currentUtcOffset : %d \n",ptpClock->currentUtcOffset);
-printf("currentUtcOffsetValid : %d \n",ptpClock->currentUtcOffsetValid);
-printf("leap59 : %d \n",ptpClock->leap59);
-printf("leap61 : %d \n",ptpClock->leap61);
-printf("timeTraceable : %d \n",ptpClock->timeTraceable);
-printf("frequencyTraceable : %d \n",ptpClock->frequencyTraceable);
-printf("ptpTimescale : %d \n",ptpClock->ptpTimescale);
-printf("timeSource : %d \n",ptpClock->timeSource);
+printf("currentUtcOffset : %d \n",ptpPortDS->currentUtcOffset);
+printf("currentUtcOffsetValid : %d \n",ptpPortDS->currentUtcOffsetValid);
+printf("leap59 : %d \n",ptpPortDS->leap59);
+printf("leap61 : %d \n",ptpPortDS->leap61);
+printf("timeTraceable : %d \n",ptpPortDS->timeTraceable);
+printf("frequencyTraceable : %d \n",ptpPortDS->frequencyTraceable);
+printf("ptpTimescale : %d \n",ptpPortDS->ptpTimescale);
+printf("timeSource : %d \n",ptpPortDS->timeSource);
 printf("\n");
 }
 
-/**\brief Display Port data set of a PtpClock*/
-void displayPort (PtpClock *ptpClock){
+/**\brief Display Port data set of a PtpPortDS*/
+void displayPort (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Port Data Set-- \n");
 printf("\n");
 
-portIdentity_display(&ptpClock->portIdentity);
-printf("port state : %d \n",ptpClock->portState);
-printf("logMinDelayReqInterval : %d \n",ptpClock->logMinDelayReqInterval);
+portIdentity_display(&ptpPortDS->portIdentity);
+printf("port state : %d \n",ptpPortDS->portState);
+printf("logMinDelayReqInterval : %d \n",ptpPortDS->logMinDelayReqInterval);
 printf("peerMeanPathDelay : \n");
-timeInternal_display(&ptpClock->peerMeanPathDelay);
-printf("logAnnounceInterval : %d \n",ptpClock->logAnnounceInterval);
-printf("announceReceiptTimeout : %d \n",ptpClock->announceReceiptTimeout);
-printf("logSyncInterval : %d \n",ptpClock->logSyncInterval);
-printf("delayMechanism : %d \n",ptpClock->delayMechanism);
-printf("logMinPdelayReqInterval : %d \n",ptpClock->logMinPdelayReqInterval);
-printf("versionNumber : %d \n",ptpClock->versionNumber);
+timeInternal_display(&ptpPortDS->peerMeanPathDelay);
+printf("logAnnounceInterval : %d \n",ptpPortDS->logAnnounceInterval);
+printf("announceReceiptTimeout : %d \n",ptpPortDS->announceReceiptTimeout);
+printf("logSyncInterval : %d \n",ptpPortDS->logSyncInterval);
+printf("delayMechanism : %d \n",ptpPortDS->delayMechanism);
+printf("logMinPdelayReqInterval : %d \n",ptpPortDS->logMinPdelayReqInterval);
+printf("versionNumber : %d \n",ptpPortDS->versionNumber);
 printf("\n");
 }
 
-/**\brief Display ForeignMaster data set of a PtpClock*/
-void displayForeignMaster (PtpClock *ptpClock){
+/**\brief Display ForeignMaster data set of a PtpPortDS*/
+void displayForeignMaster (PtpPortDS *ptpPortDS){
 
 	ForeignMasterRecord *foreign;
 	int i;
 
-	if (ptpClock->number_foreign_records > 0){
+	if (ptpPortDS->number_foreign_records > 0){
 
 		printf("---Ptp Clock Foreign Data Set-- \n");
 		printf("\n");
-		printf("There is %d Foreign master Recorded \n",ptpClock->number_foreign_records);
-		foreign = ptpClock->foreign;
+		printf("There is %d Foreign master Recorded \n",ptpPortDS->number_foreign_records);
+		foreign = ptpPortDS->foreign;
 
-			for (i=0;i<ptpClock->number_foreign_records;i++){
+			for (i=0;i<ptpPortDS->number_foreign_records;i++){
 
 				portIdentity_display(&foreign->foreignMasterPortIdentity);
 				printf("number of Announce message received : %d \n",foreign->foreignMasterAnnounceMessages);
@@ -357,9 +357,9 @@ void displayForeignMaster (PtpClock *ptpClock){
 
 }
 
-/**\brief Display other data set of a PtpClock*/
+/**\brief Display other data set of a PtpPortDS*/
 
-void displayOthers (PtpClock *ptpClock){
+void displayOthers (PtpPortDS *ptpPortDS){
 
 int i ;
 
@@ -374,71 +374,71 @@ static const char timer[][26] = {
 printf("---Ptp Others Data Set-- \n");
 printf("\n");
 printf("master_to_slave_delay : \n");
-timeInternal_display(&ptpClock->master_to_slave_delay);
+timeInternal_display(&ptpPortDS->master_to_slave_delay);
 printf("\n");
 printf("slave_to_master_delay : \n");
-timeInternal_display(&ptpClock->slave_to_master_delay);
+timeInternal_display(&ptpPortDS->slave_to_master_delay);
 printf("\n");
 printf("delay_req_receive_time : \n");
-timeInternal_display(&ptpClock->pdelay_req_receive_time);
+timeInternal_display(&ptpPortDS->pdelay_req_receive_time);
 printf("\n");
 printf("delay_req_send_time : \n");
-timeInternal_display(&ptpClock->pdelay_req_send_time);
+timeInternal_display(&ptpPortDS->pdelay_req_send_time);
 printf("\n");
 printf("delay_resp_receive_time : \n");
-timeInternal_display(&ptpClock->pdelay_resp_receive_time);
+timeInternal_display(&ptpPortDS->pdelay_resp_receive_time);
 printf("\n");
 printf("delay_resp_send_time : \n");
-timeInternal_display(&ptpClock->pdelay_resp_send_time);
+timeInternal_display(&ptpPortDS->pdelay_resp_send_time);
 printf("\n");
 printf("sync_receive_time : \n");
-timeInternal_display(&ptpClock->sync_receive_time);
+timeInternal_display(&ptpPortDS->sync_receive_time);
 printf("\n");
-//printf("R : %f \n",ptpClock->R);
-printf("sentPdelayReq : %d \n",ptpClock->sentPDelayReq);
-printf("sentPDelayReqSequenceId : %d \n",ptpClock->sentPDelayReqSequenceId);
-printf("waitingForFollow : %d \n",ptpClock->waitingForFollow);
+//printf("R : %f \n",ptpPortDS->R);
+printf("sentPdelayReq : %d \n",ptpPortDS->sentPDelayReq);
+printf("sentPDelayReqSequenceId : %d \n",ptpPortDS->sentPDelayReqSequenceId);
+printf("waitingForFollow : %d \n",ptpPortDS->waitingForFollow);
 printf("\n");
 printf("Offset from master filter : \n");
-printf("nsec_prev : %d \n",ptpClock->ofm_filt.nsec_prev);
-printf("y : %d \n",ptpClock->ofm_filt.y);
+printf("nsec_prev : %d \n",ptpPortDS->ofm_filt.nsec_prev);
+printf("y : %d \n",ptpPortDS->ofm_filt.y);
 printf("\n");
 printf("One way delay filter : \n");
-printf("nsec_prev : %d \n",ptpClock->owd_filt.nsec_prev);
-printf("y : %d \n",ptpClock->owd_filt.y);
-printf("s_exp : %d \n",ptpClock->owd_filt.s_exp);
+printf("nsec_prev : %d \n",ptpPortDS->owd_filt.nsec_prev);
+printf("y : %d \n",ptpPortDS->owd_filt.y);
+printf("s_exp : %d \n",ptpPortDS->owd_filt.s_exp);
 printf("\n");
-printf("observed_drift : %d \n",ptpClock->observed_drift);
-printf("message activity %d \n",ptpClock->message_activity);
+printf("observed_drift : %d \n",ptpPortDS->observed_drift);
+printf("message activity %d \n",ptpPortDS->message_activity);
 printf("\n");
 
 #if 0
 for (i=0;i<TIMER_ARRAY_SIZE;i++){
 	printf("%s : \n",timer[i]);
-	intervalTimer_display(&ptpClock->itimer[i]);
+	intervalTimer_display(&ptpPortDS->itimer[i]);
 	printf("\n");
 }
 #endif
 
-netPath_display(&ptpClock->netPath);
-printf("mCommunication technology %d \n",ptpClock->port_communication_technology);
-clockUUID_display(ptpClock->port_uuid_field);
+netPath_display(&ptpPortDS->netPath);
+printf("mCommunication technology %d \n",ptpPortDS->port_communication_technology);
+clockUUID_display(ptpPortDS->port_uuid_field);
 printf("\n");
 }
 
 
-/**\brief Display Buffer in & out of a PtpClock*/
-void displayBuffer (PtpClock *ptpClock){
+/**\brief Display Buffer in & out of a PtpPortDS*/
+void displayBuffer (PtpPortDS *ptpPortDS){
 
 	int i;
 	int j;
 	j=0;
 
-	printf("PtpClock Buffer Out  \n");
+	printf("PtpPortDS Buffer Out  \n");
 	printf("\n");
 
 	for (i=0;i<PACKET_SIZE;i++){
-		printf(":%02hhx",ptpClock->msgObuf[i]);
+		printf(":%02hhx",ptpPortDS->msgObuf[i]);
 		j++;
 
 		if (j==8){
@@ -455,10 +455,10 @@ void displayBuffer (PtpClock *ptpClock){
  j=0;
  printf("\n");
 
-	printf("PtpClock Buffer In  \n");
+	printf("PtpPortDS Buffer In  \n");
 	printf("\n");
 	for (i=0;i<PACKET_SIZE;i++){
-		printf(":%02hhx",ptpClock->msgIbuf[i]);
+		printf(":%02hhx",ptpPortDS->msgIbuf[i]);
 		j++;
 
 		if (j==8){
@@ -478,17 +478,17 @@ void displayBuffer (PtpClock *ptpClock){
 
 
 
-/**\brief Display All data set of a PtpClock*/
-void displayPtpClock (PtpClock *ptpClock){
+/**\brief Display All data set of a PtpPortDS*/
+void displayPtpPortDS (PtpPortDS *ptpPortDS){
 
-displayDefault (ptpClock);
-displayCurrent (ptpClock);
-displayParent (ptpClock);
-displayGlobal(ptpClock);
-displayPort(ptpClock);
-displayForeignMaster(ptpClock);
-displayBuffer(ptpClock);
-displayOthers (ptpClock);
+displayDefault (ptpPortDS);
+displayCurrent (ptpPortDS);
+displayParent (ptpPortDS);
+displayGlobal(ptpPortDS);
+displayPort(ptpPortDS);
+displayForeignMaster(ptpPortDS);
+displayBuffer(ptpPortDS);
+displayOthers (ptpPortDS);
 
 }
 

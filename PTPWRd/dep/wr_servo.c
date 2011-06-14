@@ -168,7 +168,7 @@ static wr_timestamp_t ts_zero()
 }
 #endif
 
-int wr_servo_init(PtpClock *clock)
+int wr_servo_init(PtpPortDS *clock)
 {
 	hexp_port_state_t pstate;
 	wr_servo_state_t *s = &clock->wr_servo;
@@ -230,7 +230,7 @@ int wr_servo_man_adjust_phase(int phase)
 	return phase;
 }
 
-int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
+int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 
@@ -240,7 +240,7 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 	return 0;
 }
 
-int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
+int wr_servo_got_delay(PtpPortDS *clock, Integer32 cf)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 
@@ -255,7 +255,7 @@ int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
 	return 0;
 }
 
-int wr_servo_update(PtpClock *clock)
+int wr_servo_update(PtpPortDS *clock)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 	uint64_t tics;

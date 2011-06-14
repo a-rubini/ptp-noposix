@@ -52,14 +52,14 @@ RunTimeOpts rtOpts = {
 
 int main(int argc, char **argv)
 {
-   PtpClock *ptpClock;
+   PtpPortDS *ptpPortDS;
    Integer16 ret;
    int i;
 
    netStartup();
 
   /*Initialize run time options with command line arguments*/
-   if( !(ptpClock = ptpdStartup(argc, argv, &ret, &rtOpts)) )
+   if( !(ptpPortDS = ptpdStartup(argc, argv, &ret, &rtOpts)) )
      return ret;
 
     /* White rabbit debugging info*/
@@ -115,9 +115,9 @@ int main(int argc, char **argv)
 
   /* do the protocol engine */
    if(rtOpts.portNumber == 1)
-     protocol(&rtOpts, ptpClock);	 //forever loop..
+     protocol(&rtOpts, ptpPortDS);	 //forever loop..
    else if(rtOpts.portNumber > 1)
-     multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested)
+     multiProtocol(&rtOpts, ptpPortDS); 	//forever loop when many ports (not fully implemented/tested)
    else
      ERROR("Not appropriate portNumber\n");
 

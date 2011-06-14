@@ -131,7 +131,7 @@ printhf:
 
 # clean and so on.
 clean:
-	rm -f *.a */*.o */dep/*.o *~ */*~
+	rm -f *.a */*.o */dep/*.o *~ */*~ */dep/*~
 
 distclean:
 	git clean -f -d

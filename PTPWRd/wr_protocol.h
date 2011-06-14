@@ -5,33 +5,33 @@
     /*
       handle actions and events for 'wrPortState'
     */
-    void doWRSlaveState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void doWRSlaveState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
     /*
       perform actions required when leaving 'wrPortState' and entering 'state'
     */
-    void toWRSlaveState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void toWRSlaveState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
     /*
       handle actions and events for 'wrPortState'
     */
-    void doWRMasterState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void doWRMasterState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
     /*
       perform actions required when leaving 'wrPortState' and entering 'state'
     */
-    void toWRMasterState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void toWRMasterState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 #else
     /*
       handle actions and events for 'wrPortState'
     */
-    void doWRState(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
     /*
       perform actions required when leaving 'wrPortState' and entering 'state'
     */
-    void toWRState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
+    void toWRState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 #endif
 
@@ -49,7 +49,7 @@ polls HW for TX timestamp
     TRUE  	- if timestamp read,
     FALSE	- otherwise
 */
-Boolean getWRtxTimestamp(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+Boolean getWRtxTimestamp(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 /*
   this function manages WR timeouts, each main state (except IDLE) has timeout
@@ -59,19 +59,19 @@ Boolean getWRtxTimestamp(RunTimeOpts *rtOpts, PtpClock *ptpClock);
   exccedded, we exit WR FSM, no WRPTP, sorry
 */
 void wrTimetoutManage(UInteger8,UInteger8, RunTimeOpts *rtOpts,
-		      PtpClock *ptpClock);
+		      PtpPortDS *ptpPortDS);
 
 /*
   this function checks if wr timer has expired for a current WR state
 */
 void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts,
-		    PtpClock *ptpClock, Enumeration8 wrMode);
+		    PtpPortDS *ptpPortDS, Enumeration8 wrMode);
 
 /*
   this function comes as a consequence of implementing substates.
   it returns the main state currently being executed
 */
-UInteger8 returnCurrentWRMainState(PtpClock*);
+UInteger8 returnCurrentWRMainState(PtpPortDS*);
 
 /*
 Function tries to read fixed delays (if PTPWRd restarted, they are remembered by HW
@@ -84,7 +84,7 @@ return:
   FALSE - sth wrong
 
 */
-Boolean initWRcalibration(const char *ifaceName,PtpClock *ptpClock );
+Boolean initWRcalibration(const char *ifaceName,PtpPortDS *ptpPortDS );
 
 char *printf_bits(UInteger32 bits);
 
@@ -96,7 +96,7 @@ char *format_wr_timestamp(wr_timestamp_t ts);
   It initializes White Rabbit dynamic data fields as 
   defined in the WRSPEC, talbe 1
 */
-Boolean initWrData(PtpClock *ptpClock);
+Boolean initWrData(PtpPortDS *ptpPortDS);
 #endif
 
 #endif /*WR_PROTOCOL_H_*/

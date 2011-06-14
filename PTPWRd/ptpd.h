@@ -77,22 +77,22 @@ void subTime(TimeInternal*,TimeInternal*,TimeInternal*);
  * \brief Compare data set of foreign masters and local data set
  * \return The recommended state for the port 
  */
-UInteger8 bmc(ForeignMasterRecord*,RunTimeOpts*,PtpClock*);
+UInteger8 bmc(ForeignMasterRecord*,RunTimeOpts*,PtpPortDS*);
 
 /**
  * \brief When recommended state is Master, copy local data into parent and grandmaster dataset
  */
-void m1(PtpClock*);
+void m1(PtpPortDS*);
 
 /**
  * \brief When recommended state is Slave, copy dataset of master into parent and grandmaster dataset
  */
-void s1(MsgHeader*,MsgAnnounce*,PtpClock*);
+void s1(MsgHeader*,MsgAnnounce*,PtpPortDS*);
 
 /**
  * \brief Initialize datas
  */
-void initData(RunTimeOpts*,PtpClock*);
+void initData(RunTimeOpts*,PtpPortDS*);
 /** \}*/
 
 
@@ -103,21 +103,21 @@ void initData(RunTimeOpts*,PtpClock*);
  * \brief Protocol engine
  */
 /* protocol.c */
-void protocol(RunTimeOpts*,PtpClock*);
+void protocol(RunTimeOpts*,PtpPortDS*);
 /** \}*/
 
 
 //Diplay functions usefull to debug
 void displayRunTimeOpts(RunTimeOpts*);
-void displayDefault (PtpClock*);
-void displayCurrent (PtpClock*);
-void displayParent (PtpClock*);
-void displayGlobal (PtpClock*);
-void displayPort (PtpClock*);
-void displayForeignMaster (PtpClock*);
-void displayOthers (PtpClock*);
-void displayBuffer (PtpClock*);
-void displayPtpClock (PtpClock*);
+void displayDefault (PtpPortDS*);
+void displayCurrent (PtpPortDS*);
+void displayParent (PtpPortDS*);
+void displayGlobal (PtpPortDS*);
+void displayPort (PtpPortDS*);
+void displayForeignMaster (PtpPortDS*);
+void displayOthers (PtpPortDS*);
+void displayBuffer (PtpPortDS*);
+void displayPtpPortDS (PtpPortDS*);
 void timeInternal_display(TimeInternal*);
 void clockIdentity_display(ClockIdentity);
 void netPath_display(NetPath*);
@@ -146,48 +146,48 @@ void msgPDelayReq_display(MsgPDelayReq*);
  * - only one port is allowed to calibrate at a time, need to implement some synch of that
  * - test 
  */
-void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 
 
 
-int wr_servo_init(PtpClock *clock);
-int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2);
-int wr_servo_got_delay(PtpClock *clock, Integer32 cf);
-int wr_servo_update(PtpClock *clock);
+int wr_servo_init(PtpPortDS *clock);
+int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2);
+int wr_servo_got_delay(PtpPortDS *clock, Integer32 cf);
+int wr_servo_update(PtpPortDS *clock);
 
 /* What follows are the protopytes that were missing when I started (ARub) */
-extern void do_irq_less_timing(PtpClock *ptpClock);
+extern void do_irq_less_timing(PtpPortDS *ptpPortDS);
 #if __STDC_HOSTED__
 	extern void ptpd_handle_wripc(void);
 #endif
 extern void handleFollowUp(MsgHeader *header, Octet *msgIbuf,
 			   ssize_t length, Boolean isFromSelf,
-			   RunTimeOpts *rtOpts, PtpClock *ptpClock);
+			   RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 extern void msgUnpackDelayResp(void *buf,MsgDelayResp *resp);
 
 extern void msgPackDelayReq(void *buf,Timestamp *originTimestamp,
-			    PtpClock *ptpClock);
-extern void msgPackDelayResp(void *buf,MsgHeader *header,PtpClock *ptpClock);
+			    PtpPortDS *ptpPortDS);
+extern void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS);
 
-extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock);
-extern void handle(RunTimeOpts*,PtpClock*);
+extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
+extern void handle(RunTimeOpts*,PtpPortDS*);
 
 
 #ifdef WRPTPv2
 void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, 
-			     PtpClock *ptpClock );
-extern UInteger16 msgPackWRSignalingMsg(void *buf,PtpClock *ptpClock, Enumeration16 wrMessageID);
+			     PtpPortDS *ptpPortDS );
+extern UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID);
 
-extern void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock *ptpClock);
+extern void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS);
 
 #else
 extern void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,
-			      PtpClock*);
+			      PtpPortDS*);
 extern void msgUnpackWRManagement(void *buf,MsgManagement *management,
 				  Enumeration16 *wr_managementId,
-				  PtpClock *ptpClock );
-extern UInteger16 msgPackWRManagement(void *buf,PtpClock *ptpClock,
+				  PtpPortDS *ptpPortDS );
+extern UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS,
 					   Enumeration16 wr_managementId);				  
 #endif
 			      

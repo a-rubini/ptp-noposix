@@ -2,14 +2,14 @@
 /* startup.c, for freestanding application */
 #include <ptpd.h>
 
-static PtpClock ptpClock[MAX_PORT_NUMBER];
+static PtpPortDS ptpPortDS[MAX_PORT_NUMBER];
 static ForeignMasterRecord foreign[MAX_PORT_NUMBER][DEFAULT_MAX_FOREIGN_RECORDS];
 
 
-PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret,
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret,
 		       RunTimeOpts *rtOpts)
 {
-	PtpClock * currentPtpdClockData;
+	PtpPortDS * currentPtpdClockData;
 	int i;
 
 	/* When running freestanding, configuration is compiled-in
@@ -52,7 +52,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret,
 	strcpy(rtOpts->ifaceName[0], "wru1");
 	rtOpts->slaveOnly = TRUE;
 
-	currentPtpdClockData = ptpClock;
+	currentPtpdClockData = ptpPortDS;
 	for(i = 0; i < MAX_PORT_NUMBER; i++) {
 		currentPtpdClockData->portIdentity.portNumber = i + 1;
 		currentPtpdClockData->foreign = foreign[i];
@@ -63,7 +63,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret,
 	}
 
 	*ret = 0;
-	return ptpClock;
+	return ptpPortDS;
 }
 
 void ptpdShutdown(void)

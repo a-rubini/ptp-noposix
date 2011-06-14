@@ -254,22 +254,21 @@ typedef struct
 {
 	PortIdentity foreignMasterPortIdentity;
 	UInteger16 foreignMasterAnnounceMessages;
-
+#ifdef WRPTPv2	
+	UInteger16 receptionPortNumber;
+#endif
 	//This one is not in the spec
 	MsgAnnounce  announce;
 	MsgHeader    header;
 
 } ForeignMasterRecord;
 
-
 /**
- * \struct PtpClock
- * \brief Main program data structure
+ * \brief Clock data sets
  */
-/* main program data structure */
-typedef struct {
-/***** Default data set ******/
-	NetPath netPath;
+typedef struct
+{
+/******** defaultDS ***************/
 
 	/*Static members*/
 	Boolean twoStepFlag;
@@ -278,23 +277,85 @@ typedef struct {
 
 	/*Dynamic members*/
 	ClockQuality clockQuality;
+  
+  	/*Configurable members*/
+	UInteger8 priority1;
+	UInteger8 priority2;
+	UInteger8 domainNumber;
+	Boolean slaveOnly;
+	
+/******** brief Current data set *****/
 
+	/*Dynamic members*/
+	UInteger16 stepsRemoved;
+	TimeInternal offsetFromMaster;
+	TimeInternal meanPathDelay;
+	//WRPTP:
+	UInteger16 primarySlavePortNumber;
+	
+/********   Parent data set ********/
+	
+	/*Dynamic members*/
+	PortIdentity parentPortIdentity;
+	Boolean parentStats;
+	UInteger16 observedParentOffsetScaledLogVariance;
+	Integer32 observedParentClockPhaseChangeRate;
+	ClockIdentity grandmasterIdentity;
+	ClockQuality grandmasterClockQuality;
+	UInteger8 grandmasterPriority1;
+	UInteger8 grandmasterPriority2;
+	
+/**********  Time Property data set *********/
+	/*Dynamic members*/
+	Integer16 currentUtcOffset;
+	Boolean currentUtcOffsetValid;
+	Boolean leap59;
+	Boolean leap61;
+	Boolean timeTraceable;
+	Boolean frequencyTraceable;
+	Boolean ptpTimescale;
+	Enumeration8 timeSource;
+	
+} PtpClockDS;
+
+/**
+ * \struct PtpPortDS
+ * \brief Main program data structure
+ */
+/* main program data structure */
+typedef struct {
+
+	//PtpClockDS *ptpClockDS;
+	
+/***** Default data set ******/
+	NetPath netPath;
+
+//#ifndef WRPTPv2	
+	/*Static members*/
+	Boolean twoStepFlag;
+	ClockIdentity clockIdentity;
+	UInteger16 numberPorts;
+
+	/*Dynamic members*/
+	ClockQuality clockQuality;
+
+	
 	/*Configurable members*/
 	UInteger8 priority1;
 	UInteger8 priority2;
 	UInteger8 domainNumber;
 	Boolean slaveOnly;
 
+	
 /***** Current data set ******/
 	/*Dynamic members*/
 	UInteger16 stepsRemoved;
 	TimeInternal offsetFromMaster;
 	TimeInternal meanPathDelay;
 
-#ifdef WRPTPv2
 	UInteger16 primarySlavePortNumber;
 
-#endif
+
 /******* Parent data set *******/
 
   /*Dynamic members*/
@@ -306,10 +367,10 @@ typedef struct {
 	ClockQuality grandmasterClockQuality;
 	UInteger8 grandmasterPriority1;
 	UInteger8 grandmasterPriority2;
-
-	/*
+//#endif
+  /*
    ******* White Rabbit *******
-   *       (parentDS)
+   *      
    */
 	//WRPTPv2: move these to portDS
 	Boolean parentIsWRnode; 
@@ -321,7 +382,7 @@ typedef struct {
 	FixedDelta otherNodeDeltaRx; //WRPTPv2: parentPortDeltaRx
 
 /******* Global time properties data set *********/
-
+//#ifndef WRPTPv2
 	/*Dynamic members*/
 	Integer16 currentUtcOffset;
 	Boolean currentUtcOffsetValid;
@@ -331,7 +392,7 @@ typedef struct {
 	Boolean frequencyTraceable;
 	Boolean ptpTimescale;
 	Enumeration8 timeSource;
-
+//#endif
 /****** Port configuration data set ***********/
 
 	/*Static members*/
@@ -611,7 +672,7 @@ typedef struct {
 	IntervalTimer wrTimers[WR_TIMER_ARRAY_SIZE];
 	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
-} PtpClock;
+} PtpPortDS;
 
 /**
  * \struct RunTimeOpts

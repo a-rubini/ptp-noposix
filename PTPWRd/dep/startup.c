@@ -7,7 +7,7 @@
 
 #include "../ptpd.h"
 
-PtpClock *ptpClock;
+PtpPortDS *ptpPortDS;
 
 void catch_close(int sig)
 {
@@ -42,9 +42,9 @@ void ptpdShutdown()
 {
 
   int i;
-  PtpClock * currentPtpdClockData;
+  PtpPortDS * currentPtpdClockData;
 
-  currentPtpdClockData = ptpClock;
+  currentPtpdClockData = ptpPortDS;
 
   for (i=0; i < MAX_PORT_NUMBER; i++)
   {
@@ -58,11 +58,11 @@ void ptpdShutdown()
      currentPtpdClockData++;
   }
 
-  free(ptpClock);
+  free(ptpPortDS);
 
 }
 
-PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts)
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts)
 {
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
@@ -312,11 +312,11 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     }
   }
 
-  ptpClock = (PtpClock*)calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
+  ptpPortDS = (PtpPortDS*)calloc(MAX_PORT_NUMBER, sizeof(PtpPortDS));
 
-  PtpClock * currentPtpdClockData;
+  PtpPortDS * currentPtpdClockData;
 
-  if(!ptpClock)
+  if(!ptpPortDS)
   {
     PERROR("failed to allocate memory for protocol engine data");
     *ret = 2;
@@ -324,9 +324,9 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
   }
   else
   {
-    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpClock));
+    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
-    currentPtpdClockData = ptpClock;
+    currentPtpdClockData = ptpPortDS;
     int i;
 
     for(i = 0; i < MAX_PORT_NUMBER; i++)
@@ -338,7 +338,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	    PERROR("failed to allocate memory for foreign master data");
 	    *ret = 2;
 	  //TODO:
-	      free(ptpClock);
+	      free(ptpPortDS);
 	    return 0;
 	}
 	else
@@ -376,5 +376,5 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
   *ret = 0;
 
-  return ptpClock;
+  return ptpPortDS;
 }

@@ -5,41 +5,41 @@
 #include "ptpd_netif.h"
 
 
-Boolean doInit(RunTimeOpts*,PtpClock*);
-void doState(RunTimeOpts*,PtpClock*);
-void toState(UInteger8,RunTimeOpts*,PtpClock*);
+Boolean doInit(RunTimeOpts*,PtpPortDS*);
+void doState(RunTimeOpts*,PtpPortDS*);
+void toState(UInteger8,RunTimeOpts*,PtpPortDS*);
 
-void handle(RunTimeOpts*,PtpClock*);
-void handleAnnounce(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void handleSync(MsgHeader*,Octet*,ssize_t,TimeInternal*,Boolean,RunTimeOpts*,PtpClock*);
-void handleDelayReq(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void handleManagement(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void issueAnnounce(RunTimeOpts*,PtpClock*);
-void issueSync(RunTimeOpts*,PtpClock*);
-void issueFollowup(RunTimeOpts*,PtpClock*);
-void issueDelayReq(RunTimeOpts*,PtpClock*);
+void handle(RunTimeOpts*,PtpPortDS*);
+void handleAnnounce(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void handleSync(MsgHeader*,Octet*,ssize_t,TimeInternal*,Boolean,RunTimeOpts*,PtpPortDS*);
+void handleDelayReq(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void handleManagement(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void issueAnnounce(RunTimeOpts*,PtpPortDS*);
+void issueSync(RunTimeOpts*,PtpPortDS*);
+void issueFollowup(RunTimeOpts*,PtpPortDS*);
+void issueDelayReq(RunTimeOpts*,PtpPortDS*);
 #ifdef WRPTPv2
-void issueWRSignalingMsg(Enumeration16,RunTimeOpts*,PtpClock*);
+void issueWRSignalingMsg(Enumeration16,RunTimeOpts*,PtpPortDS*);
 #else
-void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,PtpClock*);
+void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,PtpPortDS*);
 #endif
-void addForeign(Octet*,MsgHeader*,PtpClock*);
+void addForeign(Octet*,MsgHeader*,PtpPortDS*);
 
-void handleSignaling(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void issueManagement(MsgHeader*,MsgManagement*,RunTimeOpts*,PtpClock*);
+void handleSignaling(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void issueManagement(MsgHeader*,MsgManagement*,RunTimeOpts*,PtpPortDS*);
 
-Boolean msgIsFromCurrentParent(MsgHeader *, PtpClock *);
+Boolean msgIsFromCurrentParent(MsgHeader *, PtpPortDS *);
 
 
 #ifndef WR_MODE_ONLY
-void handlePDelayReq(MsgHeader*,Octet*,ssize_t,TimeInternal*,Boolean,RunTimeOpts*,PtpClock*);
-void handlePDelayResp(MsgHeader*,Octet*,TimeInternal* ,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void handleDelayResp(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void handlePDelayRespFollowUp(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpClock*);
-void issuePDelayReq(RunTimeOpts*,PtpClock*);
-void issuePDelayResp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpClock*);
-void issueDelayResp(MsgHeader*,RunTimeOpts*,PtpClock*);
-void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpClock*);
+void handlePDelayReq(MsgHeader*,Octet*,ssize_t,TimeInternal*,Boolean,RunTimeOpts*,PtpPortDS*);
+void handlePDelayResp(MsgHeader*,Octet*,TimeInternal* ,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void handleDelayResp(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void handlePDelayRespFollowUp(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
+void issuePDelayReq(RunTimeOpts*,PtpPortDS*);
+void issuePDelayResp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
+void issueDelayResp(MsgHeader*,RunTimeOpts*,PtpPortDS*);
+void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
 #endif
 
 
@@ -64,38 +64,38 @@ static inline unsigned long pow_2(int exp)
  * - only one port is allowed to calibrate at a time, need to implement some synch of that
  * - test
  */
-void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  {
 
   int           i;
-  PtpClock *    currentPtpClockData;
+  PtpPortDS *    currentPtpPortDSData;
 
-  currentPtpClockData = ptpClock;
+  currentPtpPortDSData = ptpPortDS;
 
   for (i=0; i < rtOpts->portNumber; i++)
   {
      DBGV("multiPortProtocol: initializing port %d\n", (i+1));
-     toState(PTP_INITIALIZING, rtOpts, currentPtpClockData);
-     if(!doInit(rtOpts, currentPtpClockData))
+     toState(PTP_INITIALIZING, rtOpts, currentPtpPortDSData);
+     if(!doInit(rtOpts, currentPtpPortDSData))
      {
        // doInit Failed!  Exit
        DBG("\n--------------------------------------------------\n---------------- port %d failed to doInit()-----------------------------\n--------------------------------\n",(i+1));
        //return;
      }
-     currentPtpClockData++;
+     currentPtpPortDSData++;
   }
 
   for(;;)
   {
-    currentPtpClockData = ptpClock;
+    currentPtpPortDSData = ptpPortDS;
 
     for (i=0; i < rtOpts->portNumber; i++)
     {
       /*
       fixme:
 
-      if(currentPtpClockData->wrMode == WR_MASTER && currentPtpClockData->portIdentity.portNumber  == 7 || \
-	 currentPtpClockData->wrMode == WR_SLAVE  && currentPtpClockData->portIdentity.portNumber  == 10  )
+      if(currentPtpPortDSData->wrMode == WR_MASTER && currentPtpPortDSData->portIdentity.portNumber  == 7 || \
+	 currentPtpPortDSData->wrMode == WR_SLAVE  && currentPtpPortDSData->portIdentity.portNumber  == 10  )
       */
       do
       {
@@ -107,20 +107,20 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
        * for the time of calibration
        */
 
-	if(currentPtpClockData->portState != PTP_INITIALIZING)
-	  doState(rtOpts, currentPtpClockData);
-	else if(!doInit(rtOpts, currentPtpClockData))
+	if(currentPtpPortDSData->portState != PTP_INITIALIZING)
+	  doState(rtOpts, currentPtpPortDSData);
+	else if(!doInit(rtOpts, currentPtpPortDSData))
 	  return;
 
-	if(currentPtpClockData->message_activity)
+	if(currentPtpPortDSData->message_activity)
 	  DBGV("activity\n");
 	else
 	  DBGV("no activity\n");
 
       }
-      while(currentPtpClockData->portState == PTP_UNCALIBRATED);
+      while(currentPtpPortDSData->portState == PTP_UNCALIBRATED);
 
-      currentPtpClockData++;
+      currentPtpPortDSData++;
     }
 
   }
@@ -135,22 +135,22 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    checked for 'port_state'. the actions and events may or may not change
    'port_state' by calling toState(), but once they are done we loop around
    again and perform the actions required for the new 'port_state'. */
-void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   DBG("event POWERUP\n");
 
-  toState(PTP_INITIALIZING, rtOpts, ptpClock);
+  toState(PTP_INITIALIZING, rtOpts, ptpPortDS);
 
   for(;;)
   {
     ptpd_handle_wripc();
 
-    if(ptpClock->portState != PTP_INITIALIZING)
-      doState(rtOpts, ptpClock);
-    else if(!doInit(rtOpts, ptpClock))
+    if(ptpPortDS->portState != PTP_INITIALIZING)
+      doState(rtOpts, ptpPortDS);
+    else if(!doInit(rtOpts, ptpPortDS))
       return;
 
-    if(ptpClock->message_activity)
+    if(ptpPortDS->message_activity)
       DBGV("activity\n");
     else
       DBGV("no activity\n");
@@ -162,7 +162,7 @@ void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /*
  * perform actions required when leaving 'port_state' and entering 'state'
  */
-void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
 #ifdef WRPTPv2	
@@ -171,46 +171,46 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    * implemented by banning change of PTP state
    * if WR state is different then WRS_IDLE.
    */
-  if(ptpClock->wrPortState !=WRS_IDLE)
+  if(ptpPortDS->wrPortState !=WRS_IDLE)
       return ;
 #endif  
-  ptpClock->message_activity = TRUE;
+  ptpPortDS->message_activity = TRUE;
 
   /**
     leaving state tasks
   **/
-  switch(ptpClock->portState)
+  switch(ptpPortDS->portState)
   {
   case PTP_MASTER:
     DBG("PTP_FSM .... exiting PTP_MASTER\n");
     
-    timerStop(&ptpClock->timers.sync);
-    timerStop(&ptpClock->timers.announceInterval);
-    timerStop(&ptpClock->timers.pdelayReq);
+    timerStop(&ptpPortDS->timers.sync);
+    timerStop(&ptpPortDS->timers.announceInterval);
+    timerStop(&ptpPortDS->timers.pdelayReq);
 
     break;
 
   case PTP_SLAVE:
     DBG("PTP_FSM .... exiting PTP_SLAVE\n");
-    timerStop(&ptpClock->timers.announceReceipt);
+    timerStop(&ptpPortDS->timers.announceReceipt);
 
     if (rtOpts->E2E_mode)
-      timerStop(&ptpClock->timers.delayReq);
+      timerStop(&ptpPortDS->timers.delayReq);
     else
-      timerStop(&ptpClock->timers.pdelayReq);
+      timerStop(&ptpPortDS->timers.pdelayReq);
 
-    wr_servo_init(ptpClock);
+    wr_servo_init(ptpPortDS);
     break;
 
    case PTP_PASSIVE:
      DBG("PTP_FSM .... exiting PTP_PASSIVE\n");
-     timerStop(&ptpClock->timers.pdelayReq);
-     timerStop(&ptpClock->timers.announceReceipt);
+     timerStop(&ptpPortDS->timers.pdelayReq);
+     timerStop(&ptpPortDS->timers.announceReceipt);
      break;
       
   case PTP_LISTENING:
     DBG("PTP_FSM .... exiting PTP_LISTENING\n");
-    timerStop(&ptpClock->timers.announceReceipt);
+    timerStop(&ptpPortDS->timers.announceReceipt);
       
     break;
   case PTP_UNCALIBRATED:
@@ -234,51 +234,51 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   {
   case PTP_INITIALIZING:
     DBG("PTP_FSM .... entering PTP_INITIALIZING\n");
-    ptpClock->portState = PTP_INITIALIZING;
+    ptpPortDS->portState = PTP_INITIALIZING;
     break;
 
   case PTP_FAULTY:
     DBG("PTP_FSM .... entering PTP_FAULTY\n");
-    ptpClock->portState = PTP_FAULTY;
+    ptpPortDS->portState = PTP_FAULTY;
     break;
 
   case PTP_DISABLED:
     DBG("PTP_FSM .... entering  PTP_DISABLED\n");
-    ptpClock->portState = PTP_DISABLED;
+    ptpPortDS->portState = PTP_DISABLED;
     break;
 
   case PTP_LISTENING:
     DBG("PTP_FSM .... entering  PTP_LISTENING\n");
 
-    timerStart(&ptpClock->timers.announceReceipt, 
-	       ptpClock->announceReceiptTimeout * 1000 * (pow_2(ptpClock->logAnnounceInterval)));
-    ptpClock->portState = PTP_LISTENING;
+    timerStart(&ptpPortDS->timers.announceReceipt, 
+	       ptpPortDS->announceReceiptTimeout * 1000 * (pow_2(ptpPortDS->logAnnounceInterval)));
+    ptpPortDS->portState = PTP_LISTENING;
     break;
 
    case PTP_MASTER:
     DBG("PTP_FSM .... entering  PTP_MASTER\n");
 
-    timerStart(&ptpClock->timers.sync, 
-	       1000 * pow_2(ptpClock->logSyncInterval));
-    timerStart(&ptpClock->timers.announceInterval, 
-	       1000 * pow_2(ptpClock->logAnnounceInterval));
-    timerStart(&ptpClock->timers.pdelayReq, 
-	       1000 * pow_2(ptpClock->logMinPdelayReqInterval));
+    timerStart(&ptpPortDS->timers.sync, 
+	       1000 * pow_2(ptpPortDS->logSyncInterval));
+    timerStart(&ptpPortDS->timers.announceInterval, 
+	       1000 * pow_2(ptpPortDS->logAnnounceInterval));
+    timerStart(&ptpPortDS->timers.pdelayReq, 
+	       1000 * pow_2(ptpPortDS->logMinPdelayReqInterval));
 
-    ptpClock->portState = PTP_MASTER;
+    ptpPortDS->portState = PTP_MASTER;
     break;
 
 
   case PTP_PASSIVE:
     DBG("PTP_FSM .... entering  PTP_PASSIVE\n");
 
-    timerStart(&ptpClock->timers.pdelayReq, 
-	      1000 * pow_2(ptpClock->logMinPdelayReqInterval));
+    timerStart(&ptpPortDS->timers.pdelayReq, 
+	      1000 * pow_2(ptpPortDS->logMinPdelayReqInterval));
 
-    timerStart(&ptpClock->timers.announceInterval, 
-	       ptpClock->announceReceiptTimeout * 1000 * pow_2(ptpClock->logAnnounceInterval));
+    timerStart(&ptpPortDS->timers.announceInterval, 
+	       ptpPortDS->announceReceiptTimeout * 1000 * pow_2(ptpPortDS->logAnnounceInterval));
 
-    ptpClock->portState = PTP_PASSIVE;
+    ptpPortDS->portState = PTP_PASSIVE;
     break;
 
   case PTP_UNCALIBRATED:
@@ -298,42 +298,42 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     * First we check whether the port is WR Slave enabled
     * and the parentPort is WR Master enabled
     *****************************************************/
-    if( ptpClock->wrMode            == WR_SLAVE   &&
-       (ptpClock->wrConfig          == WR_S_ONLY  || \
-	ptpClock->wrConfig          == WR_M_AND_S)&& \
-	(ptpClock->parentWrConfig   == WR_M_ONLY  || \
-	ptpClock->parentWrConfig    == WR_M_AND_S))
+    if( ptpPortDS->wrMode            == WR_SLAVE   &&
+       (ptpPortDS->wrConfig          == WR_S_ONLY  || \
+	ptpPortDS->wrConfig          == WR_M_AND_S)&& \
+	(ptpPortDS->parentWrConfig   == WR_M_ONLY  || \
+	ptpPortDS->parentWrConfig    == WR_M_AND_S))
     {
         /* now we check whether WR Link Setup is needed */
-	if(ptpClock->parentWrModeON  == FALSE     || \
-	   ptpClock->wrModeON        == FALSE     )
+	if(ptpPortDS->parentWrModeON  == FALSE     || \
+	   ptpPortDS->wrModeON        == FALSE     )
       {
 
-	toWRState(WRS_PRESENT, rtOpts, ptpClock);
-	ptpClock->portState = PTP_UNCALIBRATED;
+	toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
+	ptpPortDS->portState = PTP_UNCALIBRATED;
 	DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_SLAVE )\n");
 	break;
       }
     }
     else
     {// one of the ports on the link is not WR-enabled
-      ptpClock->wrMode = NON_WR;
+      ptpPortDS->wrMode = NON_WR;
     }
     
 #else
-    if( ptpClock->wrMode            == WR_SLAVE  && \
-        ptpClock->parentWrNodeMode == WR_MASTER && \
-        (ptpClock->parentWrModeON  == FALSE     || \
-         ptpClock->wrModeON             == FALSE     ))
+    if( ptpPortDS->wrMode            == WR_SLAVE  && \
+        ptpPortDS->parentWrNodeMode == WR_MASTER && \
+        (ptpPortDS->parentWrModeON  == FALSE     || \
+         ptpPortDS->wrModeON             == FALSE     ))
     {
           
       
 # ifdef NEW_SINGLE_WRFSM
-      toWRState(WRS_PRESENT, rtOpts, ptpClock);
+      toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
 # else
-      toWRSlaveState(PTPWR_PRESENT, rtOpts, ptpClock);
+      toWRSlaveState(PTPWR_PRESENT, rtOpts, ptpPortDS);
 
-      ptpClock->portState = PTP_UNCALIBRATED;
+      ptpPortDS->portState = PTP_UNCALIBRATED;
       break;
     }
 # endif      
@@ -350,53 +350,53 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      *
      */
     
-    if(ptpClock->wrMode == WR_MASTER)
+    if(ptpPortDS->wrMode == WR_MASTER)
     {
       DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
       
 # ifdef NEW_SINGLE_WRFSM
-      toWRState(WRS_M_LOCK, rtOpts, ptpClock);
+      toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
 # else
-      toWRMasterState(PTPWR_LOCK, rtOpts, ptpClock);
+      toWRMasterState(PTPWR_LOCK, rtOpts, ptpPortDS);
 # endif
 
-      ptpClock->portState = PTP_UNCALIBRATED;
+      ptpPortDS->portState = PTP_UNCALIBRATED;
       break;
     }
 #endif
     /* Standard PTP, go straight to SLAVE */
     DBG("PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
-    ptpClock->portState  = PTP_SLAVE;
+    ptpPortDS->portState  = PTP_SLAVE;
    
     break;
 
 
   case PTP_SLAVE:
     DBG("PTP_FSM .... entering PTP_SLAVE\n");
-    wr_servo_init(ptpClock);
+    wr_servo_init(ptpPortDS);
 
-    ptpClock->waitingForFollow = FALSE;
+    ptpPortDS->waitingForFollow = FALSE;
 
-    ptpClock->pdelay_req_send_time.seconds = 0;
-    ptpClock->pdelay_req_send_time.nanoseconds = 0;
-    ptpClock->pdelay_req_receive_time.seconds = 0;
-    ptpClock->pdelay_req_receive_time.nanoseconds = 0;
-    ptpClock->pdelay_resp_send_time.seconds = 0;
-    ptpClock->pdelay_resp_send_time.nanoseconds = 0;
-    ptpClock->pdelay_resp_receive_time.seconds = 0;
-    ptpClock->pdelay_resp_receive_time.nanoseconds = 0;
+    ptpPortDS->pdelay_req_send_time.seconds = 0;
+    ptpPortDS->pdelay_req_send_time.nanoseconds = 0;
+    ptpPortDS->pdelay_req_receive_time.seconds = 0;
+    ptpPortDS->pdelay_req_receive_time.nanoseconds = 0;
+    ptpPortDS->pdelay_resp_send_time.seconds = 0;
+    ptpPortDS->pdelay_resp_send_time.nanoseconds = 0;
+    ptpPortDS->pdelay_resp_receive_time.seconds = 0;
+    ptpPortDS->pdelay_resp_receive_time.nanoseconds = 0;
 
-    timerStart(&ptpClock->timers.announceReceipt,
-	       (ptpClock->announceReceiptTimeout) * 1000 * pow_2(ptpClock->logAnnounceInterval));
+    timerStart(&ptpPortDS->timers.announceReceipt,
+	       (ptpPortDS->announceReceiptTimeout) * 1000 * pow_2(ptpPortDS->logAnnounceInterval));
 
     if (rtOpts->E2E_mode)
-      timerStart(&ptpClock->timers.delayReq,
-		 1000 * pow_2(ptpClock->logMinDelayReqInterval));
+      timerStart(&ptpPortDS->timers.delayReq,
+		 1000 * pow_2(ptpPortDS->logMinDelayReqInterval));
     else
-      timerStart(&ptpClock->timers.pdelayReq,
-		 1000 * pow_2(ptpClock->logMinPdelayReqInterval));
+      timerStart(&ptpPortDS->timers.pdelayReq,
+		 1000 * pow_2(ptpPortDS->logMinPdelayReqInterval));
 
-    ptpClock->portState = PTP_SLAVE;
+    ptpPortDS->portState = PTP_SLAVE;
     break;
 
   default:
@@ -405,11 +405,11 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   }
 
   if(rtOpts->displayStats)
-    displayStats(rtOpts, ptpClock);
+    displayStats(rtOpts, ptpPortDS);
 }
 
 
-void send_test(PtpClock *clock)
+void send_test(PtpPortDS *clock)
 {
   for(;;)
     {
@@ -428,65 +428,65 @@ void send_test(PtpClock *clock)
 /*
  here WR adds initWRCalibration()
  */
-Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
   DBG("Initialization: manufacturerIdentity: %s\n", MANUFACTURER_ID);
 
   /* initialize networking */
 
-  netShutdown(&ptpClock->netPath);
+  netShutdown(&ptpPortDS->netPath);
 
 #ifndef WRPTPv2
-  ptpClock->wrConfig = rtOpts->wrConfig;
+  ptpPortDS->wrConfig = rtOpts->wrConfig;
 #endif
 
   /* network init */
-  if(!netInit(&ptpClock->netPath, rtOpts, ptpClock))
+  if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
   {
     ERROR("failed to initialize network\n");
-    toState(PTP_FAULTY, rtOpts, ptpClock);
+    toState(PTP_FAULTY, rtOpts, ptpPortDS);
     return FALSE;
   }
 
-  //   send_test(ptpClock);
+  //   send_test(ptpPortDS);
 
   /* all the protocol (PTP + WRPTP) initialization */
-  initData(rtOpts, ptpClock);
+  initData(rtOpts, ptpPortDS);
 
 #ifdef WRPTPv2
   /* 
    * attempt autodetection only if non wr config is set, 
    * otherwise, the configured setting is forced
    */
-  if(ptpClock->wrConfig == WR_MODE_AUTO)
-    autoDetectPortWrConfig(&ptpClock->netPath, ptpClock); //TODO handle error
+  if(ptpPortDS->wrConfig == WR_MODE_AUTO)
+    autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO handle error
   else
     DBG("wrConfig .............. FORCED configuration\n")  ;
 #endif
 
   /* Create the timers (standard PTP only, the WR ones are created in another function) */
-  timerInit(&ptpClock->timers.sync, "Sync");
-  timerInit(&ptpClock->timers.delayReq, "DelayReq");
-  timerInit(&ptpClock->timers.pdelayReq, "PDelayReq");
-  timerInit(&ptpClock->timers.announceReceipt, "AnnReceipt");
-  timerInit(&ptpClock->timers.announceInterval, "AnnInterval");
+  timerInit(&ptpPortDS->timers.sync, "Sync");
+  timerInit(&ptpPortDS->timers.delayReq, "DelayReq");
+  timerInit(&ptpPortDS->timers.pdelayReq, "PDelayReq");
+  timerInit(&ptpPortDS->timers.announceReceipt, "AnnReceipt");
+  timerInit(&ptpPortDS->timers.announceInterval, "AnnInterval");
 
-  initClock(rtOpts, ptpClock);
-  m1(ptpClock);
-  msgPackHeader(ptpClock->msgObuf, ptpClock);
+  initClock(rtOpts, ptpPortDS);
+  m1(ptpPortDS);
+  msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 
 #ifdef WRPTPv2
-  if(ptpClock->wrConfig != NON_WR)
+  if(ptpPortDS->wrConfig != NON_WR)
 #else
-  if(ptpClock->wrMode != NON_WR)
+  if(ptpPortDS->wrMode != NON_WR)
 #endif    
   {
-    initWRcalibration(ptpClock->netPath.ifaceName, ptpClock);
+    initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
     // TODO: set appropriately classes if slaveOnly or masterOnly
   }
 
-  toState(PTP_LISTENING, rtOpts, ptpClock);
+  toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
   return TRUE;
 }
@@ -496,33 +496,33 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
  here WR adds:
  -
  */
-void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	UInteger8 state;
 	Boolean linkUP;
 
-	//DBG("DoState : %d\n", ptpClock->portState);
+	//DBG("DoState : %d\n", ptpPortDS->portState);
 
-	linkUP = isPortUp(&ptpClock->netPath);
+	linkUP = isPortUp(&ptpPortDS->netPath);
 
 	if(  linkUP == FALSE )
 	{
-		ptpClock->wrModeON = FALSE;
-		ptpClock->calibrated = FALSE;
-		//ptpClock->record_update = TRUE;
-		if(ptpClock->wrMode == WR_MASTER)
-		   ptpClock->wrMode = NON_WR;
+		ptpPortDS->wrModeON = FALSE;
+		ptpPortDS->calibrated = FALSE;
+		//ptpPortDS->record_update = TRUE;
+		if(ptpPortDS->wrMode == WR_MASTER)
+		   ptpPortDS->wrMode = NON_WR;
 		
 
 		/* if the link goes down, go to FAULTY state immediately */
 
-		//toState(PTP_FAULTY, rtOpts, ptpClock);
+		//toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		//return;
 	}
 
-	ptpClock->message_activity = FALSE;
+	ptpPortDS->message_activity = FALSE;
 
-	switch(ptpClock->portState)
+	switch(ptpPortDS->portState)
 	{
 	case PTP_LISTENING:
 	case PTP_PASSIVE:
@@ -531,54 +531,54 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		/*State decision Event*/
 #ifdef WRPTPv2
 		/*kind-of-non-WRFSM-preemption implementation*/
-		if(ptpClock->record_update && ptpClock->wrPortState == WRS_IDLE)
+		if(ptpPortDS->record_update && ptpPortDS->wrPortState == WRS_IDLE)
 #else
-		if(ptpClock->record_update)
+		if(ptpPortDS->record_update)
 #endif		  
 		  
 		{
 			DBGV("event STATE_DECISION_EVENT\n");
-			ptpClock->record_update = FALSE;
+			ptpPortDS->record_update = FALSE;
 
-			state = bmc(ptpClock->foreign, rtOpts, ptpClock);
+			state = bmc(ptpPortDS->foreign, rtOpts, ptpPortDS);
 
 			/*
 			* WR: transition through UNCALIBRATED state implemented
 			*/
-			if(state != ptpClock->portState)
+			if(state != ptpPortDS->portState)
 			{
 				if(state == PTP_SLAVE        && (
-				   ptpClock->portState == PTP_LISTENING    || 
-				   ptpClock->portState == PTP_PRE_MASTER   ||
-				   ptpClock->portState == PTP_MASTER       ||
-				   ptpClock->portState == PTP_PASSIVE      ||
-				   ptpClock->portState == PTP_UNCALIBRATED ))
+				   ptpPortDS->portState == PTP_LISTENING    || 
+				   ptpPortDS->portState == PTP_PRE_MASTER   ||
+				   ptpPortDS->portState == PTP_MASTER       ||
+				   ptpPortDS->portState == PTP_PASSIVE      ||
+				   ptpPortDS->portState == PTP_UNCALIBRATED ))
 				{
 					/* implementation of PTP_UNCALIBRATED state
 					* as transcient state between sth and SLAVE
 					* as specified in PTP state machine: Figure 23, 78p
 					*/
 					/*
-					if((ptpClock->wrConfig          == WR_S_ONLY  || \
-					    ptpClock->wrConfig          == WR_M_AND_S)&& \
-					   (ptpClock->parentWrConfig    == WR_M_ONLY  || \
-					    ptpClock->parentWrConfig    == WR_M_AND_S))
+					if((ptpPortDS->wrConfig          == WR_S_ONLY  || \
+					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
+					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
+					    ptpPortDS->parentWrConfig    == WR_M_AND_S))
 					{
 					  DBG("wrMode <= WR_SLAVE\n");
-					  ptpClock->wrMode  = WR_SLAVE;
+					  ptpPortDS->wrMode  = WR_SLAVE;
 					}
 					*/
 					/* Candidate for WR Slave */
-					ptpClock->wrMode  = WR_SLAVE;
+					ptpPortDS->wrMode  = WR_SLAVE;
 					DBG("recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
 					DBG("recommended wrMode = WR_SLAVE\n");
-					toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
+					toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				}
 				else
 				{
 					/* */
-					toState(state, rtOpts, ptpClock);
+					toState(state, rtOpts, ptpPortDS);
 				}
 
 			}else
@@ -596,20 +596,20 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		 		  *           will be evaluated here
 		 		  */
 		 
-				  if(ptpClock->portState	    == PTP_SLAVE && \
-				     ptpClock->wrMode               == WR_SLAVE  && \
-		   		    (ptpClock->parentWrModeON       == FALSE     || \
-		   		     ptpClock->wrModeON             == FALSE     ))
+				  if(ptpPortDS->portState	    == PTP_SLAVE && \
+				     ptpPortDS->wrMode               == WR_SLAVE  && \
+		   		    (ptpPortDS->parentWrModeON       == FALSE     || \
+		   		     ptpPortDS->wrModeON             == FALSE     ))
 		 		  {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
-				      if(ptpClock->parentWrModeON  == FALSE)
+				      if(ptpPortDS->parentWrModeON  == FALSE)
 					DBG("parent node left White Rabbit Mode- WR Master-forced");
 					DBG(" re-synchronization\n");
-				      if(ptpClock->wrModeON             == FALSE)
+				      if(ptpPortDS->wrModeON             == FALSE)
 					DBG("this node left White Rabbit Mode - WR Slave-forced ");
 					DBG("re-synchronization\n");
 				      
-				      toState(PTP_UNCALIBRATED, rtOpts, ptpClock);
+				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				   }
 			}
@@ -621,14 +621,14 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 	}
 
-	switch(ptpClock->portState)
+	switch(ptpPortDS->portState)
 	{
 	case PTP_FAULTY:
 		/* imaginary troubleshooting */
 
 		DBG("event FAULT_CLEARED\n");
 
-		toState(PTP_INITIALIZING, rtOpts, ptpClock);
+		toState(PTP_INITIALIZING, rtOpts, ptpPortDS);
 		return;
 
 	case PTP_UNCALIBRATED:
@@ -637,21 +637,21 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		/* Execute WR protocol state machine */
 		
 #ifdef WRPTPv2	
-		if(ptpClock->wrMode == WR_SLAVE)
+		if(ptpPortDS->wrMode == WR_SLAVE)
 			/* handling messages inside: handle()*/
-			doWRState(rtOpts, ptpClock);
+			doWRState(rtOpts, ptpPortDS);
 		else
-			toState(PTP_SLAVE, rtOpts, ptpClock);
+			toState(PTP_SLAVE, rtOpts, ptpPortDS);
 		
-		ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+		ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
 #else
-		if(ptpClock->wrMode == WR_SLAVE || ptpClock->wrMode == WR_MASTER)
+		if(ptpPortDS->wrMode == WR_SLAVE || ptpPortDS->wrMode == WR_MASTER)
 			/* handling messages inside: handle()*/
-			doWRState(rtOpts, ptpClock);
+			doWRState(rtOpts, ptpPortDS);
 		else
-			toState(PTP_SLAVE, rtOpts, ptpClock);
+			toState(PTP_SLAVE, rtOpts, ptpPortDS);
 		
-		ptpClock->msgTmpManagementId =  NULL_MANAGEMENT;
+		ptpPortDS->msgTmpManagementId =  NULL_MANAGEMENT;
 #endif		
 		break;
 
@@ -660,38 +660,38 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_SLAVE:
 
 		//if( linkUP == TRUE)
-		  handle(rtOpts, ptpClock);
+		  handle(rtOpts, ptpPortDS);
 
-		if(timerExpired(&ptpClock->timers.announceReceipt) || linkUP == FALSE)
+		if(timerExpired(&ptpPortDS->timers.announceReceipt) || linkUP == FALSE)
 		{
 			DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
-			ptpClock->number_foreign_records = 0;
-			ptpClock->foreign_record_i = 0;
-			ptpClock->wrMode = NON_WR;
+			ptpPortDS->number_foreign_records = 0;
+			ptpPortDS->foreign_record_i = 0;
+			ptpPortDS->wrMode = NON_WR;
 
-			if(!ptpClock->slaveOnly && ptpClock->clockQuality.clockClass != 255  )
+			if(!ptpPortDS->slaveOnly && ptpPortDS->clockQuality.clockClass != 255  )
 			{
-				m1(ptpClock);
-				toState(PTP_MASTER, rtOpts, ptpClock);
+				m1(ptpPortDS);
+				toState(PTP_MASTER, rtOpts, ptpPortDS);
 			}
-			else if (ptpClock->portState != PTP_LISTENING) //???/
-				toState(PTP_LISTENING, rtOpts, ptpClock);
+			else if (ptpPortDS->portState != PTP_LISTENING) //???/
+				toState(PTP_LISTENING, rtOpts, ptpPortDS);
 		}
 
 		if (rtOpts->E2E_mode)
 		{
-			if(timerExpired(&ptpClock->timers.delayReq))
+			if(timerExpired(&ptpPortDS->timers.delayReq))
 			{
 				DBG("DELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
-				issueDelayReq(rtOpts,ptpClock);
+				issueDelayReq(rtOpts,ptpPortDS);
 			}
 		}
 		else
 		{
-			if(timerExpired(&ptpClock->timers.pdelayReq))
+			if(timerExpired(&ptpPortDS->timers.pdelayReq))
 			{
 				DBG("PDELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
-				issuePDelayReq(rtOpts,ptpClock);
+				issuePDelayReq(rtOpts,ptpPortDS);
 			}
 		}
 		break;
@@ -700,51 +700,51 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 		//if( linkUP == TRUE)
 #ifdef WRPTPv2		
-		if(ptpClock->wrMode == WR_MASTER  && ptpClock->wrPortState != WRS_IDLE)
+		if(ptpPortDS->wrMode == WR_MASTER  && ptpPortDS->wrPortState != WRS_IDLE)
 		{
 			/* handling messages inside: handle()*/
-			doWRState(rtOpts, ptpClock);
-			ptpClock->msgTmpWrMessageID = NULL_WR_TLV;
+			doWRState(rtOpts, ptpPortDS);
+			ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
 			break;
 		}
 		else
-			handle(rtOpts, ptpClock);
+			handle(rtOpts, ptpPortDS);
 #else		  
-		handle(rtOpts, ptpClock);
+		handle(rtOpts, ptpPortDS);
 #endif	  
 
-		if(timerExpired(&ptpClock->timers.sync))
+		if(timerExpired(&ptpPortDS->timers.sync))
 		{
 
 			DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n"); 
-			issueSync(rtOpts, ptpClock);
-			issueFollowup(rtOpts,ptpClock);
+			issueSync(rtOpts, ptpPortDS);
+			issueFollowup(rtOpts,ptpPortDS);
 		}
 
-		if(timerExpired(&ptpClock->timers.announceInterval))
+		if(timerExpired(&ptpPortDS->timers.announceInterval))
 		{
 
 			DBGV("event ANNOUNCE_INTERVAL_TIMEOUT_EXPIRES\n");
-			issueAnnounce(rtOpts, ptpClock);
+			issueAnnounce(rtOpts, ptpPortDS);
 		}
 
 		if (!rtOpts->E2E_mode)
 		{
-			if(timerExpired(&ptpClock->timers.pdelayReq))
+			if(timerExpired(&ptpPortDS->timers.pdelayReq))
 			{
 				DBG("event PDELAYREQ_INTERVAL_TIMEOUT_EXPIRES\n");
-				issuePDelayReq(rtOpts,ptpClock);
+				issuePDelayReq(rtOpts,ptpPortDS);
 			}
 		}
 
-		if(ptpClock->slaveOnly || ptpClock->clockQuality.clockClass == 255)
-			toState(PTP_LISTENING, rtOpts, ptpClock);
+		if(ptpPortDS->slaveOnly || ptpPortDS->clockQuality.clockClass == 255)
+			toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
 		break;
 
 	case PTP_DISABLED:
 		//if( linkUP == TRUE)
-		  handle(rtOpts, ptpClock);
+		  handle(rtOpts, ptpPortDS);
 		break;
 
 	default:
@@ -757,7 +757,7 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 /*
 check and handle received messages
 */
-void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
 	ssize_t length;
@@ -768,14 +768,14 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	/*
 	* TODO: implement netSelect()
 	*/
-	if(!ptpClock->message_activity)
+	if(!ptpPortDS->message_activity)
 	{
-		ret = netSelect(0, &ptpClock->netPath);
+		ret = netSelect(0, &ptpPortDS->netPath);
 
 		if(ret < 0)
 		{
 			PERROR("failed to poll sockets, ret = %d\n", ret);
-			toState(PTP_FAULTY, rtOpts, ptpClock);
+			toState(PTP_FAULTY, rtOpts, ptpPortDS);
 			return;
 		}
 		else if(!ret)
@@ -792,13 +792,13 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	* way, no difference, any of the functions (netRecvEvent and netRecvGeneral
 	* can receive any event, need to clean things later */
 
-	length = netRecvMsg(ptpClock->msgIbuf, &ptpClock->netPath, &ptpClock->current_rx_ts);
+	length = netRecvMsg(ptpPortDS->msgIbuf, &ptpPortDS->netPath, &ptpPortDS->current_rx_ts);
 
 	if(length < 0)
 	{
 		PERROR("Failed to receive on the event socket, len = %d\n", (int)length);
 		DBG("Failed to receive on the event socket, len = %d\n", (int)length);
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 	else if(!length) /* nothing received, just exit */
@@ -807,13 +807,13 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		return;
 	}
 
-	ptpClock->message_activity = TRUE;
+	ptpPortDS->message_activity = TRUE;
 
 	if(length < HEADER_LENGTH)
 	{
 		ERROR("Message shorter than header length\n");
 		DBG("Message shorter than header length\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
@@ -823,28 +823,28 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	* WR: to comply with old PTP daemon work flow
 	* this should go to netRecvMsg
 	*/
-	time.seconds = ptpClock->current_rx_ts.utc;
-	time.nanoseconds = ptpClock->current_rx_ts.nsec;
+	time.seconds = ptpPortDS->current_rx_ts.utc;
+	time.nanoseconds = ptpPortDS->current_rx_ts.nsec;
 	// !!!!!!!!!!!!!!!!!
 
-	msgUnpackHeader(ptpClock->msgIbuf, &ptpClock->msgTmpHeader);
+	msgUnpackHeader(ptpPortDS->msgIbuf, &ptpPortDS->msgTmpHeader);
 
-	if(ptpClock->msgTmpHeader.versionPTP != ptpClock->versionNumber)
+	if(ptpPortDS->msgTmpHeader.versionPTP != ptpPortDS->versionNumber)
 	{
-		DBG("Ignored version %d message\n", ptpClock->msgTmpHeader.versionPTP);
+		DBG("Ignored version %d message\n", ptpPortDS->msgTmpHeader.versionPTP);
 		return;
 	}
 
-	if(ptpClock->msgTmpHeader.domainNumber != ptpClock->domainNumber)
+	if(ptpPortDS->msgTmpHeader.domainNumber != ptpPortDS->domainNumber)
 	{
-		DBG("Ignored message from domainNumber %d\n", ptpClock->msgTmpHeader.domainNumber);
+		DBG("Ignored message from domainNumber %d\n", ptpPortDS->msgTmpHeader.domainNumber);
 		return;
 	}
 
 	/*Spec 9.5.2.2*/
 
-	isFromSelf = (ptpClock->portIdentity.portNumber == ptpClock->msgTmpHeader.sourcePortIdentity.portNumber
-		      && !memcmp(ptpClock->msgTmpHeader.sourcePortIdentity.clockIdentity, ptpClock->portIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH));
+	isFromSelf = (ptpPortDS->portIdentity.portNumber == ptpPortDS->msgTmpHeader.sourcePortIdentity.portNumber
+		      && !memcmp(ptpPortDS->msgTmpHeader.sourcePortIdentity.clockIdentity, ptpPortDS->portIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH));
 
 	/* subtract the inbound latency adjustment if it is not a loop back and the
 	time stamp seems reasonable */
@@ -852,56 +852,56 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	if(!isFromSelf && time.seconds > 0)
 		subTime(&time, &time, &rtOpts->inboundLatency);
 
-	//DBG("handle: messageType = 0x%x => ",ptpClock->msgTmpHeader.messageType);
+	//DBG("handle: messageType = 0x%x => ",ptpPortDS->msgTmpHeader.messageType);
   
-	switch(ptpClock->msgTmpHeader.messageType)
+	switch(ptpPortDS->msgTmpHeader.messageType)
 	{
 	case ANNOUNCE:
-		handleAnnounce(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleAnnounce(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case SYNC:
-		handleSync(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, &time, isFromSelf, rtOpts, ptpClock);
+		handleSync(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, &time, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case FOLLOW_UP:
-		handleFollowUp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleFollowUp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case DELAY_REQ:
 		DBG("handle ..... DELAY_REQ\n");
-		handleDelayReq(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleDelayReq(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 #ifndef WR_MODE_ONLY
 	case PDELAY_REQ:
-		handlePDelayReq(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, &time, isFromSelf, rtOpts, ptpClock);
+		handlePDelayReq(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, &time, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case PDELAY_RESP:
 		DBG("handle ..... PDELAY_RESP\n");
-		handlePDelayResp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf,&time, length, isFromSelf, rtOpts, ptpClock);
+		handlePDelayResp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf,&time, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case PDELAY_RESP_FOLLOW_UP:
 		DBG("handle ..... PDELAY_RESP_FOLLOW_UP\n");
-		handlePDelayRespFollowUp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handlePDelayRespFollowUp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 #endif
 
 	case DELAY_RESP:
-		handleDelayResp(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleDelayResp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 
 	case MANAGEMENT:
 		DBG("MANAGEMENT\n");
-		handleManagement(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleManagement(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case SIGNALING:
 		
-		handleSignaling(&ptpClock->msgTmpHeader, ptpClock->msgIbuf, length, isFromSelf, rtOpts, ptpClock);
+		handleSignaling(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	default:
@@ -910,22 +910,22 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	}
 }
 
-Boolean msgIsFromCurrentParent(MsgHeader *header, PtpClock *ptpClock)
+Boolean msgIsFromCurrentParent(MsgHeader *header, PtpPortDS *ptpPortDS)
 {
-	if(!memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-	   && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
+	if(!memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+	   && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
 		return TRUE;
 	else
 		return FALSE;
 }
  
 /*spec 9.5.3*/
-void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	if(length < ANNOUNCE_LENGTH)
 	{
 		ERROR("Too short Announce message\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
@@ -934,7 +934,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	else
 		DBG("handle ..... ANNOUNCE: standard PTP\n");
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 	case PTP_INITIALIZING:
 	case PTP_FAULTY:
@@ -945,7 +945,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		/* White Rabbit Extension */
 		//TODO: maybe change to wrConfig
-		if(ptpClock->wrMode != NON_WR)
+		if(ptpPortDS->wrMode != NON_WR)
 		{
 			DBGV("Handle Announce: drop messages other than management in WR mode\n");
 			return;
@@ -962,13 +962,13 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		}
 
 		/* Valid announce message has been received : BMC algorithm will be executed */
-		ptpClock->record_update = TRUE; 
+		ptpPortDS->record_update = TRUE; 
 
-		if(msgIsFromCurrentParent(header, ptpClock))
+		if(msgIsFromCurrentParent(header, ptpPortDS))
 		{
-			msgUnpackAnnounce(ptpClock->msgIbuf,&ptpClock->msgTmp.announce,header);
+			msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.announce,header);
 
-			if(ptpClock->msgTmp.announce.wr_flags != NON_WR)
+			if(ptpPortDS->msgTmp.announce.wr_flags != NON_WR)
 				DBG("handle ..... WR_ANNOUNCE:  message from another White Rabbit node [wr_flag != NON_WR]\n");
 			
 #ifdef WRPTPv2			
@@ -979,25 +979,25 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			* Therefore, now we update the best foreignMaster (which is the parent) and
 			* then let the BMC do the job of updating portDS
 			*/
-			msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->foreign[ptpClock->foreign_record_best].header);
-			msgUnpackAnnounce(ptpClock->msgIbuf,&ptpClock->foreign[ptpClock->foreign_record_best].announce,&ptpClock->foreign[ptpClock->foreign_record_best].header);
+			msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].header);
+			msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].announce,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].header);
 #else			
-			s1(header,&ptpClock->msgTmp.announce,ptpClock);
+			s1(header,&ptpPortDS->msgTmp.announce,ptpPortDS);
 #endif
 			/*Reset Timer handling Announce receipt timeout*/
-			timerStart(&ptpClock->timers.announceReceipt,
-				   ptpClock->announceReceiptTimeout * 1000 *
-				   (pow_2(ptpClock->logAnnounceInterval)));
+			timerStart(&ptpPortDS->timers.announceReceipt,
+				   ptpPortDS->announceReceiptTimeout * 1000 *
+				   (pow_2(ptpPortDS->logAnnounceInterval)));
 
 		} else {
 
 			/*addForeign takes care of AnnounceUnpacking*/
-			addForeign(ptpClock->msgIbuf,header,ptpClock);
+			addForeign(ptpPortDS->msgIbuf,header,ptpPortDS);
 
 			/*Reset Timer handling Announce receipt timeout*/
-			timerStart(&ptpClock->timers.announceReceipt,
-				   ptpClock->announceReceiptTimeout * 1000 *
-				   (pow_2(ptpClock->logAnnounceInterval)));
+			timerStart(&ptpPortDS->timers.announceReceipt,
+				   ptpPortDS->announceReceiptTimeout * 1000 *
+				   (pow_2(ptpPortDS->logAnnounceInterval)));
 			
 		} 
 		break;
@@ -1012,14 +1012,14 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		}
 
 		DBGV("Announce message from another foreign master");
-		addForeign(ptpClock->msgIbuf,header,ptpClock);
-		ptpClock->record_update = TRUE;
+		addForeign(ptpPortDS->msgIbuf,header,ptpPortDS);
+		ptpPortDS->record_update = TRUE;
 		break;
 
 	} /* switch (port_state) */
 }
 
-void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal *time, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal *time, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	TimeInternal OriginTimestamp;
 	TimeInternal correctionField;
@@ -1029,11 +1029,11 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 	if(length < SYNC_LENGTH)
 	{
 		ERROR("Too short Sync message\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
-	switch(ptpClock->portState)
+	switch(ptpPortDS->portState)
 	{
 		case PTP_INITIALIZING:
 		case PTP_FAULTY:
@@ -1042,7 +1042,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 		case PTP_UNCALIBRATED:
 			/* White Rabbit */
-			if(ptpClock->wrMode != NON_WR)
+			if(ptpPortDS->wrMode != NON_WR)
 			{
 				DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
 				return;
@@ -1055,40 +1055,40 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				return;
 			}
 
-			if (msgIsFromCurrentParent(header, ptpClock))
+			if (msgIsFromCurrentParent(header, ptpPortDS))
 			{
 				/*
 				* WR: HW timestamps
 				*/
-				ptpClock->sync_receive_time.seconds = ptpClock->current_rx_ts.utc;
-				ptpClock->sync_receive_time.nanoseconds = ptpClock->current_rx_ts.nsec;
-				ptpClock->sync_receive_time.phase = ptpClock->current_rx_ts.phase;
+				ptpPortDS->sync_receive_time.seconds = ptpPortDS->current_rx_ts.utc;
+				ptpPortDS->sync_receive_time.nanoseconds = ptpPortDS->current_rx_ts.nsec;
+				ptpPortDS->sync_receive_time.phase = ptpPortDS->current_rx_ts.phase;
 
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
 					DBG("handle ..... SYNC    : two step clock mode\n");
-					ptpClock->waitingForFollow = TRUE;
-					ptpClock->recvSyncSequenceId = header->sequenceId;
+					ptpPortDS->waitingForFollow = TRUE;
+					ptpPortDS->recvSyncSequenceId = header->sequenceId;
 
 					/*Save correctionField of Sync message to local variable*/
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
 					/* remeber correction field */
-					ptpClock->lastSyncCorrectionField.seconds = correctionField.seconds;
-					ptpClock->lastSyncCorrectionField.nanoseconds = correctionField.nanoseconds;
+					ptpPortDS->lastSyncCorrectionField.seconds = correctionField.seconds;
+					ptpPortDS->lastSyncCorrectionField.nanoseconds = correctionField.nanoseconds;
 
 					break;
 				}
 				else
 				{
 					ERROR("BAD !!!!!!!! we don't use this; handle Sync msg, one step clock\n");
-					msgUnpackSync(ptpClock->msgIbuf,&ptpClock->msgTmp.sync);
-					integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
+					msgUnpackSync(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.sync);
+					integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
 					timeInternal_display(&correctionField);
-					ptpClock->waitingForFollow = FALSE;
-					toInternalTime(&OriginTimestamp,&ptpClock->msgTmp.sync.originTimestamp);
-					updateOffset(&OriginTimestamp,&ptpClock->sync_receive_time,&ptpClock->ofm_filt,rtOpts,ptpClock,&correctionField);
-					updateClock(rtOpts,ptpClock);
+					ptpPortDS->waitingForFollow = FALSE;
+					toInternalTime(&OriginTimestamp,&ptpPortDS->msgTmp.sync.originTimestamp);
+					updateOffset(&OriginTimestamp,&ptpPortDS->sync_receive_time,&ptpPortDS->ofm_filt,rtOpts,ptpPortDS,&correctionField);
+					updateClock(rtOpts,ptpPortDS);
 
 					break;
 				}
@@ -1113,7 +1113,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				/*Add latency*/
 				addTime(time,time,&rtOpts->outboundLatency);
 				DBG("HandleSync: Sync message received from self\n");
-				issueFollowup(time,rtOpts,ptpClock);
+				issueFollowup(time,rtOpts,ptpPortDS);
 				break;
 			}
 #endif
@@ -1122,7 +1122,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 }
 
 
-void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	TimeInternal preciseOriginTimestamp;
 	TimeInternal correctionField;
@@ -1132,7 +1132,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	if(length < FOLLOW_UP_LENGTH)
 	{
 		ERROR("Too short FollowUp message\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
@@ -1142,7 +1142,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		return;
 	}
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 		case PTP_INITIALIZING:
 		case PTP_FAULTY:
@@ -1155,7 +1155,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		case PTP_UNCALIBRATED:
 
 		  /*White Rabbit */
-		  if(ptpClock->wrMode != NON_WR)
+		  if(ptpPortDS->wrMode != NON_WR)
 		  {
 		    DBGV("Handleannounce WR mode: disregaurd messages other than management \n");
 		    return;
@@ -1163,47 +1163,47 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		case PTP_SLAVE:
 
-//		isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-//							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
+//		isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+//							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 
-		if (msgIsFromCurrentParent(header, ptpClock))
+		if (msgIsFromCurrentParent(header, ptpPortDS))
 		{
-			if (ptpClock->waitingForFollow)
+			if (ptpPortDS->waitingForFollow)
 			{
-				if ((ptpClock->recvSyncSequenceId == header->sequenceId))
+				if ((ptpPortDS->recvSyncSequenceId == header->sequenceId))
 				{
 
-					msgUnpackFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.follow);
+					msgUnpackFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.follow);
 
 					DBG("handle ..... FOLLOW_UP:  , succedded [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
-					    (unsigned      long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
-					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
-					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
+					    (unsigned      long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
+					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
+					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
 
 					
 					DBGM("handle FollowUP msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
-					    (unsigned      long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
-					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
-					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
+					    (unsigned      long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
+					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
+					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
 
-					ptpClock->waitingForFollow = FALSE;
+					ptpPortDS->waitingForFollow = FALSE;
 						
 					/*copy the precise followUP info to local variable*/
-					toInternalTime(&preciseOriginTimestamp,&ptpClock->msgTmp.follow.preciseOriginTimestamp);
+					toInternalTime(&preciseOriginTimestamp,&ptpPortDS->msgTmp.follow.preciseOriginTimestamp);
 
 					preciseOriginTimestamp.phase = 0;
 
 						/*get correction field form the header to local variable*/
-					integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
+					integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
 
 						/*add to correctionField last sych correction (?)*/
-					addTime(&correctionField,&correctionField,&ptpClock->lastSyncCorrectionField);
+					addTime(&correctionField,&correctionField,&ptpPortDS->lastSyncCorrectionField);
 					
-					wr_servo_got_sync(ptpClock, preciseOriginTimestamp, ptpClock->sync_receive_time);
+					wr_servo_got_sync(ptpPortDS, preciseOriginTimestamp, ptpPortDS->sync_receive_time);
 					
 
-					issueDelayReq(rtOpts,ptpClock);
+					issueDelayReq(rtOpts,ptpPortDS);
 
 						break;
 				}
@@ -1234,7 +1234,7 @@ static Integer32 phase_to_cf_units(Integer32 phase)
   return (Integer32) ((double)phase / 1000.0 * 65536.0);
 }
 
-void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFromSelf,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFromSelf,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	if (!rtOpts->E2E_mode)
 	{
@@ -1247,11 +1247,11 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 	if(length < DELAY_REQ_LENGTH)
 	{
 		ERROR("short DelayReq message\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 	case PTP_INITIALIZING:
 	case PTP_FAULTY:
@@ -1268,11 +1268,11 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 /* WR: not this way in White Rabbit*/
 #if 0
 			/* Get sending timestamp from IP stack with So_TIMESTAMP*/
-			ptpClock->delay_req_send_time.seconds = time->seconds;
-			ptpClock->delay_req_send_time.nanoseconds = time->nanoseconds;
+			ptpPortDS->delay_req_send_time.seconds = time->seconds;
+			ptpPortDS->delay_req_send_time.nanoseconds = time->nanoseconds;
 					
 			/*Add latency*/
-			addTime(&ptpClock->delay_req_send_time,&ptpClock->delay_req_send_time,&rtOpts->outboundLatency);
+			addTime(&ptpPortDS->delay_req_send_time,&ptpPortDS->delay_req_send_time,&rtOpts->outboundLatency);
 #endif
 			break;
 		}
@@ -1282,13 +1282,13 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 	case PTP_MASTER:
 
 		DBG("handle ..... DELAY_REQ:, succedded\n");
-		msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->delayReqHeader);
+		msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->delayReqHeader);
 				
 		/* FIXME: do this, but properly */
-		ptpClock->delayReqHeader.correctionfield.msb = 0;
-		ptpClock->delayReqHeader.correctionfield.lsb = phase_to_cf_units(ptpClock->current_rx_ts.phase);
+		ptpPortDS->delayReqHeader.correctionfield.msb = 0;
+		ptpPortDS->delayReqHeader.correctionfield.lsb = phase_to_cf_units(ptpPortDS->current_rx_ts.phase);
 
-		issueDelayResp(&ptpClock->delayReqHeader,rtOpts,ptpClock);
+		issueDelayResp(&ptpPortDS->delayReqHeader,rtOpts,ptpPortDS);
 		break;
 
 	default:
@@ -1299,7 +1299,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 
 
-void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFromSelf,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFromSelf,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	Boolean isFromCurrentParent = FALSE;
 	TimeInternal requestReceiptTimestamp;
@@ -1313,11 +1313,11 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 	if(length < DELAY_RESP_LENGTH)
 	{
 		ERROR("Too short DelayResp message\n");
-		toState(PTP_FAULTY, rtOpts, ptpClock);
+		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 	case PTP_INITIALIZING:
 	case PTP_FAULTY:
@@ -1332,43 +1332,43 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 	case PTP_SLAVE:
 
 
-		msgUnpackDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.resp);
+		msgUnpackDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.resp);
 
 		DBG("handle ..... DELAY_RESP, succedded: [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
-		    (unsigned      long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.msb, \
-		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
-		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);		
+		    (unsigned      long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.msb, \
+		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
+		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.nanosecondsField);		
 		
 		DBGM("handle ..... DELAY_RESP, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
-		    (unsigned      long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.msb, \
-		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
-		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);
+		    (unsigned      long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.msb, \
+		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
+		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.nanosecondsField);
 
 		
-		isFromCurrentParent = msgIsFromCurrentParent(header, ptpClock);
+		isFromCurrentParent = msgIsFromCurrentParent(header, ptpPortDS);
 		
 		/* what the f**k is this? */
-		if ((memcmp(ptpClock->portIdentity.clockIdentity, ptpClock->msgTmp.resp.requestingPortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0)
-		    && ((ptpClock->sentDelayReqSequenceId - 1) == header->sequenceId)
-		    && (ptpClock->portIdentity.portNumber == ptpClock->msgTmp.resp.requestingPortIdentity.portNumber)
+		if ((memcmp(ptpPortDS->portIdentity.clockIdentity, ptpPortDS->msgTmp.resp.requestingPortIdentity.clockIdentity, CLOCK_IDENTITY_LENGTH) == 0)
+		    && ((ptpPortDS->sentDelayReqSequenceId - 1) == header->sequenceId)
+		    && (ptpPortDS->portIdentity.portNumber == ptpPortDS->msgTmp.resp.requestingPortIdentity.portNumber)
 		    && isFromCurrentParent)
 		{
 			/* copy timestamp to local variable */
-			toInternalTime(&requestReceiptTimestamp, &ptpClock->msgTmp.resp.receiveTimestamp);
+			toInternalTime(&requestReceiptTimestamp, &ptpPortDS->msgTmp.resp.receiveTimestamp);
 
 
 			/* t_4 */
-			ptpClock->delay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
-			ptpClock->delay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
-			ptpClock->delay_req_receive_time.phase = requestReceiptTimestamp.phase;
+			ptpPortDS->delay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
+			ptpPortDS->delay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
+			ptpPortDS->delay_req_receive_time.phase = requestReceiptTimestamp.phase;
 
 			/* coppy correctionField from header->cF to local variable (correctionField) */
 			integer64_to_internalTime(header->correctionfield,&correctionField);
 
-			wr_servo_got_delay(ptpClock, header->correctionfield.lsb);
-			wr_servo_update(ptpClock);
+			wr_servo_got_delay(ptpPortDS, header->correctionfield.lsb);
+			wr_servo_update(ptpPortDS);
 
-			ptpClock->logMinDelayReqInterval = header->logMessageInterval;
+			ptpPortDS->logMinDelayReqInterval = header->logMessageInterval;
 			
 		}
 		break;
@@ -1377,7 +1377,7 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 
 
 #ifndef WR_MODE_ONLY
-void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal *time, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal *time, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
   if (!rtOpts->E2E_mode)
@@ -1388,11 +1388,11 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 	 if(length < PDELAY_REQ_LENGTH)
 	 {
 	ERROR("short PDelayReq message\n");
-	toState(PTP_FAULTY, rtOpts, ptpClock);
+	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 		case PTP_INITIALIZING:
 		case PTP_FAULTY:
@@ -1409,18 +1409,18 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 		if (isFromSelf)
 		{
 			/* Get sending timestamp from IP stack with So_TIMESTAMP*/
-			ptpClock->pdelay_req_send_time.seconds = time->seconds;
-			ptpClock->pdelay_req_send_time.nanoseconds = time->nanoseconds;
+			ptpPortDS->pdelay_req_send_time.seconds = time->seconds;
+			ptpPortDS->pdelay_req_send_time.nanoseconds = time->nanoseconds;
 
 			/*Add latency*/
-			addTime(&ptpClock->pdelay_req_send_time,&ptpClock->pdelay_req_send_time,&rtOpts->outboundLatency);
+			addTime(&ptpPortDS->pdelay_req_send_time,&ptpPortDS->pdelay_req_send_time,&rtOpts->outboundLatency);
 			break;
 		}
 		else
 		{
 			DBG("handle PDelayReq msg, succedded\n");
-			msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->PdelayReqHeader);
-			issuePDelayResp(time,header,rtOpts,ptpClock);
+			msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->PdelayReqHeader);
+			issuePDelayResp(time,header,rtOpts,ptpPortDS);
 			break;
 		}
 
@@ -1436,7 +1436,7 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
   }
 }
 
-void handlePDelayResp(MsgHeader *header, Octet *msgIbuf, TimeInternal *time,ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handlePDelayResp(MsgHeader *header, Octet *msgIbuf, TimeInternal *time,ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
 if (!rtOpts->E2E_mode)
@@ -1450,11 +1450,11 @@ if (!rtOpts->E2E_mode)
 	 if(length < PDELAY_RESP_LENGTH)
 	 {
 	ERROR("short PDelayResp message\n");
-	toState(PTP_FAULTY, rtOpts, ptpClock);
+	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 		case PTP_INITIALIZING:
 		case PTP_FAULTY:
@@ -1470,47 +1470,47 @@ if (!rtOpts->E2E_mode)
 		if (isFromSelf)
 		{
 		 addTime(time,time,&rtOpts->outboundLatency);
-		 issuePDelayRespFollowUp(time,&ptpClock->PdelayReqHeader,rtOpts,ptpClock);
+		 issuePDelayRespFollowUp(time,&ptpPortDS->PdelayReqHeader,rtOpts,ptpPortDS);
 		 break;
 		}
 
-			msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
+			msgUnpackPDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.presp);
 
 			DBG("handle PDelayResp msg, succedded [SLAVE sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
-			(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);			
+			(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);			
 			
 			DBGM("handle PDelayResp msg, succedded [SLAVE]: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-			(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
+			(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
-			isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
+			isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
-			if (!   ((ptpClock->sentPDelayReqSequenceId == header->sequenceId)
-			   && (!memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
-			   && ( ptpClock->portIdentity.portNumber == ptpClock->msgTmp.presp.requestingPortIdentity.portNumber)))
+			if (!   ((ptpPortDS->sentPDelayReqSequenceId == header->sequenceId)
+			   && (!memcmp(ptpPortDS->portIdentity.clockIdentity,ptpPortDS->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+			   && ( ptpPortDS->portIdentity.portNumber == ptpPortDS->msgTmp.presp.requestingPortIdentity.portNumber)))
 
 			{
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
 					/*Store t4 (Fig 35)*/
-					ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
-					ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
+					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
+					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 //
-					DBG("\n\n\ntime[two steps]: ptpClock->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					DBG("\n\n\ntime[two steps]: ptpClock->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
+					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
+					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
 
 					/*store t2 (Fig 35)*/
-					toInternalTime(&requestReceiptTimestamp,&ptpClock->msgTmp.presp.requestReceiptTimestamp);
-					ptpClock->pdelay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
-					ptpClock->pdelay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
+					toInternalTime(&requestReceiptTimestamp,&ptpPortDS->msgTmp.presp.requestReceiptTimestamp);
+					ptpPortDS->pdelay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
+					ptpPortDS->pdelay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
-					ptpClock->lastPdelayRespCorrectionField.seconds = correctionField.seconds;
-					ptpClock->lastPdelayRespCorrectionField.nanoseconds = correctionField.nanoseconds;
+					ptpPortDS->lastPdelayRespCorrectionField.seconds = correctionField.seconds;
+					ptpPortDS->lastPdelayRespCorrectionField.nanoseconds = correctionField.nanoseconds;
 //
 					break;
 				}//Two Step Clock
@@ -1518,17 +1518,17 @@ if (!rtOpts->E2E_mode)
 				else //One step Clock
 				{
 					/*Store t4 (Fig 35)*/
-					ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
-					ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
+					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
+					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					DBG("\n\n\ntime[one step]: ptpClock->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					DBG("\n\n\ntime[one step]: ptpClock->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
+					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
+					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
 					printf("\n\n ----------- calculate after receiving handlePDelayResp [one step] msg ---------\n");
 
-					//					updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,FALSE);
+					//					updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,FALSE);
 
 					printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
@@ -1549,61 +1549,61 @@ if (!rtOpts->E2E_mode)
 					/*Add latency*/
 					addTime(time,time,&rtOpts->outboundLatency);
 
-					issuePDelayRespFollowUp(time,&ptpClock->PdelayReqHeader,rtOpts,ptpClock);
+					issuePDelayRespFollowUp(time,&ptpPortDS->PdelayReqHeader,rtOpts,ptpPortDS);
 					break;
 				}
 
 
-				msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
+				msgUnpackPDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.presp);
 
 				DBG("handle PDelayResp msg, succedded [MASTER: sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
-				(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);				
+				(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);				
 				
 				DBGM("handle PDelayResp msg, succedded [MASTER: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-				(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
+				(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
+				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
+				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
 
-				isFromCurrentParent = !memcmp(ptpClock->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-							  && (ptpClock->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
+				isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
-				if (!   ((ptpClock->sentPDelayReqSequenceId == header->sequenceId)
-					&& (!memcmp(ptpClock->portIdentity.clockIdentity,ptpClock->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
-					&& ( ptpClock->portIdentity.portNumber == ptpClock->msgTmp.presp.requestingPortIdentity.portNumber)))
+				if (!   ((ptpPortDS->sentPDelayReqSequenceId == header->sequenceId)
+					&& (!memcmp(ptpPortDS->portIdentity.clockIdentity,ptpPortDS->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+					&& ( ptpPortDS->portIdentity.portNumber == ptpPortDS->msgTmp.presp.requestingPortIdentity.portNumber)))
 
 				{
 					if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 					{
 						/*Store t4 (Fig 35)*/
-						ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
-						ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
+						ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
+						ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
 
 						/*store t2 (Fig 35)*/
-						toInternalTime(&requestReceiptTimestamp,&ptpClock->msgTmp.presp.requestReceiptTimestamp);
-						ptpClock->pdelay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
-						ptpClock->pdelay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
+						toInternalTime(&requestReceiptTimestamp,&ptpPortDS->msgTmp.presp.requestReceiptTimestamp);
+						ptpPortDS->pdelay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
+						ptpPortDS->pdelay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
 
 						integer64_to_internalTime(header->correctionfield,&correctionField);
-						ptpClock->lastPdelayRespCorrectionField.seconds = correctionField.seconds;
-						ptpClock->lastPdelayRespCorrectionField.nanoseconds = correctionField.nanoseconds;
+						ptpPortDS->lastPdelayRespCorrectionField.seconds = correctionField.seconds;
+						ptpPortDS->lastPdelayRespCorrectionField.nanoseconds = correctionField.nanoseconds;
 						break;
 					}//Two Step Clock
 
 					else //One step Clock
 					{
 						/*Store t4 (Fig 35)*/
-						ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
-						ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
+						ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
+						ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
 						integer64_to_internalTime(header->correctionfield,&correctionField);
 
 						printf("\n\n ----------- calculate after receiving handlePDelayResp [one step] msg ---------\n");
 
-						//						updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,FALSE);
+						//						updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,FALSE);
 
 						printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
@@ -1624,7 +1624,7 @@ else //(End to End mode..)
 
 }
 
-void handlePDelayRespFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock){
+void handlePDelayRespFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS){
 
 if (!rtOpts->E2E_mode)
  {
@@ -1636,11 +1636,11 @@ if (!rtOpts->E2E_mode)
 	 if(length < PDELAY_RESP_FOLLOW_UP_LENGTH)
 	 {
 	ERROR("short PDelayRespfollowup message\n");
-	toState(PTP_FAULTY, rtOpts, ptpClock);
+	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
 
-	switch(ptpClock->portState )
+	switch(ptpPortDS->portState )
 	{
 		case PTP_INITIALIZING:
 		case PTP_FAULTY:
@@ -1651,25 +1651,25 @@ if (!rtOpts->E2E_mode)
 
 		case PTP_SLAVE:
 
-		if (header->sequenceId == ptpClock->sentPDelayReqSequenceId-1)
+		if (header->sequenceId == ptpPortDS->sentPDelayReqSequenceId-1)
 		{
-			msgUnpackPDelayRespFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.prespfollow);
+			msgUnpackPDelayRespFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.prespfollow);
 
 			DBG("handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-			(unsigned      long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
-			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
-			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
+			(unsigned      long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
+			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
+			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
 
 
-			toInternalTime(&responseOriginTimestamp,&ptpClock->msgTmp.prespfollow.responseOriginTimestamp);
-			ptpClock->pdelay_resp_send_time.seconds = responseOriginTimestamp.seconds;
-			ptpClock->pdelay_resp_send_time.nanoseconds = responseOriginTimestamp.nanoseconds;
-		    integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
-			addTime(&correctionField,&correctionField,&ptpClock->lastPdelayRespCorrectionField);
+			toInternalTime(&responseOriginTimestamp,&ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp);
+			ptpPortDS->pdelay_resp_send_time.seconds = responseOriginTimestamp.seconds;
+			ptpPortDS->pdelay_resp_send_time.nanoseconds = responseOriginTimestamp.nanoseconds;
+		    integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
+			addTime(&correctionField,&correctionField,&ptpPortDS->lastPdelayRespCorrectionField);
 
 			DBG("\n\n ------------ calculate after receiving handlePDelayRespFollowUp msg --------\n");
 
-			//			updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,TRUE);
+			//			updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,TRUE);
 
 			DBG("\n -------------------------------finish calculation ------------------------\n\n");
 
@@ -1678,25 +1678,25 @@ if (!rtOpts->E2E_mode)
 
 		case PTP_MASTER:
 
-		if (header->sequenceId == ptpClock->sentPDelayReqSequenceId-1)
+		if (header->sequenceId == ptpPortDS->sentPDelayReqSequenceId-1)
 		{
-			msgUnpackPDelayRespFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.prespfollow);
+			msgUnpackPDelayRespFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.prespfollow);
 
 			DBG("handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-			(unsigned      long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
-			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
-			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
+			(unsigned      long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
+			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
+			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
 
 
-			toInternalTime(&responseOriginTimestamp,&ptpClock->msgTmp.prespfollow.responseOriginTimestamp);
-			ptpClock->pdelay_resp_send_time.seconds = responseOriginTimestamp.seconds;
-			ptpClock->pdelay_resp_send_time.nanoseconds = responseOriginTimestamp.nanoseconds;
-		    integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
-			addTime(&correctionField,&correctionField,&ptpClock->lastPdelayRespCorrectionField);
+			toInternalTime(&responseOriginTimestamp,&ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp);
+			ptpPortDS->pdelay_resp_send_time.seconds = responseOriginTimestamp.seconds;
+			ptpPortDS->pdelay_resp_send_time.nanoseconds = responseOriginTimestamp.nanoseconds;
+		    integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
+			addTime(&correctionField,&correctionField,&ptpPortDS->lastPdelayRespCorrectionField);
 
 			DBG("\n\n ------------ calculate after receiving handlePDelayRespFollowUp msg --------\n");
 
-			updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,TRUE);
+			updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,TRUE);
 
 			DBG("\n -------------------------------finish calculation ------------------------\n\n");
 			break;
@@ -1720,7 +1720,7 @@ else //(End to End mode..)
 /*
 WR: custom White Rabbit management
 */
-void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	MsgManagement management;
 
@@ -1728,10 +1728,10 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		return;
 
 
-	msgUnpackWRManagement(ptpClock->msgIbuf,&management,&(ptpClock->msgTmpManagementId),ptpClock);
+	msgUnpackWRManagement(ptpPortDS->msgIbuf,&management,&(ptpPortDS->msgTmpManagementId),ptpPortDS);
 
 
-	switch(ptpClock->msgTmpManagementId)
+	switch(ptpPortDS->msgTmpManagementId)
 	{
 #ifndef WRPTPv2
 //we dont' use this staff !!!
@@ -1740,8 +1740,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		DBG("WR Management msg [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
 	\n\tcalPeriod             = %32lld us\n",\
-		    ptpClock->otherNodeCalSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalPeriod);
+		    ptpPortDS->otherNodeCalSendPattern,	  \
+		    (unsigned long long)ptpPortDS->otherNodeCalPeriod);
 		break;
 
 	case CALIBRATED:
@@ -1749,8 +1749,8 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		DBG("WR Management msg [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:
@@ -1789,16 +1789,16 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	* which identifies itself and the calibration is statrted
 	* if the calibration is already being done, just ignore this
 	*/
-	if(ptpClock->wrMode        == WR_MASTER &&
-	   ptpClock->msgTmpManagementId == SLAVE_PRESENT && 
-	   ptpClock->portState          != PTP_UNCALIBRATED )
-	  toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+	if(ptpPortDS->wrMode        == WR_MASTER &&
+	   ptpPortDS->msgTmpManagementId == SLAVE_PRESENT && 
+	   ptpPortDS->portState          != PTP_UNCALIBRATED )
+	  toState(PTP_UNCALIBRATED,rtOpts,ptpPortDS);
 #endif	  
 
 }
 
 
-void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpClock *ptpClock) 
+void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS) 
 {
 #ifdef WRPTPv2  
 	MsgSignaling signalingMsg;
@@ -1807,12 +1807,12 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		return;
 
 
-	msgUnpackWRSignalingMsg(ptpClock->msgIbuf,&signalingMsg,&(ptpClock->msgTmpWrMessageID),ptpClock);
+	msgUnpackWRSignalingMsg(ptpPortDS->msgIbuf,&signalingMsg,&(ptpPortDS->msgTmpWrMessageID),ptpPortDS);
 
 	// a hack
-	//ptpClock->msgTmpManagementId = ptpClock->msgTmpWrMessageID;
+	//ptpPortDS->msgTmpManagementId = ptpPortDS->msgTmpWrMessageID;
 
-	switch(ptpClock->msgTmpWrMessageID)
+	switch(ptpPortDS->msgTmpWrMessageID)
 	{
 
 	case CALIBRATE:
@@ -1820,8 +1820,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		DBG("handle ..... WR_SIGNALING, [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
 	\n\tcalPeriod    	  = %32lld us\n",\
-		    ptpClock->otherNodeCalSendPattern,	  \
-		    (unsigned long long)ptpClock->otherNodeCalPeriod);
+		    ptpPortDS->otherNodeCalSendPattern,	  \
+		    (unsigned long long)ptpPortDS->otherNodeCalPeriod);
 		break;
 
 	case CALIBRATED:
@@ -1829,8 +1829,8 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		DBG("handle ..... WR_SIGNALING [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->otherNodeDeltaRx.scaledPicoseconds.lsb);
+		    ((unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb, \
+		    ((unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
 		break;
 
 	case SLAVE_PRESENT:
@@ -1863,18 +1863,18 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	*/
 
 	/* here we deternime that a node should be WR_MASTER */
-	if(ptpClock->portState         == PTP_MASTER    && \
-	   ptpClock->msgTmpWrMessageID == SLAVE_PRESENT && \
-	  (ptpClock->wrConfig      == WR_M_ONLY     || 
-	   ptpClock->wrConfig      == WR_M_AND_S     ))
+	if(ptpPortDS->portState         == PTP_MASTER    && \
+	   ptpPortDS->msgTmpWrMessageID == SLAVE_PRESENT && \
+	  (ptpPortDS->wrConfig      == WR_M_ONLY     || 
+	   ptpPortDS->wrConfig      == WR_M_AND_S     ))
 	{
 	     ///////// fucken important !! /////////////
 	     DBGWRFSM("wrMode <= WR_MASTER\n");
-	     ptpClock->wrMode = WR_MASTER;
+	     ptpPortDS->wrMode = WR_MASTER;
 	     ///////////////////////////////////////////
-	     toWRState(WRS_M_LOCK, rtOpts, ptpClock);
+	     toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
 
-	     //toState(PTP_UNCALIBRATED,rtOpts,ptpClock);
+	     //toState(PTP_UNCALIBRATED,rtOpts,ptpPortDS);
 	}
 
 		
@@ -1886,64 +1886,64 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 
 /*Pack and send on general multicast ip adress an Announce message*/
-void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueAnnounce(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	UInteger16 announce_len;
 
-	msgPackAnnounce(ptpClock->msgObuf,ptpClock);
+	msgPackAnnounce(ptpPortDS->msgObuf,ptpPortDS);
 #ifdef WRPTPv2
-	if (ptpClock->wrConfig != NON_WR && ptpClock->wrConfig != WR_S_ONLY)
+	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 #else
-	if (ptpClock->wrMode != NON_WR)
+	if (ptpPortDS->wrMode != NON_WR)
 #endif
 	
 		announce_len = WR_ANNOUNCE_LENGTH;
 	else
 		announce_len = ANNOUNCE_LENGTH;
 
-	if (!netSendGeneral(ptpClock->msgObuf,announce_len,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,announce_len,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("Announce message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... ANNOUNCE : Announce Msg, failed \n");
 	}
 	else
 	{
-		if (ptpClock->wrMode != NON_WR)
+		if (ptpPortDS->wrMode != NON_WR)
 		  DBG("issue  ..... WR ANNOUNCE : succedded \n");
 		else
 		  DBG("issue  ..... ANNOUNCE : succedded \n");
 		DBGV("Announce MSG sent ! \n");
-		ptpClock->sentAnnounceSequenceId++;
+		ptpPortDS->sentAnnounceSequenceId++;
 	}
 }
 
 
 /*Pack and send on event multicast ip adress a Sync message*/
-void issueSync(RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	Timestamp originTimestamp;
 
 	/* send a dummy origin timestamp */
 	memset(&originTimestamp, 0, sizeof(originTimestamp));
 	
-	msgPackSync(ptpClock->msgObuf,&originTimestamp,ptpClock);
+	msgPackSync(ptpPortDS->msgObuf,&originTimestamp,ptpPortDS);
 	
 
-	if (!netSendEvent(ptpClock->msgObuf,SYNC_LENGTH,&ptpClock->netPath,&ptpClock->synch_tx_ts))
+	if (!netSendEvent(ptpPortDS->msgObuf,SYNC_LENGTH,&ptpPortDS->netPath,&ptpPortDS->synch_tx_ts))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
-		ptpClock->pending_Synch_tx_ts = FALSE;
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
+		ptpPortDS->pending_Synch_tx_ts = FALSE;
 		DBGV("Sync message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... SYNC:   failed");
 	}
 	else
 	{
 		DBG("issue  ..... SYNC: succedded [synch timestamp: %s]\n", \
-		format_wr_timestamp(ptpClock->synch_tx_ts));
-		ptpClock->pending_tx_ts = TRUE;
-		ptpClock->pending_Synch_tx_ts = TRUE;
-		ptpClock->sentSyncSequenceId++;
+		format_wr_timestamp(ptpPortDS->synch_tx_ts));
+		ptpPortDS->pending_tx_ts = TRUE;
+		ptpPortDS->pending_Synch_tx_ts = TRUE;
+		ptpPortDS->sentSyncSequenceId++;
 	}
 
 
@@ -1955,70 +1955,70 @@ void issueSync(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 
 
 /*Pack and send on general multicast ip adress a FollowUp message*/
-//void issueFollowup(TimeInternal *time,RunTimeOpts *rtOpts,PtpClock *ptpClock)
-void issueFollowup(RunTimeOpts *rtOpts,PtpClock *ptpClock)
+//void issueFollowup(TimeInternal *time,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
+void issueFollowup(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 
 
-	msgPackFollowUp(ptpClock->msgObuf,ptpClock);
+	msgPackFollowUp(ptpPortDS->msgObuf,ptpPortDS);
 
-	if (!netSendGeneral(ptpClock->msgObuf,FOLLOW_UP_LENGTH,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("FollowUp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... FOLLOW_UP: failed\n");
 	}
 	else
 	{
 		DBG("issue  ..... FOLLOW_UP: succedded [sending time of sync tx: sec = %lld  nanosec = %lld]\n",\
-		(unsigned long long)ptpClock->synch_tx_ts.utc,\
-		(unsigned long long)ptpClock->synch_tx_ts.nsec);
+		(unsigned long long)ptpPortDS->synch_tx_ts.utc,\
+		(unsigned long long)ptpPortDS->synch_tx_ts.nsec);
 
 	}
 }
 
 
 /*Pack and send on event multicast ip adress a DelayReq message*/
-void issueDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 
 	Timestamp originTimestamp;
 
 	memset(&originTimestamp, 0, sizeof(originTimestamp));
-	msgPackDelayReq(ptpClock->msgObuf,&originTimestamp,ptpClock);
+	msgPackDelayReq(ptpPortDS->msgObuf,&originTimestamp,ptpPortDS);
 
-	if (!netSendEvent(ptpClock->msgObuf,DELAY_REQ_LENGTH,&ptpClock->netPath,&ptpClock->delayReq_tx_ts))
+	if (!netSendEvent(ptpPortDS->msgObuf,DELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->delayReq_tx_ts))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
-		// ptpClock->new_tx_tag_read = FALSE;
-		// ptpClock->pending_DelayReq_tx_ts = FALSE;
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
+		// ptpPortDS->new_tx_tag_read = FALSE;
+		// ptpPortDS->pending_DelayReq_tx_ts = FALSE;
 		DBGV("delayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... DELAY_REQ: failed\n");
 	}
 	else
 	{
-		DBG("issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));
-		ptpClock->sentDelayReqSequenceId++;
-		// ptpClock->pending_tx_ts = TRUE;
-		// ptpClock->pending_DelayReq_tx_ts = TRUE;
+		DBG("issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpPortDS->delayReq_tx_ts));
+		ptpPortDS->sentDelayReqSequenceId++;
+		// ptpPortDS->pending_tx_ts = TRUE;
+		// ptpPortDS->pending_DelayReq_tx_ts = TRUE;
 	}
 }
 
 #ifndef WR_MODE_ONLY
 
 /*Pack and send on event multicast ip adress a PDelayReq message*/
-void issuePDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issuePDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 
 	Timestamp originTimestamp;
 
 	memset(&originTimestamp, 0, sizeof(originTimestamp));
-	msgPackPDelayReq(ptpClock->msgObuf,&originTimestamp,ptpClock);
+	msgPackPDelayReq(ptpPortDS->msgObuf,&originTimestamp,ptpPortDS);
 
-	if (!netSendPeerEvent(ptpClock->msgObuf,PDELAY_REQ_LENGTH,&ptpClock->netPath,&ptpClock->pDelayReq_tx_ts))
+	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayReq_tx_ts))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
-// ptpClock->pending_PDelayReq_tx_ts = FALSE;
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
+// ptpPortDS->pending_PDelayReq_tx_ts = FALSE;
 		DBGV("PdelayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_REQ, failed\n");
 	}
@@ -2026,34 +2026,34 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		DBG("issue  ..... PDELAY_REQ, succedded \n");
 		DBGV("PDelayReq MSG sent ! \n");
-		/*	ptpClock->pending_tx_ts = TRUE;
-		ptpClock->pending_PDelayReq_tx_ts = TRUE; */
-		ptpClock->sentPDelayReqSequenceId++;
+		/*	ptpPortDS->pending_tx_ts = TRUE;
+		ptpPortDS->pending_PDelayReq_tx_ts = TRUE; */
+		ptpPortDS->sentPDelayReqSequenceId++;
 	}
 }
 
 /*Pack and send on event multicast ip adress a PDelayResp message*/
-void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	Timestamp requestReceiptTimestamp;
 	
 	fromInternalTime(time,&requestReceiptTimestamp);
-	msgPackPDelayResp(ptpClock->msgObuf,header,&requestReceiptTimestamp,ptpClock);
+	msgPackPDelayResp(ptpPortDS->msgObuf,header,&requestReceiptTimestamp,ptpPortDS);
 
-	if (!netSendPeerEvent(ptpClock->msgObuf,PDELAY_RESP_LENGTH,&ptpClock->netPath,&ptpClock->pDelayResp_tx_ts))
+	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayResp_tx_ts))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
-		/*	ptpClock->pending_PDelayResp_tx_ts = FALSE; */
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
+		/*	ptpPortDS->pending_PDelayResp_tx_ts = FALSE; */
 		DBGV("PdelayResp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_RESP, failed\n");
 	}
 	else
 	{
-		/* ptpClock->pending_tx_ts = TRUE;
-		ptpClock->pending_PDelayResp_tx_ts = TRUE; */
+		/* ptpPortDS->pending_tx_ts = TRUE;
+		ptpPortDS->pending_PDelayResp_tx_ts = TRUE; */
 		DBG("issue  ..... PDELAY_RESP, succedded [sending PDelayReq receive time: sec = %lld nanosec = %lld]\n",\
-		(unsigned long long)ptpClock->pdelay_req_receive_time.seconds,\
-		(unsigned long long)ptpClock->pdelay_req_receive_time.nanoseconds);
+		(unsigned long long)ptpPortDS->pdelay_req_receive_time.seconds,\
+		(unsigned long long)ptpPortDS->pdelay_req_receive_time.nanoseconds);
 	}
 }
 
@@ -2061,60 +2061,60 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 
 
 /*Pack and send on event multicast ip adress a DelayResp message*/
-void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
-	msgPackDelayResp(ptpClock->msgObuf,header,ptpClock);
+	msgPackDelayResp(ptpPortDS->msgObuf,header,ptpPortDS);
 
-	if (!netSendGeneral(ptpClock->msgObuf,PDELAY_RESP_LENGTH,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("delayResp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... DELAY_RESP, failed\n");
 	}
 	else
 	{
 		DBG("issue  ..... DELAY_RESP, succedded [sending DelayReq receive time]: sec = %lld nanosec = %lld]\n", \
-		    (unsigned long long)ptpClock->delay_req_receive_time.seconds, \
-		    (unsigned long long)ptpClock->delay_req_receive_time.nanoseconds);
+		    (unsigned long long)ptpPortDS->delay_req_receive_time.seconds, \
+		    (unsigned long long)ptpPortDS->delay_req_receive_time.nanoseconds);
 	}
 }
 
 
 #ifndef WR_MODE_ONLY
-void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 
 
 	Timestamp responseOriginTimestamp;
 	fromInternalTime(time,&responseOriginTimestamp);
 
-	msgPackPDelayRespFollowUp(ptpClock->msgObuf,header,&responseOriginTimestamp,ptpClock);
+	msgPackPDelayRespFollowUp(ptpPortDS->msgObuf,header,&responseOriginTimestamp,ptpPortDS);
 
-	if (!netSendPeerGeneral(ptpClock->msgObuf,PDELAY_RESP_FOLLOW_UP_LENGTH,&ptpClock->netPath))
+	if (!netSendPeerGeneral(ptpPortDS->msgObuf,PDELAY_RESP_FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("PdelayRespFollowUp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, failed\n");
 	}
 	else
 	{
 		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %ld \n\t\t  nanosec = %lld\n",\
-		(unsigned long long)ptpClock->pDelayResp_tx_ts.utc,\
-		(unsigned long long)ptpClock->pDelayResp_tx_ts.nsec);
+		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.utc,\
+		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.nsec);
 	}
 }
 #endif
 
 #ifndef WRPTPv2
 // this function seems to be unsued
-void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
-	msgPackWRManagement(ptpClock->msgObuf,ptpClock, SLAVE_PRESENT);
+	msgPackWRManagement(ptpPortDS->msgObuf,ptpPortDS, SLAVE_PRESENT);
 
 	DBG("Issuing management NON-WR msg, managementId = 0x%x\n",SLAVE_PRESENT);
-	if (!netSendGeneral(ptpClock->msgObuf,WR_MANAGEMENT_LENGTH,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,WR_MANAGEMENT_LENGTH,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("Management message can't be sent -> FAULTY state \n");
 		DBG("issue: Management Msg, failed\n");
 	}
@@ -2127,15 +2127,15 @@ void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpt
 #endif
 
 #ifdef WRPTPv2
-void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	UInteger16 len;
 	
-	len = msgPackWRSignalingMsg(ptpClock->msgObuf,ptpClock, wrMessageID);
+	len = msgPackWRSignalingMsg(ptpPortDS->msgObuf,ptpPortDS, wrMessageID);
 
-	if (!netSendGeneral(ptpClock->msgObuf,len,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,len,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("Signaling message can't be sent -> FAULTY state \n");
 		DBG("issue ...... WR_SIGNALING: failed \n");
 		
@@ -2149,26 +2149,26 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalPeriod    	       = %32lld us\n\n",	\
-			    !ptpClock->calibrated,			\
-			    (unsigned long long)ptpClock->calPeriod);
+			    !ptpPortDS->calibrated,			\
+			    (unsigned long long)ptpPortDS->calPeriod);
 #else
 			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalPeriod    	       = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpClock->calibrated,			\
-			    (unsigned long long)ptpClock->calPeriod, \
-			    printf_bits(ptpClock->calibrationPattern),	\
-			    (unsigned)ptpClock->calibrationPatternLen);
+			    !ptpPortDS->calibrated,			\
+			    (unsigned long long)ptpPortDS->calPeriod, \
+			    printf_bits(ptpPortDS->calibrationPattern),	\
+			    (unsigned)ptpPortDS->calibrationPatternLen);
 
 #endif
 			break;
 
 		case CALIBRATED:
 			DBGWRFSM("issue ...... WR_SIGNALINGg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n", \
-			    ((unsigned long long)ptpClock->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaTx.scaledPicoseconds.lsb, \
-			    ((unsigned long long)ptpClock->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaRx.scaledPicoseconds.lsb);
+			    ((unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.lsb, \
+			    ((unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 			break;
 		case SLAVE_PRESENT:
 			DBGWRFSM("issue ...... WR_SIGNALING [SLAVE_PRESENT], succedded, len = %d \n",len);
@@ -2190,15 +2190,15 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpClock 
 }
 #else
 /* WR: custom White Rabbit management messages */
-void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpClock *ptpClock)
+void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	UInteger16 len;
 
-	len = msgPackWRManagement(ptpClock->msgObuf,ptpClock, wr_managementId);
+	len = msgPackWRManagement(ptpPortDS->msgObuf,ptpPortDS, wr_managementId);
 
-	if (!netSendGeneral(ptpClock->msgObuf,len,&ptpClock->netPath))
+	if (!netSendGeneral(ptpPortDS->msgObuf,len,&ptpPortDS->netPath))
 	{
-		toState(PTP_FAULTY,rtOpts,ptpClock);
+		toState(PTP_FAULTY,rtOpts,ptpPortDS);
 		DBGV("Management message can't be sent -> FAULTY state \n");
 		DBG("issue: WR Management Msg, failed \n");
 	}
@@ -2212,17 +2212,17 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 		  \n\t\tcalPeriod      	       = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
 		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpClock->calibrated,			\
-			    (unsigned long long)ptpClock->calPeriod, \
-			    printf_bits(ptpClock->calibrationPattern),	\
-			    (unsigned)ptpClock->calibrationPatternLen);
+			    !ptpPortDS->calibrated,			\
+			    (unsigned long long)ptpPortDS->calPeriod, \
+			    printf_bits(ptpPortDS->calibrationPattern),	\
+			    (unsigned)ptpPortDS->calibrationPatternLen);
 
 			break;
 
 		case CALIBRATED:
 			DBG("\n\nissue WR Management msg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n\n", \
-			    ((unsigned long long)ptpClock->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaTx.scaledPicoseconds.lsb, \
-			    ((unsigned long long)ptpClock->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaRx.scaledPicoseconds.lsb);
+			    ((unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.lsb, \
+			    ((unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 			break;
 		case SLAVE_PRESENT:
 			DBG("\n\nissue WR Management msg [SLAVE_PRESENT], succedded \n\n");
@@ -2244,58 +2244,61 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 }
 
 #endif /*WRPTPv2*/
-void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
+void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 {
 	int i,j;
 	Boolean found = FALSE;
 
-	j = ptpClock->foreign_record_best;
+	j = ptpPortDS->foreign_record_best;
 
 	/*Check if Foreign master is already known*/
-	for (i=0;i<ptpClock->number_foreign_records;i++)
+	for (i=0;i<ptpPortDS->number_foreign_records;i++)
 	{
-		if (!memcmp(header->sourcePortIdentity.clockIdentity,ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-		    && (header->sourcePortIdentity.portNumber == ptpClock->foreign[j].foreignMasterPortIdentity.portNumber))
+		if (!memcmp(header->sourcePortIdentity.clockIdentity,ptpPortDS->foreign[j].foreignMasterPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+		    && (header->sourcePortIdentity.portNumber == ptpPortDS->foreign[j].foreignMasterPortIdentity.portNumber))
 		{
 			/*Foreign Master is already in Foreignmaster data set*/
-			ptpClock->foreign[j].foreignMasterAnnounceMessages++;
+			ptpPortDS->foreign[j].foreignMasterAnnounceMessages++;
 			found = TRUE;
 			DBGV("addForeign : AnnounceMessage incremented \n");
 
-			msgUnpackHeader(buf,&ptpClock->foreign[j].header);
-			msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
-			if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
+			msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
+			msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
+			if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
 				DBG("addForeign .                        message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
-		j = (j+1)%ptpClock->number_foreign_records;
+		j = (j+1)%ptpPortDS->number_foreign_records;
 	}
 
 	/*New Foreign Master*/
 	if (!found)
 	{
-		if (ptpClock->number_foreign_records < ptpClock->max_foreign_records)
+		if (ptpPortDS->number_foreign_records < ptpPortDS->max_foreign_records)
 		{
-			ptpClock->number_foreign_records++;
+			ptpPortDS->number_foreign_records++;
 		}
-		j = ptpClock->foreign_record_i;
+		j = ptpPortDS->foreign_record_i;
 
 		/*Copy new foreign master data set from Announce message*/
-		memcpy(ptpClock->foreign[j].foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-		ptpClock->foreign[j].foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
-		ptpClock->foreign[j].foreignMasterAnnounceMessages = 0;
+		memcpy(ptpPortDS->foreign[j].foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+		ptpPortDS->foreign[j].foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
+		ptpPortDS->foreign[j].foreignMasterAnnounceMessages = 0;
 
 		/*header and announce field of each Foreign Master are usefull to run Best Master Clock Algorithm*/
-		msgUnpackHeader(buf,&ptpClock->foreign[j].header);
-		msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
-		if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
+		msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
+		msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
+		if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
 			DBG("addForeign.. WR_ANNOUNCE message from another White Rabbit node [wr_flag != NON_WR]\n");
 
 		DBGV("New foreign Master added \n");
 
-		ptpClock->foreign_record_i = (ptpClock->foreign_record_i+1) % ptpClock->max_foreign_records;
-
+		ptpPortDS->foreign_record_i = (ptpPortDS->foreign_record_i+1) % ptpPortDS->max_foreign_records;
+#ifdef WRPTPv2
+		ptpPortDS->foreign[j].receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
+#endif
+		
 	}
 
 }
