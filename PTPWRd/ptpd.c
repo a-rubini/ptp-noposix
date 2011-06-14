@@ -53,13 +53,14 @@ RunTimeOpts rtOpts = {
 int main(int argc, char **argv)
 {
    PtpPortDS *ptpPortDS;
+   PtpClockDS ptpClockDS;
    Integer16 ret;
    int i;
 
    netStartup();
 
   /*Initialize run time options with command line arguments*/
-   if( !(ptpPortDS = ptpdStartup(argc, argv, &ret, &rtOpts)) )
+   if( !(ptpPortDS = ptpdStartup(argc, argv, &ret, &rtOpts, &ptpClockDS)) )
      return ret;
 
     /* White rabbit debugging info*/
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
 
 //    if(rtOpts.wrMode == WR_SLAVE)
 //    	ptpd_init_exports();
-
+    initDataClock(&rtOpts, &ptpClockDS);
   /* do the protocol engine */
    if(rtOpts.portNumber == 1)
      protocol(&rtOpts, ptpPortDS);	 //forever loop..

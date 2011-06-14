@@ -425,6 +425,7 @@ void send_test(PtpPortDS *clock)
 }
 
 
+
 /*
  here WR adds initWRCalibration()
  */
@@ -452,7 +453,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   //   send_test(ptpPortDS);
 
   /* all the protocol (PTP + WRPTP) initialization */
-  initData(rtOpts, ptpPortDS);
+  initDataPort(rtOpts, ptpPortDS);
 
 #ifdef WRPTPv2
   /* 
@@ -669,7 +670,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			ptpPortDS->foreign_record_i = 0;
 			ptpPortDS->wrMode = NON_WR;
 
-			if(!ptpPortDS->slaveOnly && ptpPortDS->clockQuality.clockClass != 255  )
+			if(!ptpPortDS->ptpClockDS->slaveOnly && ptpPortDS->ptpClockDS->clockQuality.clockClass != 255  )
 			{
 				m1(ptpPortDS);
 				toState(PTP_MASTER, rtOpts, ptpPortDS);
@@ -737,7 +738,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			}
 		}
 
-		if(ptpPortDS->slaveOnly || ptpPortDS->clockQuality.clockClass == 255)
+		if(ptpPortDS->ptpClockDS->slaveOnly || ptpPortDS->ptpClockDS->clockQuality.clockClass == 255)
 			toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
 		break;
@@ -835,7 +836,7 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		return;
 	}
 
-	if(ptpPortDS->msgTmpHeader.domainNumber != ptpPortDS->domainNumber)
+	if(ptpPortDS->msgTmpHeader.domainNumber != ptpPortDS->ptpClockDS->domainNumber)
 	{
 		DBG("Ignored message from domainNumber %d\n", ptpPortDS->msgTmpHeader.domainNumber);
 		return;
@@ -912,8 +913,8 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 Boolean msgIsFromCurrentParent(MsgHeader *header, PtpPortDS *ptpPortDS)
 {
-	if(!memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-	   && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
+	if(!memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+	   && (ptpPortDS->ptpClockDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
 		return TRUE;
 	else
 		return FALSE;
@@ -1486,8 +1487,8 @@ if (!rtOpts->E2E_mode)
 			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
-			isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
+			isFromCurrentParent = !memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+							  && (ptpPortDS->ptpClockDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 			if (!   ((ptpPortDS->sentPDelayReqSequenceId == header->sequenceId)
 			   && (!memcmp(ptpPortDS->portIdentity.clockIdentity,ptpPortDS->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
@@ -1567,8 +1568,8 @@ if (!rtOpts->E2E_mode)
 				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
 
-				isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
+				isFromCurrentParent = !memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
+							  && (ptpPortDS->ptpClockDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 				if (!   ((ptpPortDS->sentPDelayReqSequenceId == header->sequenceId)
 					&& (!memcmp(ptpPortDS->portIdentity.clockIdentity,ptpPortDS->msgTmp.presp.requestingPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))

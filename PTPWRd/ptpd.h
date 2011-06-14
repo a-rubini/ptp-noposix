@@ -90,9 +90,15 @@ void m1(PtpPortDS*);
 void s1(MsgHeader*,MsgAnnounce*,PtpPortDS*);
 
 /**
- * \brief Initialize datas
+ * \brief Initialize port Data
  */
-void initData(RunTimeOpts*,PtpPortDS*);
+void initDataPort(RunTimeOpts*,PtpPortDS*);
+/** \}*/
+
+/**
+ * \brief Initialize clock Data
+ */
+void initDataClock(RunTimeOpts*, PtpClockDS*);
 /** \}*/
 
 

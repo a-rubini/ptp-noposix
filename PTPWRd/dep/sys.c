@@ -39,12 +39,12 @@ void displayStats(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     len += sprintf(sbuf + len,
       ", %s%d.%09d" ", %s%d.%09d",
       rtOpts->csvStats ? "" : "owd: ",
-      ptpPortDS->meanPathDelay.seconds,
-      ptpPortDS->meanPathDelay.nanoseconds,
+      ptpPortDS->ptpClockDS->meanPathDelay.seconds,
+      ptpPortDS->ptpClockDS->meanPathDelay.nanoseconds,
       //abs(ptpPortDS->meanPathDelay.nanoseconds),
       rtOpts->csvStats ? "" : "ofm: ",
-      ptpPortDS->offsetFromMaster.seconds,
-      ptpPortDS->offsetFromMaster.nanoseconds);
+      ptpPortDS->ptpClockDS->offsetFromMaster.seconds,
+      ptpPortDS->ptpClockDS->offsetFromMaster.nanoseconds);
       //abs(ptpPortDS->offsetFromMaster.nanoseconds));
 
     len += sprintf(sbuf + len,

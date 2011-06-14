@@ -94,9 +94,9 @@ void msgPackHeader(void *buf, PtpPortDS *ptpPortDS)
 	Nibble transport                        = 0x0; //0x80; //(spec annex D)
 	*(UInteger8*)(buf+0)                    = transport;
 	*(UInteger4*)(buf+1)                    = ptpPortDS->versionNumber;
-	*(UInteger8*)(buf+4)                    = ptpPortDS->domainNumber;
+	*(UInteger8*)(buf+4)                    = ptpPortDS->ptpClockDS->domainNumber;
 
-	if (ptpPortDS->twoStepFlag)
+	if (ptpPortDS->ptpClockDS->twoStepFlag)
 		*(UInteger8*)(buf+6)            = TWO_STEP_FLAG;
 
 	memset((buf+8),0,8);
@@ -109,8 +109,8 @@ void msgPackHeader(void *buf, PtpPortDS *ptpPortDS)
 	DBGM("------------ msgPackHeader --------\n");
 	DBGM(" transportSpecific............. %u\n", transport);
 	DBGM(" versionPTP.................... %u\n", ptpPortDS->versionNumber);
-	DBGM(" domainNumber.................. %u\n", ptpPortDS->domainNumber);
-	if (ptpPortDS->twoStepFlag)
+	DBGM(" domainNumber.................. %u\n", ptpPortDS->ptpClockDS->domainNumber);
+	if (ptpPortDS->ptpClockDS->twoStepFlag)
 	  DBGM(" flagField..................... %x\n", TWO_STEP_FLAG);
 	else
 	  DBGM(" flagField..................... %x\n", 0);
@@ -198,16 +198,16 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 
 	/*Announce message*/
 	memset((buf+34),0,10);
-	*(Integer16*)(buf+44)=flip16(ptpPortDS->currentUtcOffset);
+	*(Integer16*)(buf+44)=flip16(ptpPortDS->ptpClockDS->currentUtcOffset);
 
-	*(UInteger8*)(buf+47)=ptpPortDS->grandmasterPriority1;
-	*(UInteger8*)(buf+48)=ptpPortDS->clockQuality.clockClass;
-	*(Enumeration8*)(buf+49)=ptpPortDS->clockQuality.clockAccuracy;
-	*(UInteger16*)(buf+50)=flip16(ptpPortDS->clockQuality.offsetScaledLogVariance);
-	*(UInteger8*)(buf+52)=ptpPortDS->grandmasterPriority2;
-	memcpy((buf+53),ptpPortDS->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
-	*(UInteger16*)(buf+61)=flip16(ptpPortDS->stepsRemoved);
-	*(Enumeration8*)(buf+63)=ptpPortDS->timeSource;
+	*(UInteger8*)(buf+47)=ptpPortDS->ptpClockDS->grandmasterPriority1;
+	*(UInteger8*)(buf+48)=ptpPortDS->ptpClockDS->clockQuality.clockClass;
+	*(Enumeration8*)(buf+49)=ptpPortDS->ptpClockDS->clockQuality.clockAccuracy;
+	*(UInteger16*)(buf+50)=flip16(ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance);
+	*(UInteger8*)(buf+52)=ptpPortDS->ptpClockDS->grandmasterPriority2;
+	memcpy((buf+53),ptpPortDS->ptpClockDS->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
+	*(UInteger16*)(buf+61)=flip16(ptpPortDS->ptpClockDS->stepsRemoved);
+	*(Enumeration8*)(buf+63)=ptpPortDS->ptpClockDS->timeSource;
 
 	/*
 	 * White rabbit message in the suffix of PTP announce message
@@ -266,19 +266,19 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
 	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
 	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
-	DBGM(" currentUtcOffset.............. %d\n", ptpPortDS->currentUtcOffset);
-	DBGM(" grandmasterPriority1.......... %d\n", ptpPortDS->grandmasterPriority1);
-	DBGM(" clockClass.................... %d\n", ptpPortDS->clockQuality.clockClass);
-	DBGM(" clockAccuracy................. %d\n", ptpPortDS->clockQuality.clockAccuracy);
-	DBGM(" offsetScaledLogVariance....... %d\n", ptpPortDS->clockQuality.offsetScaledLogVariance);
-	DBGM(" grandmasterPriority2.......... %d\n", ptpPortDS->grandmasterPriority2);
+	DBGM(" currentUtcOffset.............. %d\n", ptpPortDS->ptpClockDS->currentUtcOffset);
+	DBGM(" grandmasterPriority1.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority1);
+	DBGM(" clockClass.................... %d\n", ptpPortDS->ptpClockDS->clockQuality.clockClass);
+	DBGM(" clockAccuracy................. %d\n", ptpPortDS->ptpClockDS->clockQuality.clockAccuracy);
+	DBGM(" offsetScaledLogVariance....... %d\n", ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance);
+	DBGM(" grandmasterPriority2.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority2);
 	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpPortDS->grandmasterIdentity[0], ptpPortDS->grandmasterIdentity[1],
-	    ptpPortDS->grandmasterIdentity[2], ptpPortDS->grandmasterIdentity[3],
-	    ptpPortDS->grandmasterIdentity[4], ptpPortDS->grandmasterIdentity[5],
-	    ptpPortDS->grandmasterIdentity[6], ptpPortDS->grandmasterIdentity[7]);
-	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->stepsRemoved);
-	DBGM(" timeSource.................... %d\n", ptpPortDS->timeSource);
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[0], ptpPortDS->ptpClockDS->grandmasterIdentity[1],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);
+	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
+	DBGM(" timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
 #ifdef WRPTPv2	
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 	{
@@ -745,8 +745,8 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 
 	/*Management message*/
 	//target portIdentity
-	memcpy((buf+34),ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	put_be16(buf + 42,ptpPortDS->parentPortIdentity.portNumber);
+	memcpy((buf+34),ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	put_be16(buf + 42,ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
 
 	//Hops staff, we dont care at the moment
 	*(Integer8*)(buf+44) = 0;
@@ -762,16 +762,16 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 
 	DBGM("------------ msgPackWRManagement-------\n");
 	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpPortDS->parentPortIdentity.clockIdentity[0],
-	    ptpPortDS->parentPortIdentity.clockIdentity[1],
-	    ptpPortDS->parentPortIdentity.clockIdentity[2],
-	    ptpPortDS->parentPortIdentity.clockIdentity[3],
-	    ptpPortDS->parentPortIdentity.clockIdentity[4],
-	    ptpPortDS->parentPortIdentity.clockIdentity[5],
-	    ptpPortDS->parentPortIdentity.clockIdentity[6],
-	    ptpPortDS->parentPortIdentity.clockIdentity[7]
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" recipient's PortId............ %u\n", ptpPortDS->parentPortIdentity.portNumber);
+	DBGM(" recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
 	DBGM(" management CMD................ %u\n", WR_CMD);
 	DBGM(" management ID................. 0x%x\n", wr_managementId);
 
@@ -890,8 +890,8 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	*(UInteger8*)(buf+32)=0x05; //Table 23 -> all other
 
 	//target portIdentity
-	memcpy((buf+34),ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	put_be16(buf + 42,ptpPortDS->parentPortIdentity.portNumber);
+	memcpy((buf+34),ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	put_be16(buf + 42,ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
 
 
 	/*WR TLV*/
@@ -907,16 +907,16 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 
 	DBGM("------------ msgPackWRSignalingMSG-------\n");
 	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpPortDS->parentPortIdentity.clockIdentity[0],
-	    ptpPortDS->parentPortIdentity.clockIdentity[1],
-	    ptpPortDS->parentPortIdentity.clockIdentity[2],
-	    ptpPortDS->parentPortIdentity.clockIdentity[3],
-	    ptpPortDS->parentPortIdentity.clockIdentity[4],
-	    ptpPortDS->parentPortIdentity.clockIdentity[5],
-	    ptpPortDS->parentPortIdentity.clockIdentity[6],
-	    ptpPortDS->parentPortIdentity.clockIdentity[7]
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6],
+	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" recipient's PortId............ %u\n", ptpPortDS->parentPortIdentity.portNumber);
+	DBGM(" recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
 	DBGM(" tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
 	DBGM(" tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
 	DBGM(" tlv_organizID ................ 0x%x\n", WR_TLV_ORGANIZATION_ID);

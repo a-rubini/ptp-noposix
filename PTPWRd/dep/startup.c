@@ -62,7 +62,7 @@ void ptpdShutdown()
 
 }
 
-PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts)
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
@@ -312,8 +312,9 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
     }
   }
 
-  ptpPortDS = (PtpPortDS*)calloc(MAX_PORT_NUMBER, sizeof(PtpPortDS));
-
+  ptpPortDS  = (PtpPortDS*)calloc(MAX_PORT_NUMBER, sizeof(PtpPortDS));
+  
+  
   PtpPortDS * currentPtpdClockData;
 
   if(!ptpPortDS)
@@ -333,6 +334,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
     {
 	currentPtpdClockData->portIdentity.portNumber = i + 1;
 	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
+	
 	if(!currentPtpdClockData->foreign)
 	{
 	    PERROR("failed to allocate memory for foreign master data");
@@ -350,6 +352,8 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
 	memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
 
+	currentPtpdClockData->ptpClockDS = ptpClockDS; // common data
+	
 	currentPtpdClockData++;
     }
   }

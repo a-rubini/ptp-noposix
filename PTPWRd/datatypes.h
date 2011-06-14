@@ -272,7 +272,7 @@ typedef struct
 
 	/*Static members*/
 	Boolean twoStepFlag;
-	ClockIdentity clockIdentity;
+	//ClockIdentity clockIdentity; // TODO: should be here but is in portDS
 	UInteger16 numberPorts;
 
 	/*Dynamic members*/
@@ -325,15 +325,16 @@ typedef struct
 /* main program data structure */
 typedef struct {
 
-	//PtpClockDS *ptpClockDS;
+	PtpClockDS *ptpClockDS;
 	
 /***** Default data set ******/
 	NetPath netPath;
 
-//#ifndef WRPTPv2	
+	ClockIdentity clockIdentity; //TODO: should be in clockDS
+#ifndef WRPTPv2	
 	/*Static members*/
 	Boolean twoStepFlag;
-	ClockIdentity clockIdentity;
+
 	UInteger16 numberPorts;
 
 	/*Dynamic members*/
@@ -367,7 +368,7 @@ typedef struct {
 	ClockQuality grandmasterClockQuality;
 	UInteger8 grandmasterPriority1;
 	UInteger8 grandmasterPriority2;
-//#endif
+#endif
   /*
    ******* White Rabbit *******
    *      
@@ -382,7 +383,7 @@ typedef struct {
 	FixedDelta otherNodeDeltaRx; //WRPTPv2: parentPortDeltaRx
 
 /******* Global time properties data set *********/
-//#ifndef WRPTPv2
+#ifndef WRPTPv2
 	/*Dynamic members*/
 	Integer16 currentUtcOffset;
 	Boolean currentUtcOffsetValid;
@@ -392,7 +393,7 @@ typedef struct {
 	Boolean frequencyTraceable;
 	Boolean ptpTimescale;
 	Enumeration8 timeSource;
-//#endif
+#endif
 /****** Port configuration data set ***********/
 
 	/*Static members*/

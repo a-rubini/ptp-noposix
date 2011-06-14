@@ -242,14 +242,14 @@ void displayDefault (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Default Data Set-- \n");
 printf("\n");
-printf("twoStepFlag : %d \n",ptpPortDS->twoStepFlag);
+printf("twoStepFlag : %d \n",ptpPortDS->ptpClockDS->twoStepFlag);
 clockIdentity_display(ptpPortDS->clockIdentity);
-printf("numberPorts : %d \n",ptpPortDS->numberPorts);
-clockQuality_display(&(ptpPortDS->clockQuality));
-printf("priority1 : %d \n",ptpPortDS->priority1);
-printf("priority2 : %d \n",ptpPortDS->priority2);
-printf("domainNumber : %d \n",ptpPortDS->domainNumber);
-printf("slaveOnly : %d \n",ptpPortDS->slaveOnly);
+printf("numberPorts : %d \n",ptpPortDS->ptpClockDS->numberPorts);
+clockQuality_display(&(ptpPortDS->ptpClockDS->clockQuality));
+printf("priority1 : %d \n",ptpPortDS->ptpClockDS->priority1);
+printf("priority2 : %d \n",ptpPortDS->ptpClockDS->priority2);
+printf("domainNumber : %d \n",ptpPortDS->ptpClockDS->domainNumber);
+printf("slaveOnly : %d \n",ptpPortDS->ptpClockDS->slaveOnly);
 printf("\n");
 }
 
@@ -260,11 +260,11 @@ void displayCurrent (PtpPortDS *ptpPortDS){
 printf("---Ptp Clock Current Data Set-- \n");
 printf("\n");
 
-printf("stepsremoved : %d \n",ptpPortDS->stepsRemoved);
+printf("stepsremoved : %d \n",ptpPortDS->ptpClockDS->stepsRemoved);
 printf("Offset from master : \n");
-timeInternal_display(&ptpPortDS->offsetFromMaster);
+timeInternal_display(&ptpPortDS->ptpClockDS->offsetFromMaster);
 printf("Mean path delay : \n");
-timeInternal_display(&ptpPortDS->meanPathDelay);
+timeInternal_display(&ptpPortDS->ptpClockDS->meanPathDelay);
 printf("\n");
 }
 
@@ -275,15 +275,15 @@ void displayParent (PtpPortDS *ptpPortDS){
 
 printf("---Ptp Clock Parent Data Set-- \n");
 printf("\n");
-portIdentity_display(&(ptpPortDS->parentPortIdentity));
-printf("parentStats : %d \n",ptpPortDS->parentStats);
-printf("observedParentOffsetScaledLogVariance : %d \n",ptpPortDS->observedParentOffsetScaledLogVariance);
-printf("observedParentClockPhaseChangeRate : %d \n",ptpPortDS->observedParentClockPhaseChangeRate);
+portIdentity_display(&(ptpPortDS->ptpClockDS->parentPortIdentity));
+printf("parentStats : %d \n",ptpPortDS->ptpClockDS->parentStats);
+printf("observedParentOffsetScaledLogVariance : %d \n",ptpPortDS->ptpClockDS->observedParentOffsetScaledLogVariance);
+printf("observedParentClockPhaseChangeRate : %d \n",ptpPortDS->ptpClockDS->observedParentClockPhaseChangeRate);
 printf("--GrandMaster--\n");
-clockIdentity_display(ptpPortDS->grandmasterIdentity);
-clockQuality_display(&ptpPortDS->grandmasterClockQuality);
-printf("grandmasterpriority1 : %d \n",ptpPortDS->grandmasterPriority1);
-printf("grandmasterpriority2 : %d \n",ptpPortDS->grandmasterPriority2);
+clockIdentity_display(ptpPortDS->ptpClockDS->grandmasterIdentity);
+clockQuality_display(&ptpPortDS->ptpClockDS->grandmasterClockQuality);
+printf("grandmasterpriority1 : %d \n",ptpPortDS->ptpClockDS->grandmasterPriority1);
+printf("grandmasterpriority2 : %d \n",ptpPortDS->ptpClockDS->grandmasterPriority2);
 printf("\n");
 }
 
@@ -293,14 +293,14 @@ void displayGlobal (PtpPortDS *ptpPortDS){
 printf("---Ptp Clock Global Time Data Set-- \n");
 printf("\n");
 
-printf("currentUtcOffset : %d \n",ptpPortDS->currentUtcOffset);
-printf("currentUtcOffsetValid : %d \n",ptpPortDS->currentUtcOffsetValid);
-printf("leap59 : %d \n",ptpPortDS->leap59);
-printf("leap61 : %d \n",ptpPortDS->leap61);
-printf("timeTraceable : %d \n",ptpPortDS->timeTraceable);
-printf("frequencyTraceable : %d \n",ptpPortDS->frequencyTraceable);
-printf("ptpTimescale : %d \n",ptpPortDS->ptpTimescale);
-printf("timeSource : %d \n",ptpPortDS->timeSource);
+printf("currentUtcOffset : %d \n",ptpPortDS->ptpClockDS->currentUtcOffset);
+printf("currentUtcOffsetValid : %d \n",ptpPortDS->ptpClockDS->currentUtcOffsetValid);
+printf("leap59 : %d \n",ptpPortDS->ptpClockDS->leap59);
+printf("leap61 : %d \n",ptpPortDS->ptpClockDS->leap61);
+printf("timeTraceable : %d \n",ptpPortDS->ptpClockDS->timeTraceable);
+printf("frequencyTraceable : %d \n",ptpPortDS->ptpClockDS->frequencyTraceable);
+printf("ptpTimescale : %d \n",ptpPortDS->ptpClockDS->ptpTimescale);
+printf("timeSource : %d \n",ptpPortDS->ptpClockDS->timeSource);
 printf("\n");
 }
 

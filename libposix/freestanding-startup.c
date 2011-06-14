@@ -7,7 +7,7 @@ static ForeignMasterRecord foreign[MAX_PORT_NUMBER][DEFAULT_MAX_FOREIGN_RECORDS]
 
 
 PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret,
-		       RunTimeOpts *rtOpts)
+		       RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
 	PtpPortDS * currentPtpdClockData;
 	int i;
@@ -59,6 +59,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret,
 		/* This memset is repeated for no reason. Bah! */
 		memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
 		memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
+		currentPtpdClockData->ptpClockDS = ptpClockDS; // common data
 		currentPtpdClockData++;
 	}
 

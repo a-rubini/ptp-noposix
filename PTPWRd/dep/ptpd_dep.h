@@ -160,7 +160,7 @@ void updateClock(RunTimeOpts*,PtpPortDS*);
 /** \name startup.c (Linux API dependent)
  * -Handle with runtime options*/
  /**\{*/
-PtpPortDS * ptpdStartup(int,char**,Integer16*,RunTimeOpts*);
+PtpPortDS * ptpdStartup(int,char**,Integer16*,RunTimeOpts*,PtpClockDS*);
 void ptpdShutdown(void);
 /** \}*/
 

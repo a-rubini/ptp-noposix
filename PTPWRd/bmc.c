@@ -4,16 +4,14 @@
 
 
 /* Init ptpPortDS with run time values (initialization constants are in constants.h)*/
-void initData(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
+void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   int i,j;
   j=0;
-  DBG("initData\n");
-
-/* Default data set */
-	ptpPortDS->twoStepFlag = TWO_STEP_FLAG;
+  DBG("initDataPort\n");
 
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
+	//TODO: should be in initDataClock()
 	for (i=0;i<CLOCK_IDENTITY_LENGTH;i++)
 	{
 
@@ -30,15 +28,13 @@ void initData(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		  j++;
 		}
 	}
-	ptpPortDS->numberPorts = rtOpts->portNumber;
+	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	    ptpPortDS->clockIdentity[0], ptpPortDS->clockIdentity[1],
+	    ptpPortDS->clockIdentity[2], ptpPortDS->clockIdentity[3],
+	    ptpPortDS->clockIdentity[4], ptpPortDS->clockIdentity[5],
+	    ptpPortDS->clockIdentity[6], ptpPortDS->clockIdentity[7]
+	    );
 
-	ptpPortDS->clockQuality.clockAccuracy = rtOpts->clockQuality.clockAccuracy;
-
-	ptpPortDS->clockQuality.offsetScaledLogVariance = rtOpts->clockQuality.offsetScaledLogVariance;
-
-
-	/* If priority not defined at the runtime, set it high for the WR master*/
-#ifdef WRPTPv2	
 	/*
 	 * White Rabbit - init static data fields
 	 */
@@ -54,32 +50,12 @@ void initData(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->knownDeltaRx.scaledPicoseconds.lsb = rtOpts->knownDeltaRx.scaledPicoseconds.lsb;
 	ptpPortDS->knownDeltaRx.scaledPicoseconds.msb = rtOpts->knownDeltaRx.scaledPicoseconds.msb;
 	
-	ptpPortDS->primarySlavePortNumber = 0;
 	
 	/* 
 	 * White Rabbit - init dynamic data fields 
 	 */
 	initWrData(ptpPortDS);
 	
-	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpPortDS->wrConfig != NON_WR)
-	  ptpPortDS->priority1 = WR_PRIORITY1;
-#else
-	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && ptpPortDS->wrMode == WR_MASTER)
-	  ptpPortDS->priority1 = WR_MASTER_PRIORITY1;
-#endif	  
-	  
-	else
-	  ptpPortDS->priority1 = rtOpts->priority1;
-
-	ptpPortDS->priority2 = rtOpts->priority2;
-
-	ptpPortDS->domainNumber = rtOpts->domainNumber;
-	ptpPortDS->slaveOnly = rtOpts->slaveOnly;
-	if(rtOpts->slaveOnly)
-           rtOpts->clockQuality.clockClass = 255;
-
-
-	ptpPortDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
 
 /*Port configuration data set */
 
@@ -104,71 +80,6 @@ void initData(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	/*Init other stuff*/
 	ptpPortDS->number_foreign_records = 0;
 	ptpPortDS->max_foreign_records = rtOpts->max_foreign_records;
-#ifdef WRPTPv2
-	if(ptpPortDS->wrConfig != NON_WR)
-#else
-	if(ptpPortDS->wrMode != NON_WR)
-#endif	  
-	{
-	  /* we want White Rabbit daemon, so here we are */
-
-
-
-	  /* setting appropriate clock class for WR node
-	   * if the class was not set by the user (is default)*/
-
-
-
-	  if(rtOpts->clockQuality.clockClass == DEFAULT_CLOCK_CLASS)
-	  {
-#ifdef WRPTPv2
-            // do nothing, we want it to be standard :)
-#else
-	    if( ptpPortDS->wrMode == WR_MASTER)
-	      ptpPortDS->clockQuality.clockClass = WR_MASTER_CLOCK_CLASS;
-	    else if(ptpPortDS->wrMode == WR_SLAVE)
-	      ptpPortDS->clockQuality.clockClass = WR_SLAVE_CLOCK_CLASS;
-#endif	    
-	  }
-	  else
-	    ptpPortDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
-
-
-
-// 	  if(ptpPortDS->portIdentity.portNumber == 1 )
-// 	  {
-// 	    /* there can be only one slave (not entirely
-// 	     * true for WR, but must be enough for the time being)
-// 	     * so the first port is the one which can be WR Slave
-// 	     */
-// 	    ptpPortDS->wrMode     		  = rtOpts->wrMode;
-// 	  }
-// 	  else
-// 	  {
-// 	    /* All the other ports except port = 1 are
-// 	     * WR Masters and no discussion about that
-// 	     */
-// 	    ptpPortDS->wrMode                 = WR_MASTER;
-// 	  }
-	}
-	else
-	{
-	  /* normal PTP daemon on all ports */
-	  //ptpPortDS->wrMode                   = NON_WR;
-	}
-#ifndef WRPTPv2	
-	ptpPortDS->wrModeON      		 = FALSE;
-
-	/*this one should be set at runtime*/
-	ptpPortDS->calibrated  		 = FALSE;
-	ptpPortDS->deltaTx.scaledPicoseconds.lsb  = 0;
-	ptpPortDS->deltaTx.scaledPicoseconds.msb  = 0;
-	ptpPortDS->deltaRx.scaledPicoseconds.lsb	 = 0;
-	ptpPortDS->deltaRx.scaledPicoseconds.msb	 = 0;
-	/**/
-#endif
-	//ptpPortDS->tx_tag 		 = 0;
-	//ptpPortDS->new_tx_tag_read   		 = FALSE;
 
 	ptpPortDS->pending_tx_ts            = FALSE;
 	ptpPortDS->pending_Synch_tx_ts      = 0;
@@ -176,57 +87,62 @@ void initData(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->pending_PDelayReq_tx_ts  = 0;
 	ptpPortDS->pending_PDelayResp_tx_ts = 0;
 
-#ifndef WRPTPv2		
-	
-# ifdef NEW_SINGLE_WRFSM
-	ptpPortDS->wrPortState = WRS_IDLE;
-# else
-	ptpPortDS->wrPortState = PTPWR_IDLE;
-# endif
-
-	ptpPortDS->calPeriod = rtOpts->calPeriod;
-	
-	
-	ptpPortDS->calibrationPattern = rtOpts->calibrationPattern;
-	ptpPortDS->calibrationPatternLen = rtOpts->calibrationPatternLen;
-
-	//TODO:
-	for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
-	  {
-	    ptpPortDS->wrTimeouts[i] = WR_DEFAULT_STATE_TIMEOUT_MS;
-	  }
-
-	// TODO: fixme: locking timeout should be bigger
-
-	ptpPortDS->wrTimeouts[WRS_S_LOCK]   = 10000;
-	ptpPortDS->wrTimeouts[WRS_S_LOCK_1] = 10000;
-	ptpPortDS->wrTimeouts[WRS_S_LOCK_2] = 10000;
-#endif
 }
+
+
+void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
+{
+	fprintf(stderr, "DBG: initDataClock");
+	/* Default data set */
+	ptpClockDS->twoStepFlag = TWO_STEP_FLAG;
+	ptpClockDS->numberPorts = rtOpts->portNumber;
+	ptpClockDS->clockQuality.clockAccuracy = rtOpts->clockQuality.clockAccuracy;
+	ptpClockDS->clockQuality.offsetScaledLogVariance = rtOpts->clockQuality.offsetScaledLogVariance;
+
+	
+	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && rtOpts->wrConfig != NON_WR)
+	  ptpClockDS->priority1 = WR_PRIORITY1;  
+	else
+	  ptpClockDS->priority1 = rtOpts->priority1;
+
+	ptpClockDS->priority2 = rtOpts->priority2;
+
+	ptpClockDS->domainNumber = rtOpts->domainNumber;
+	ptpClockDS->slaveOnly = rtOpts->slaveOnly;
+	if(rtOpts->slaveOnly)
+           rtOpts->clockQuality.clockClass = 255;
+
+
+	ptpClockDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
+	
+	//WRPTP
+	ptpClockDS->primarySlavePortNumber=0;
+}
+/////////////
 
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpPortDS *ptpPortDS)
 {
   DBG("[%s]\n",__func__);
 	/*Current data set update*/
-	ptpPortDS->stepsRemoved = 0;
-	ptpPortDS->offsetFromMaster.nanoseconds = 0;
-	ptpPortDS->offsetFromMaster.seconds = 0;
-	ptpPortDS->meanPathDelay.nanoseconds = 0;
-	ptpPortDS->meanPathDelay.seconds = 0;
+	ptpPortDS->ptpClockDS->stepsRemoved = 0;
+	ptpPortDS->ptpClockDS->offsetFromMaster.nanoseconds = 0;
+	ptpPortDS->ptpClockDS->offsetFromMaster.seconds = 0;
+	ptpPortDS->ptpClockDS->meanPathDelay.nanoseconds = 0;
+	ptpPortDS->ptpClockDS->meanPathDelay.seconds = 0;
 
 	/*Parent data set*/
-	memcpy(ptpPortDS->parentPortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
-	ptpPortDS->parentPortIdentity.portNumber = 0;
-	ptpPortDS->parentStats = DEFAULT_PARENTS_STATS;
-	ptpPortDS->observedParentClockPhaseChangeRate = 0;
-	ptpPortDS->observedParentOffsetScaledLogVariance = 0;
-	memcpy(ptpPortDS->grandmasterIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
-	ptpPortDS->grandmasterClockQuality.clockAccuracy = ptpPortDS->clockQuality.clockAccuracy;
-	ptpPortDS->grandmasterClockQuality.clockClass = ptpPortDS->clockQuality.clockClass;
-	ptpPortDS->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->clockQuality.offsetScaledLogVariance;
-	ptpPortDS->grandmasterPriority1 = ptpPortDS->priority1;
-	ptpPortDS->grandmasterPriority2 = ptpPortDS->priority2;
+	memcpy(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpPortDS->ptpClockDS->parentPortIdentity.portNumber = 0;
+	ptpPortDS->ptpClockDS->parentStats = DEFAULT_PARENTS_STATS;
+	ptpPortDS->ptpClockDS->observedParentClockPhaseChangeRate = 0;
+	ptpPortDS->ptpClockDS->observedParentOffsetScaledLogVariance = 0;
+	memcpy(ptpPortDS->ptpClockDS->grandmasterIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.clockAccuracy = ptpPortDS->ptpClockDS->clockQuality.clockAccuracy;
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.clockClass = ptpPortDS->ptpClockDS->clockQuality.clockClass;
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance;
+	ptpPortDS->ptpClockDS->grandmasterPriority1 = ptpPortDS->ptpClockDS->priority1;
+	ptpPortDS->ptpClockDS->grandmasterPriority2 = ptpPortDS->ptpClockDS->priority2;
 
 	/*White Rabbit*/
 #ifdef WRPTPv2
@@ -242,7 +158,7 @@ void m1(PtpPortDS *ptpPortDS)
 #endif	
 
 	/*Time Properties data set*/
-	ptpPortDS->timeSource = INTERNAL_OSCILLATOR;
+	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
 }
 
@@ -252,18 +168,19 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 {
 	DBG("[%s]\n",__func__);
 	/*Current DS*/
-	ptpPortDS->stepsRemoved = announce->stepsRemoved + 1;
+	ptpPortDS->ptpClockDS->stepsRemoved = announce->stepsRemoved + 1;
 
 	/*Parent DS*/
 
-	memcpy(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	ptpPortDS->parentPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
-	memcpy(ptpPortDS->grandmasterIdentity,announce->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
-	ptpPortDS->grandmasterClockQuality.clockAccuracy = announce->grandmasterClockQuality.clockAccuracy;
-	ptpPortDS->grandmasterClockQuality.clockClass = announce->grandmasterClockQuality.clockClass;
-	ptpPortDS->grandmasterClockQuality.offsetScaledLogVariance = announce->grandmasterClockQuality.offsetScaledLogVariance;
-	ptpPortDS->grandmasterPriority1 = announce->grandmasterPriority1;
-	ptpPortDS->grandmasterPriority2 = announce->grandmasterPriority2;
+	memcpy(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	
+	ptpPortDS->ptpClockDS->parentPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
+	memcpy(ptpPortDS->ptpClockDS->grandmasterIdentity,announce->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.clockAccuracy = announce->grandmasterClockQuality.clockAccuracy;
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.clockClass = announce->grandmasterClockQuality.clockClass;
+	ptpPortDS->ptpClockDS->grandmasterClockQuality.offsetScaledLogVariance = announce->grandmasterClockQuality.offsetScaledLogVariance;
+	ptpPortDS->ptpClockDS->grandmasterPriority1 = announce->grandmasterPriority1;
+	ptpPortDS->ptpClockDS->grandmasterPriority2 = announce->grandmasterPriority2;
 
 	/*White Rabbit*/
 	ptpPortDS->parentIsWRnode    	 = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
@@ -284,14 +201,14 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	
 	
 	/*Timeproperties DS*/
-	ptpPortDS->currentUtcOffset = announce->currentUtcOffset;
-	ptpPortDS->currentUtcOffsetValid = ((header->flagField[1] & 0x04) == 0x04); //"Valid" is bit 2 in second octet of flagfield
-	ptpPortDS->leap59 = ((header->flagField[1] & 0x02) == 0x02);
-	ptpPortDS->leap61 = ((header->flagField[1] & 0x01) == 0x01);
-	ptpPortDS->timeTraceable = ((header->flagField[1] & 0x10) == 0x10);
-	ptpPortDS->frequencyTraceable = ((header->flagField[1] & 0x20) == 0x20);
-	ptpPortDS->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
-	ptpPortDS->timeSource = announce->timeSource;
+	ptpPortDS->ptpClockDS->currentUtcOffset = announce->currentUtcOffset;
+	ptpPortDS->ptpClockDS->currentUtcOffsetValid = ((header->flagField[1] & 0x04) == 0x04); //"Valid" is bit 2 in second octet of flagfield
+	ptpPortDS->ptpClockDS->leap59 = ((header->flagField[1] & 0x02) == 0x02);
+	ptpPortDS->ptpClockDS->leap61 = ((header->flagField[1] & 0x01) == 0x01);
+	ptpPortDS->ptpClockDS->timeTraceable = ((header->flagField[1] & 0x10) == 0x10);
+	ptpPortDS->ptpClockDS->frequencyTraceable = ((header->flagField[1] & 0x20) == 0x20);
+	ptpPortDS->ptpClockDS->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
+	ptpPortDS->ptpClockDS->timeSource = announce->timeSource;
 }
 
 
@@ -299,12 +216,12 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
 {
 	DBG("[%s]\n",__func__);
-  	announce->grandmasterPriority1 = ptpPortDS->priority1;
+  	announce->grandmasterPriority1 = ptpPortDS->ptpClockDS->priority1;
 	memcpy(announce->grandmasterIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
-	announce->grandmasterClockQuality.clockClass = ptpPortDS->clockQuality.clockClass;
-	announce->grandmasterClockQuality.clockAccuracy = ptpPortDS->clockQuality.clockAccuracy;
-	announce->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->clockQuality.offsetScaledLogVariance;
-	announce->grandmasterPriority2 = ptpPortDS->priority2;
+	announce->grandmasterClockQuality.clockClass = ptpPortDS->ptpClockDS->clockQuality.clockClass;
+	announce->grandmasterClockQuality.clockAccuracy = ptpPortDS->ptpClockDS->clockQuality.clockAccuracy;
+	announce->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance;
+	announce->grandmasterPriority2 = ptpPortDS->ptpClockDS->priority2;
 	announce->stepsRemoved = 0;
 	memcpy(header->sourcePortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
 
@@ -436,7 +353,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			DBGBMC("DCA: .. A within 1 of B \n");
 			if (announceA->stepsRemoved > announceB->stepsRemoved)
 			{
-				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
 				    DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
 				    return 0;
@@ -450,7 +367,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			}
 			else if (announceB->stepsRemoved > announceA->stepsRemoved)
 			{
-				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
 				  	DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
 					return 0;
@@ -645,7 +562,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	
 	copyD0(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,ptpPortDS);
 
-	if (ptpPortDS->clockQuality.clockClass < 128)
+	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128)
 	{
 		DBGBMC("SDA: .. clockClass < 128\n");
 		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)<0))
