@@ -268,8 +268,9 @@ char* clockDescription(MsgHeader *header, MsgAnnounce *announce)
 /*Data set comparison bewteen two foreign masters (9.3.4 fig 27)
  * return similar to memcmp() */
 
-Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
-								MsgHeader *headerB,MsgAnnounce *announceB,PtpPortDS *ptpPortDS)
+Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteger16 receptionPortNumberA,
+			      MsgHeader *headerB, MsgAnnounce *announceB, UInteger16 receptionPortNumberB,
+			      PtpPortDS *ptpPortDS)
 {
 	/*
 	 * This implementation is not precisely as in the standard !@!!!!!
@@ -361,19 +362,19 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 				
 				/* Compare Identities of Receiver of A and Sender of A */
 				
-				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(4)
 				{
 				    DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
 				    //return 0;
 				    return A_equals_B;
 				}
-				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)
+				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)//(4)
 				{
 				  
 				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
 				    return B_better_then_A;
 				}
-				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)
+				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)//(4)
 				{
 				  
 				    DBGBMC("DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
@@ -383,23 +384,23 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 				   DBGBMC("Impossible to get here \n");
 
 			}
-			else if (announceB->stepsRemoved > announceA->stepsRemoved)
+			else if (announceB->stepsRemoved > announceA->stepsRemoved) //(3)
 			{
-				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))  //(5)
 				{
 				  	DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
 					return A_equals_B;
 				}
-				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)
+				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)//(5)
 				{
 				  
 				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
 				    return A_better_then_B;
 				}
-				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)
+				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)//(5)
 				{
 				  
-				    DBGBMC("DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
+				    DBGBMC("DCA: .. .. .. A better by topology than B (Comparing Identities of A: Receiver > Sender)\n");
 				    return A_better_by_topology_then_B;
 				}
 				else 
@@ -408,22 +409,43 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 			else // steps removed A = steps removed B
 			{
 				DBGBMC("DCA: .. steps removed A = steps removed B \n");
-				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
+				// compare Identities of Senders of A and B
+				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(6)
 				{
 					
-					/* need more implementation here !!!!*/
-					DBG("DCA: .. Sender=Receiver : Error -2");
-					//return 0;
-					return A_equals_B;
+					//Compare Port Numbers of receivers of A and B
+					//TODO:
+					if(receptionPortNumberA == receptionPortNumberB) //(7)
+					{
+					    DBG("DCA: .. Sender=Receiver : Error -2");
+					    //return 0;
+					    return A_equals_B;
+					
+					}
+					else if(receptionPortNumberA < receptionPortNumberB) //(7)
+					{
+					    DBGBMC("DCA: .. .. .. .. A better by topology than B (Compare Port Numbers of Receivers of A and B : A < B)\n");
+					    return A_better_by_topology_then_B;
+					}
+					else if(receptionPortNumberA > receptionPortNumberB) //(7)
+					{
+					    DBGBMC("DCA: .. .. .. .. B better by topology than A (Compare Port Numbers of Receivers of A and B : A > B)\n");
+					    return B_better_by_topology_then_A;
+					}
+
+					
+					
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{
-					DBGBMC("DCA: .. .. A better than B \n");
-					return -1;
+					DBGBMC("DCA: .. .. A better by topology than B \n");
+					//return -1;
+					return A_better_by_topology_then_B;
 				}
 				else
-				{	DBGBMC("DCA: .. .. B better than A \n");
-					return 1;
+				{	DBGBMC("DCA: .. .. B better by topologythan A \n");
+					//return 1;
+					return B_better_by_topology_then_A;
 				}
 			}
 
@@ -574,7 +596,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 }
 
 /*State decision algorithm 9.3.3 Fig 26*/
-UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 portNumber, RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
+UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 receptionPortNumber, RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	DBGBMC("SDA: State Decision Algorith,\n");
 	if (rtOpts->slaveOnly)
@@ -596,13 +618,19 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128)
 	{
 		DBGBMC("SDA: .. clockClass < 128\n");
-		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)<0))
+		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
+					  &ptpPortDS->msgTmp.announce,
+					   ptpPortDS->portIdentity.portNumber,
+					   header,announce,receptionPortNumber,ptpPortDS)<0))
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
 			m1(ptpPortDS);
 			return PTP_MASTER;
 		}
-		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
+		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
+					       &ptpPortDS->msgTmp.announce,
+					        ptpPortDS->portIdentity.portNumber,
+					        header,announce,receptionPortNumber,ptpPortDS)>0))
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1: PTP_PASSIVE =modify=>> PTP_SLAVE\n");
 			s1(header,announce,ptpPortDS);
@@ -630,14 +658,26 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		DBGBMC("SDA: .. clockClass > 128\n");
 		//if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS))<0)
 		/* compare  D0 with Ebest */
-		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,ptpPortDS)<0))		
+		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
+					  &ptpPortDS->msgTmp.announce,
+					   ptpPortDS->portIdentity.portNumber,
+					  &ptpPortDS->ptpClockDS->bestForeign->header,
+					  &ptpPortDS->ptpClockDS->bestForeign->announce,
+					   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+					  ptpPortDS)<0))		
 		{		
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
 			m1(ptpPortDS);
 			return PTP_MASTER;
 		}
 		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
-		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,ptpPortDS)>0))
+		else if ((bmcDataSetComparison( &ptpPortDS->msgTmpHeader,
+						&ptpPortDS->msgTmp.announce,
+						 ptpPortDS->portIdentity.portNumber,
+						&ptpPortDS->ptpClockDS->bestForeign->header,
+						&ptpPortDS->ptpClockDS->bestForeign->announce,
+						 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+						 ptpPortDS)>0))
 		{
 #ifdef WRPTPv2
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
@@ -653,13 +693,19 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO ->> no implemented -> PTP_SLAVE\n", \
 				ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber, ptpPortDS->portIdentity.portNumber);
 				
-				if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,header,announce,ptpPortDS))<0)	
+				if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,
+							  &ptpPortDS->ptpClockDS->bestForeign->announce,
+							   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+							   header,announce,receptionPortNumber,ptpPortDS))<0)	
 				{		
 					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES =>  PTP_SLAVE [modifiedBMC->> to be implemented]\n");
 					s1(header,announce,ptpPortDS); //TODO: change according to the spec
 					return PTP_SLAVE;
 				}
-				else if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,header,announce,ptpPortDS))>0)
+				else if ((bmcDataSetComparison( &ptpPortDS->ptpClockDS->bestForeign->header,
+								&ptpPortDS->ptpClockDS->bestForeign->announce,
+								 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+								 header,announce,receptionPortNumber,ptpPortDS))>0)
 				{
 					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO =>  PTP_MASTER [m3() to be implemented]\n");
 					m1(ptpPortDS); //TODO: change according to the spec
@@ -742,8 +788,13 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
 	{
 		DBGBMC("BMC: .. looking at %d foreign master\n",i);
-		if ((bmcDataSetComparison(&foreignMaster[i].header,&foreignMaster[i].announce,
-								 &foreignMaster[best].header,&foreignMaster[best].announce,ptpPortDS)) < 0)
+		if ((bmcDataSetComparison(&foreignMaster[i].header,
+					  &foreignMaster[i].announce,
+					   foreignMaster[i].receptionPortNumber,
+					  &foreignMaster[best].header,
+					  &foreignMaster[best].announce,
+					   foreignMaster[best].receptionPortNumber,
+					  ptpPortDS)) < 0)
 		{
 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
 			best = i;
@@ -785,8 +836,10 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 		DBGBMC("BMC: .. looking at %d foreign master\n",i);
 		if ((bmcDataSetComparison(&ptpPortDS[i].foreign[ERbest_i].header,   	\
 					  &ptpPortDS[i].foreign[ERbest_i].announce, 	\
+					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].header,	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].announce,	\
+					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
 					   ptpPortDS)) < 0)
 		{
 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);
