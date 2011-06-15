@@ -80,6 +80,17 @@ void subTime(TimeInternal*,TimeInternal*,TimeInternal*);
 UInteger8 bmc(ForeignMasterRecord*,RunTimeOpts*,PtpPortDS*);
 
 /**
+ * \brief Calculates Erbest - which foreign master is the best on a give port
+ */
+UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS );
+
+/**
+ * \brief Calculates Ebest - the best foreign master for all the ports.
+ */
+UInteger8 EBest(PtpPortDS *ptpPortDS );
+
+
+/**
  * \brief When recommended state is Master, copy local data into parent and grandmaster dataset
  */
 void m1(PtpPortDS*);
@@ -155,7 +166,7 @@ void msgPDelayReq_display(MsgPDelayReq*);
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 
-
+Boolean globalBestForeignMastersUpdate(PtpPortDS*);
 
 int wr_servo_init(PtpPortDS *clock);
 int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2);

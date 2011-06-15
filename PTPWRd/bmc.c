@@ -610,15 +610,13 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 			if(portNumber == ptpPortDS->portIdentity.portNumber)
 			{
 				
-				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: \
-				PTP_SLAVE\n",portNumber);
+				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: PTP_SLAVE\n",portNumber);
 				s1(header,announce,ptpPortDS);
 				return PTP_SLAVE;
 			}
 			else
 			{
-				DBGBMC("SDA: .. .. .. Ebest received on port r \
-				(foreign_receivd_on=%d,current_port=%d ): NO ->> no implemented -> PTP_SLAVE\n", \
+				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO ->> no implemented -> PTP_SLAVE\n", \
 				portNumber, ptpPortDS->portIdentity.portNumber);
 				/*
 				
@@ -653,9 +651,8 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 	DBG("BMC: Best Master Clock Algorithm @ working\n");
 	Integer16 i,best;
 
-
-
-
+////////// move this  -- all below
+//         do it separately for multiple ports
 	if (!ptpPortDS->number_foreign_records)
 	{
 		DBGBMC("BMC: .. no foreign masters\n");
@@ -665,6 +662,36 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 			m1(ptpPortDS);
 			return ptpPortDS->portState;
 		}
+	}
+
+// 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
+// 	{
+// 		DBGBMC("BMC: .. looking at %d foreign master\n",i);
+// 		if ((bmcDataSetComparison(&foreignMaster[i].header,&foreignMaster[i].announce,
+// 								 &foreignMaster[best].header,&foreignMaster[best].announce,ptpPortDS)) < 0)
+// 		{
+// 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
+// 			best = i;
+// 		}
+// 	}
+// 
+// 	DBGBMC("BMC: the best foreign master index: %d\n",best);
+// 	ptpPortDS->foreign_record_best = best;
+////////// move this - all above
+
+	best = ptpPortDS->foreign_record_best;
+
+	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce, foreignMaster[best].receptionPortNumber, rtOpts,ptpPortDS);
+}
+
+UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
+{
+	Integer16 i,best;
+	
+	if (!ptpPortDS->number_foreign_records)
+	{
+	    //nothing to look for
+	    return -1;
 	}
 
 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
@@ -678,11 +705,55 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 		}
 	}
 
-	DBGBMC("BMC: the best foreign master index: %d\n",best);
+ 	DBGBMC("ErBest: the best foreign master for port = %d is indexed = %d received on port = %d\n",\
+ 		 ptpPortDS->portIdentity.portNumber, best, foreignMaster[best].receptionPortNumber);
+		
 	ptpPortDS->foreign_record_best = best;
 
-
-	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce, foreignMaster[best].receptionPortNumber, rtOpts,ptpPortDS);
+	return best;
 }
 
+UInteger8 EBest(PtpPortDS *ptpPortDS )
+{
+	Integer16 i;
+	Integer16 Ebest;
+	Integer16 ERbest_i;
+	Integer16 ERbest_b;	
+  
+	
+	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
+	{
+		if(ptpPortDS[Ebest].number_foreign_records > 0)
+			break;
+	}
+	
+	
+	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
+	{
+	  
+		if(ptpPortDS[i].number_foreign_records > 0)
+			continue;
+		
+		ERbest_i 	= ptpPortDS[i].foreign_record_best;
+		ERbest_b	= ptpPortDS[Ebest].foreign_record_best;
+		
+		DBGBMC("BMC: .. looking at %d foreign master\n",i);
+		if ((bmcDataSetComparison(&ptpPortDS[i].foreign[ERbest_i].header,   	\
+					  &ptpPortDS[i].foreign[ERbest_i].announce, 	\
+					  &ptpPortDS[Ebest].foreign[ERbest_b].header,	\
+					  &ptpPortDS[Ebest].foreign[ERbest_b].announce,	\
+					   ptpPortDS)) < 0)
+		{
+			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);
+			Ebest = i;
+		}
+	}
+	ptpPortDS->ptpClockDS->Ebest = Ebest;
+	
+	ERbest_b = ptpPortDS[Ebest].foreign_record_best;
+	
+	DBGBMC("Ebest: the port with the best foreign master number=%d, the foreign master record number=%d\n",\
+		ptpPortDS[Ebest].foreign[ERbest_b].receptionPortNumber ,Ebest);
 
+	return Ebest;
+}

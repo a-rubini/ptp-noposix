@@ -316,6 +316,10 @@ typedef struct
 	Boolean ptpTimescale;
 	Enumeration8 timeSource;
 	
+/**********  custom data set *********/	
+	
+	Integer16  Ebest;
+	Boolean globalStateDecisionEvent;
 } PtpClockDS;
 
 /**
@@ -355,7 +359,7 @@ typedef struct {
 	TimeInternal meanPathDelay;
 
 	UInteger16 primarySlavePortNumber;
-
+	
 
 /******* Parent data set *******/
 

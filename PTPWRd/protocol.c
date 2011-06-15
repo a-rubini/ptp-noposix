@@ -91,12 +91,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
     for (i=0; i < rtOpts->portNumber; i++)
     {
-      /*
-      fixme:
 
-      if(currentPtpPortDSData->wrMode == WR_MASTER && currentPtpPortDSData->portIdentity.portNumber  == 7 || \
-	 currentPtpPortDSData->wrMode == WR_SLAVE  && currentPtpPortDSData->portIdentity.portNumber  == 10  )
-      */
       do
       {
       /*
@@ -122,6 +117,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
       currentPtpPortDSData++;
     }
+    
 
   }
 
@@ -138,7 +134,9 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   DBG("event POWERUP\n");
-
+  
+  ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+  
   toState(PTP_INITIALIZING, rtOpts, ptpPortDS);
 
   for(;;)
@@ -150,10 +148,12 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     else if(!doInit(rtOpts, ptpPortDS))
       return;
 
-    if(ptpPortDS->message_activity)
-      DBGV("activity\n");
+    /* Handle Best Master Clock Algorithm globally */
+    if(globalBestForeignMastersUpdate(ptpPortDS))
+      ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
     else
-      DBGV("no activity\n");
+      ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+    
 
   }
 }
@@ -532,9 +532,10 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		/*State decision Event*/
 #ifdef WRPTPv2
 		/*kind-of-non-WRFSM-preemption implementation*/
-		if(ptpPortDS->record_update && ptpPortDS->wrPortState == WRS_IDLE)
+		//if(ptpPortDS->record_update && ptpPortDS->wrPortState == WRS_IDLE)
+		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)
 #else
-		if(ptpPortDS->record_update)
+		if(ptpPortDS->record_update)  // make this global clockwise !!!!
 #endif		  
 		  
 		{
@@ -2298,8 +2299,31 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 		ptpPortDS->foreign_record_i = (ptpPortDS->foreign_record_i+1) % ptpPortDS->max_foreign_records;
 #ifdef WRPTPv2
 		ptpPortDS->foreign[j].receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
+		DBG("addForeign..: portIdentity.portNumber=%d\n",ptpPortDS->portIdentity.portNumber);
 #endif
 		
 	}
+
+}
+Boolean globalBestForeignMastersUpdate(PtpPortDS *ptpPortDS)
+{
+
+	Integer16 i;
+	Boolean returnValue = FALSE;
+	
+	for (i=0; i < ptpPortDS->ptpClockDS->numberPorts; i++)
+	{
+	    if(ptpPortDS[i].record_update)
+	    {
+	      ErBest(&ptpPortDS[i].foreign,ptpPortDS);
+	      returnValue = TRUE;
+	      DBG("GLOBAL UPDATE: updating Erbest on port=%d\n",ptpPortDS[i].portIdentity.portNumber);
+	    }
+	}
+	if(returnValue)
+	  EBest(ptpPortDS);
+  
+	
+	return returnValue;
 
 }
