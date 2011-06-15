@@ -597,33 +597,47 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		 *
 		 */
 		DBGBMC("SDA: .. clockClass > 128\n");
-		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS))<0)
+		//if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS))<0)
+		/* compare  D0 with Ebest */
+		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,ptpPortDS)<0))		
 		{		
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
 			m1(ptpPortDS);
 			return PTP_MASTER;
 		}
-		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
+		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
+		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,ptpPortDS)>0))
 		{
 #ifdef WRPTPv2
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
-			if(portNumber == ptpPortDS->portIdentity.portNumber)
+			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber)
 			{
 				
-				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: PTP_SLAVE\n",portNumber);
+				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: PTP_SLAVE\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
 				s1(header,announce,ptpPortDS);
 				return PTP_SLAVE;
 			}
 			else
 			{
 				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO ->> no implemented -> PTP_SLAVE\n", \
-				portNumber, ptpPortDS->portIdentity.portNumber);
-				/*
+				ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber, ptpPortDS->portIdentity.portNumber);
 				
-				we need to know Erbest..... to resume the work
-				
-				*/
-				return PTP_SLAVE; // dupa
+				if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,header,announce,ptpPortDS))<0)	
+				{		
+					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES =>  PTP_SLAVE [modifiedBMC->> to be implemented]\n");
+					s1(header,announce,ptpPortDS); //TODO: change according to the spec
+					return PTP_SLAVE;
+				}
+				else if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,&ptpPortDS->ptpClockDS->bestForeign->announce,header,announce,ptpPortDS))>0)
+				{
+					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO =>  PTP_MASTER [m3() to be implemented]\n");
+					m1(ptpPortDS); //TODO: change according to the spec
+					return PTP_MASTER;			
+				}
+				else
+				{
+					DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
+				}				  
 			}
 
 #else
@@ -751,6 +765,8 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 	ptpPortDS->ptpClockDS->Ebest = Ebest;
 	
 	ERbest_b = ptpPortDS[Ebest].foreign_record_best;
+	
+	ptpPortDS->ptpClockDS->bestForeign = &ptpPortDS[Ebest].foreign[ERbest_b];
 	
 	DBGBMC("Ebest: the port with the best foreign master number=%d, the foreign master record number=%d\n",\
 		ptpPortDS[Ebest].foreign[ERbest_b].receptionPortNumber ,Ebest);

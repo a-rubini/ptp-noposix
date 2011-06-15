@@ -320,6 +320,7 @@ typedef struct
 	
 	Integer16  Ebest;
 	Boolean globalStateDecisionEvent;
+	ForeignMasterRecord *bestForeign;
 } PtpClockDS;
 
 /**
