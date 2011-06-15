@@ -334,56 +334,87 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA,
 	}
 #endif
 	/*Identity comparison*/
-	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH))
+	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH)) // (1)
 	{
 		DBGBMC("DCA: Grandmasters are identical\n");
 		//Algorithm part2 Fig 28
-		if (announceA->stepsRemoved > announceB->stepsRemoved+1)
+		// compare steps removed of A and B
+		if (announceA->stepsRemoved > announceB->stepsRemoved+1) //(2)
 		{
 		    DBGBMC("DCA: .. B better than A \n");
-		    return 1;// B better than A
+		    //return 1;// B better than A
+		    return B_better_then_A;
 		}
-		else if (announceB->stepsRemoved > announceA->stepsRemoved+1)
+		else if (announceB->stepsRemoved > announceA->stepsRemoved+1) //(2)
 		{
 		    DBGBMC("DCA: .. A better than B \n");
-		    return -1;//A better than B
+		    //return -1;//A better than B
+		    return A_better_then_B;
 		}
 		else //A within 1 of B
 		{
 			DBGBMC("DCA: .. A within 1 of B \n");
-			if (announceA->stepsRemoved > announceB->stepsRemoved)
+			// Compare Steps Removed of A and B
+			if (announceA->stepsRemoved > announceB->stepsRemoved) // (3)
 			{
+				DBGBMC("DCA: .. .. A > B\n");
+				
+				/* Compare Identities of Receiver of A and Sender of A */
+				
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				    DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
-				    return 0;
+				    DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
+				    //return 0;
+				    return A_equals_B;
 				}
-				else
+				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)
 				{
-				    DBGBMC("DCA: .. .. B better than A \n");
-				    return 1;
+				  
+				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
+				    return B_better_then_A;
 				}
+				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)
+				{
+				  
+				    DBGBMC("DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
+				    return B_better_by_topology_then_A;
+				}
+				else 
+				   DBGBMC("Impossible to get here \n");
 
 			}
 			else if (announceB->stepsRemoved > announceA->stepsRemoved)
 			{
 				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
-				  	DBGBMC("DCA: .. .. Sender=Receiver : Error -1");
-					return 0;
+				  	DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
+					return A_equals_B;
 				}
-				else
-				{	DBGBMC("DCA: .. .. A better than B \n");
-				  	return -1;
+				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)
+				{
+				  
+				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
+				    return A_better_then_B;
 				}
+				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)
+				{
+				  
+				    DBGBMC("DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
+				    return A_better_by_topology_then_B;
+				}
+				else 
+				   DBGBMC("Impossible to get here \n");
 			}
 			else // steps removed A = steps removed B
 			{
 				DBGBMC("DCA: .. steps removed A = steps removed B \n");
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))
 				{
+					
+					/* need more implementation here !!!!*/
 					DBG("DCA: .. Sender=Receiver : Error -2");
-					return 0;
+					//return 0;
+					return A_equals_B;
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{

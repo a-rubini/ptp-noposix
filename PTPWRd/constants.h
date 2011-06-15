@@ -408,4 +408,11 @@ enum{
 
 #endif
 
+#define A_better_by_topology_then_B 	-2
+#define A_better_then_B 		-1
+#define B_better_then_A 		1
+#define B_better_by_topology_then_A	2
+
+#define A_equals_B			0
+
 #endif /*CONSTANTS_H_*/
