@@ -86,7 +86,8 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->pending_DelayReq_tx_ts   = 0;
 	ptpPortDS->pending_PDelayReq_tx_ts  = 0;
 	ptpPortDS->pending_PDelayResp_tx_ts = 0;
-
+      
+	ptpPortDS->isSecondarySlave = FALSE;
 }
 
 
@@ -151,7 +152,6 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->parentWrModeON     	= ptpPortDS->wrModeON;
 	ptpPortDS->parentCalibrated 	= ptpPortDS->calibrated;
 	
-	primarySlavePortNumber		= ptpPortDS->portIdentity.portNumber;
 	
 #else
 	ptpPortDS->parentWrNodeMode   = ptpPortDS->wrMode;
@@ -163,11 +163,13 @@ void m1(PtpPortDS *ptpPortDS)
 	/*Time Properties data set*/
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
+	ptpPortDS->isSecondarySlave = FALSE;
 }
 void m3(PtpPortDS *ptpPortDS)
 {
 
     // it seems to be doing nothing
+    ptpPortDS->isSecondarySlave = FALSE;
 }
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
@@ -200,6 +202,9 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 #ifdef WRPTPv2
 	ptpPortDS->parentWrConfig      =   announce->wr_flags & WR_NODE_MODE;
 	DBGBMC(" S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
+	
+	ptpPortDS->ptpClockDS->primarySlavePortNumber	= ptpPortDS->portIdentity.portNumber;
+	
 #else
 	ptpPortDS->parentWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
 	DBGBMC(" S1: parentWrNodeMode....  0x%x\n",ptpPortDS->parentWrNodeMode);
@@ -216,6 +221,8 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->frequencyTraceable = ((header->flagField[1] & 0x20) == 0x20);
 	ptpPortDS->ptpClockDS->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
 	ptpPortDS->ptpClockDS->timeSource = announce->timeSource;
+	
+	ptpPortDS->isSecondarySlave = FALSE;
 }
 
 void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
@@ -223,13 +230,15 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	
 	
 	/*Copy new foreign master data set from Announce message*/
+	ptpPortDS->isSecondarySlave = TRUE;
+	
 	memcpy(ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
 	ptpPortDS->secondaryForeignMaster.foreignMasterAnnounceMessages = 0;
 
 	/*header and announce field of each Foreign Master are usefull to run Best Master Clock Algorithm*/
-	msgUnpackHeader(buf,&ptpPortDS->secondaryForeignMaster.header);
-	msgUnpackAnnounce(buf,&pptpPortDS->secondaryForeignMaster.announce,&ptpPortDS->secondaryForeignMaster.header);
+	msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.header);
+	msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.announce,&ptpPortDS->secondaryForeignMaster.header);
 
 	DBG("New secondary foreign Master added \n");
 
@@ -869,7 +878,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].header,	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].announce,	\
-					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
+					   ptpPortDS[Ebest].foreign[ERbest_i].receptionPortNumber, 	\
 					   ptpPortDS)) < 0)
 		{
 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);

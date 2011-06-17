@@ -148,9 +148,21 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     else if(!doInit(rtOpts, ptpPortDS))
       return;
 
+    if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
+    {
+      DBG("update secondary slaves\n");
+      /* Do after State Decision Even in all the ports */
+      if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
+	DBG("no secondary slaves\n");
+      ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+    }
+    
     /* Handle Best Master Clock Algorithm globally */
     if(globalBestForeignMastersUpdate(ptpPortDS))
+    {
+      DBG("Initiate global State Decision Event\n");
       ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
+    }
     else
       ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
     
@@ -2325,5 +2337,49 @@ Boolean globalBestForeignMastersUpdate(PtpPortDS *ptpPortDS)
   
 	
 	return returnValue;
+
+}
+Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
+{
+
+	Integer16 i;
+	Integer16 Ebest;
+	
+	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
+	{
+		if(ptpPortDS[Ebest].isSecondarySlave)
+			break;
+	}
+	if(Ebest == ptpPortDS->ptpClockDS->numberPorts)
+	  return FALSE; //no secondary slaves
+	
+	DBG("secondary Slave Update\n");
+	
+	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
+	{
+	  
+		if(ptpPortDS[i].isSecondarySlave == FALSE)
+			continue;
+		
+		if ((bmcDataSetComparison(&ptpPortDS[i].secondaryForeignMaster.header,   	\
+					  &ptpPortDS[i].secondaryForeignMaster.announce, 	\
+					   ptpPortDS[i].secondaryForeignMaster.receptionPortNumber, 	\
+					  &ptpPortDS[Ebest].secondaryForeignMaster.header,	\
+					  &ptpPortDS[Ebest].secondaryForeignMaster.announce,	\
+					   ptpPortDS[Ebest].secondaryForeignMaster.receptionPortNumber, 	\
+					   ptpPortDS)) < 0)
+		{
+			DBG("secondary Slave Update:  update currently best (%d) to new best = %d\n",Ebest, i);
+			Ebest = i;
+		}
+	}
+	ptpPortDS->ptpClockDS->secondarySlavePortNumber = Ebest;
+	
+	ptpPortDS->ptpClockDS->secondBestForeign = &ptpPortDS[Ebest].secondaryForeignMaster;
+	
+	DBGBMC("secondary Slave Update: the port with the best secondary master (secondary slave) is %d\n",\
+		Ebest);
+
+	return TRUE;
 
 }

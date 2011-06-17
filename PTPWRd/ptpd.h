@@ -96,9 +96,20 @@ UInteger8 EBest(PtpPortDS *ptpPortDS );
 void m1(PtpPortDS*);
 
 /**
+ * \brief When recommended state is Master, behave as defined in PTP standard
+ */
+void m3(PtpPortDS*);
+
+/**
  * \brief When recommended state is Slave, copy dataset of master into parent and grandmaster dataset
  */
 void s1(MsgHeader*,MsgAnnounce*,PtpPortDS*);
+
+/**
+ * \brief When recommended state is Slave as a result of modified BMC, behave as described in WRSPEC
+ */
+void s2(MsgHeader*,MsgAnnounce*,PtpPortDS*);
+
 
 /**
  * \brief Initialize port Data
@@ -167,6 +178,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 
 Boolean globalBestForeignMastersUpdate(PtpPortDS*);
+
+Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS);
 
 int wr_servo_init(PtpPortDS *clock);
 int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2);

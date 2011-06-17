@@ -292,6 +292,7 @@ typedef struct
 	TimeInternal meanPathDelay;
 	//WRPTP:
 	UInteger16 primarySlavePortNumber;
+	UInteger16 secondarySlavePortNumber;
 	
 /********   Parent data set ********/
 	
@@ -321,6 +322,7 @@ typedef struct
 	Integer16  Ebest;
 	Boolean globalStateDecisionEvent;
 	ForeignMasterRecord *bestForeign;
+	ForeignMasterRecord *secondBestForeign;
 } PtpClockDS;
 
 /**
@@ -679,6 +681,7 @@ typedef struct {
 	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
 	ForeignMasterRecord secondaryForeignMaster;
+	Boolean isSecondarySlave;
 	
 } PtpPortDS;
 
