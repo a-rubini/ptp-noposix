@@ -230,7 +230,7 @@ Boolean timerExpired(IntervalTimer *itimer);
 #endif
 
 #ifdef PTPD_DBGBMC
-#define DBGBMC(x, ...) fprintf(stderr, "(PTPWRd bmc) " x, ##__VA_ARGS__)
+#define DBGBMC(x, ...) fprintf(stderr, "(PTPWRd bmc [p=%d]) " x, ptpPortDS->portIdentity.portNumber, ##__VA_ARGS__)
 #else
 #define DBGBMC(x, ...)
 #endif

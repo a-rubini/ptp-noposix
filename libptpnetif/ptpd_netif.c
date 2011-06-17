@@ -572,6 +572,8 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 #ifdef TOMEK
 	int ret;
 	/* check if any other port is not calibrated at the moment*/
+	
+#ifndef MACIEK_HACKs	
 	if( (ret = halexp_calibration_cmd(ifaceName,
 					  HEXP_CAL_CMD_CHECK_IDLE,HEXP_ON))
 	    != HEXP_CAL_RESP_OK)
@@ -581,6 +583,7 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 			  "on interface %s FAILED !!\n",ret, ifaceName);
 		return PTPD_NETIF_NOT_READY;
 	}
+#endif
 
 	if((ret = halexp_calibration_cmd(ifaceName,
 					 HEXP_CAL_CMD_TX_PATTERN,HEXP_ON))

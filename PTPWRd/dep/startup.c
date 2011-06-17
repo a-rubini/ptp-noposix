@@ -250,7 +250,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
    case 'A':
 	   DBGNPI("WR AUTO MODE\n");
-	   rtOpts->portNumber = WR_PORT_NUMBER;
+	   rtOpts->portNumber = 2;//WR_PORT_NUMBER;
 #ifdef WRPTPv2	   
 	   rtOpts->wrConfig = WR_MODE_AUTO;
 #endif	   

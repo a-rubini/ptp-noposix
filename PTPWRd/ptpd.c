@@ -79,15 +79,15 @@ int main(int argc, char **argv)
     {
 
 #ifdef  WRPTPv2     
-      if(i == 0 && rtOpts.wrConfig == WR_MODE_AUTO)
+      if(rtOpts.wrConfig == WR_MODE_AUTO)
 	DBG("wrConfig  [port = %d] ............ Autodetection (ptpx-implementation-specific) \n",i+1);
-      else if(i == 0 && rtOpts.wrConfig == WR_M_AND_S)
+      else if(rtOpts.wrConfig == WR_M_AND_S)
 	DBG("wrConfig  [port = %d] ............ Master and Slave \n",i+1);
-      else if(i == 0 && rtOpts.wrConfig == WR_SLAVE)
+      else if(rtOpts.wrConfig == WR_SLAVE)
 	DBG("wrConfig  [port = %d] ............ Slave \n",i+1);
-      else if(i == 0 && rtOpts.wrConfig == WR_MASTER)
+      else if(rtOpts.wrConfig == WR_MASTER)
 	DBG("wrConfig  [port = %d] ............ Master \n",i+1);      
-      else if(i == 0 && rtOpts.wrConfig == NON_WR)
+      else if(rtOpts.wrConfig == NON_WR)
 	DBG("wrConfig  [port = %d] ............ NON_WR\n",i+1);
       else
 	DBG("wrConfig  [port = %d] ............ ERROR\n",i+1);

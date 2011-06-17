@@ -72,6 +72,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   currentPtpPortDSData = ptpPortDS;
 
+  ptpd_handle_wripc();
+  
   for (i=0; i < rtOpts->portNumber; i++)
   {
      DBGV("multiPortProtocol: initializing port %d\n", (i+1));
@@ -89,6 +91,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   {
     currentPtpPortDSData = ptpPortDS;
 
+    ptpd_handle_wripc();
+    
     for (i=0; i < rtOpts->portNumber; i++)
     {
 
@@ -107,17 +111,31 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	else if(!doInit(rtOpts, currentPtpPortDSData))
 	  return;
 
-	if(currentPtpPortDSData->message_activity)
-	  DBGV("activity\n");
-	else
-	  DBGV("no activity\n");
-
       }
-      while(currentPtpPortDSData->portState == PTP_UNCALIBRATED);
+      while(currentPtpPortDSData->portState == PTP_UNCALIBRATED ||
+	    currentPtpPortDSData->wrPortState != WRS_IDLE);
 
+	
       currentPtpPortDSData++;
     }
-    
+
+    if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
+    {
+	DBG("update secondary slaves\n");
+	/* Do after State Decision Even in all the ports */
+	if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
+	  DBG("no secondary slaves\n");
+	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+    }
+      
+    /* Handle Best Master Clock Algorithm globally */
+    if(globalBestForeignMastersUpdate(ptpPortDS))
+    {
+	DBG("Initiate global State Decision Event\n");
+	ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
+    }
+    else
+	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;  
 
   }
 
@@ -618,9 +636,10 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
 				      if(ptpPortDS->parentWrModeON  == FALSE)
 					DBG("parent node left White Rabbit Mode- WR Master-forced");
-					DBG(" re-synchronization\n");
+					
 				      if(ptpPortDS->wrModeON             == FALSE)
 					DBG("this node left White Rabbit Mode - WR Slave-forced ");
+					
 					DBG("re-synchronization\n");
 				      
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
@@ -2279,7 +2298,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 			msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
 			msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
 			if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
-				DBG("addForeign .                        message from another White Rabbit node [wr_flag != NON_WR]\n");
+				DBG("addForeign: message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
@@ -2373,12 +2392,12 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 			Ebest = i;
 		}
 	}
-	ptpPortDS->ptpClockDS->secondarySlavePortNumber = Ebest;
+	ptpPortDS->ptpClockDS->secondarySlavePortNumber = ptpPortDS[Ebest].portIdentity.portNumber; // Ebest;
 	
 	ptpPortDS->ptpClockDS->secondBestForeign = &ptpPortDS[Ebest].secondaryForeignMaster;
 	
 	DBGBMC("secondary Slave Update: the port with the best secondary master (secondary slave) is %d\n",\
-		Ebest);
+		ptpPortDS->ptpClockDS->secondarySlavePortNumber);
 
 	return TRUE;
 

@@ -660,7 +660,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 					   ptpPortDS->portIdentity.portNumber,
 					   header,announce,receptionPortNumber,ptpPortDS)<0)) // (5): better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [7]\n");
 			m1(ptpPortDS); //(7)
 			return PTP_MASTER;
 		}
@@ -669,7 +669,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 					        ptpPortDS->portIdentity.portNumber,
 					        header,announce,receptionPortNumber,ptpPortDS)>0)) //better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1: =>> PTP_SLAVE [modifiedBMC]\n");
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s2(): =>> PTP_SLAVE [modifiedBMC][8]\n");
 			
 #ifdef WRPTPv2			
 			s2(header,announce,ptpPortDS); //(8)
@@ -705,7 +705,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 					   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
 					  ptpPortDS)<0))	// (6) better or better by to topology	
 		{		
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [9]\n");
 			m1(ptpPortDS);//(9) actually, m2(), but it's the same as m1()
 			return PTP_MASTER;
 		}
@@ -723,7 +723,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber) //(10)
 			{
 				
-				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: PTP_SLAVE\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
+				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1(): PTP_SLAVE [11]\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
 				s1(header,announce,ptpPortDS); //(11)
 				return PTP_SLAVE;
 			}
@@ -737,7 +737,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 							   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
 							   header,announce,receptionPortNumber,ptpPortDS)) == A_better_by_topology_then_B)	//(12): better by topology
 				{		
-					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES =>  PTP_SLAVE [modifiedBMC->> to be implemented]\n");
+					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES => s2()  PTP_SLAVE [modifiedBMC][13]\n");
 					s2(header,announce,ptpPortDS); // (13)
 					return PTP_SLAVE;
 				}
@@ -746,7 +746,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 								 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
 								 header,announce,receptionPortNumber,ptpPortDS)) != A_better_by_topology_then_B)	//better by topology
 				{
-					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO =>  PTP_MASTER [m3() to be implemented]\n");
+					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO => m3() PTP_MASTER [14] \n");
 					m3(ptpPortDS); // (14)
 					return PTP_MASTER;			
 				}
@@ -761,7 +761,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 			 * For a boundary clock we should have more staff here !!!!!!!!
 			 * see: page 87, Figure 26
 			 */			
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => m1: PTP_SLAVE\n");
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1(): PTP_SLAVE\n");
 			s1(header,announce,ptpPortDS);
 			return PTP_SLAVE;
 #endif			
@@ -788,7 +788,7 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 		DBGBMC("BMC: .. no foreign masters\n");
 		if (ptpPortDS->portState == PTP_MASTER)
 		{
-			DBGBMC("BMC: .. .. m1: PTP_MASTER\n");
+			DBGBMC("BMC: .. .. m1(): PTP_MASTER\n");
 			m1(ptpPortDS);
 			return ptpPortDS->portState;
 		}
@@ -817,6 +817,8 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 {
 	Integer16 i,best;
+	
+	DBGBMC("ErBest - looking for the best ForeignMaster for a port=%d\n",ptpPortDS->portIdentity.portNumber);
 	
 	if (!ptpPortDS->number_foreign_records)
 	{
@@ -855,6 +857,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 	Integer16 ERbest_i;
 	Integer16 ERbest_b;	
   
+	DBGBMC("EBest - looking for the best ForeignMaster for all ports\n");
 	
 	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
 	{
@@ -866,7 +869,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
 	{
 	  
-		if(ptpPortDS[i].number_foreign_records > 0)
+		if(ptpPortDS[i].number_foreign_records == 0)
 			continue;
 		
 		ERbest_i 	= ptpPortDS[i].foreign_record_best;
@@ -878,7 +881,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].header,	\
 					  &ptpPortDS[Ebest].foreign[ERbest_b].announce,	\
-					   ptpPortDS[Ebest].foreign[ERbest_i].receptionPortNumber, 	\
+					   ptpPortDS[Ebest].foreign[ERbest_b].receptionPortNumber, 	\
 					   ptpPortDS)) < 0)
 		{
 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);

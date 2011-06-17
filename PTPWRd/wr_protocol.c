@@ -383,8 +383,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
       //substate 0  	- locking_enable failed when called while entering this state (toWRSlaveState()) so we
       //		  we need to try again
-
-        if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+#ifdef MACIEK_HACKs
+        if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave)
+#else
+	if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+#endif
 	  {
 	    DBGWRFSM("LockingSuccess\n");
 	    ptpPortDS->wrPortState = WRS_S_LOCK_1; //success, go ahead
@@ -393,15 +396,23 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
       //substate 1 	- polling HW
       case WRS_S_LOCK_1:
-
+#ifdef MACIEK_HACKs
+	 if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_READY || ptpPortDS->isSecondarySlave)
+#else	 
 	 if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_READY)
+#endif	 
 	    ptpPortDS->wrPortState = WRS_S_LOCK_2; //next level achieved
+   
 
 	 break; //try again
 
       //substate 2 	- somehow, HW disagree to disable locking, so try again, and again...until timeout
       case WRS_S_LOCK_2:
+#ifdef MACIEK_HACKs	
+	  if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave);
+#else
 	  if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK);
+#endif
 	    toWRState(WRS_LOCKED, rtOpts, ptpPortDS);
 	  break;
   /**********************************  M_LOCK  ***************************************************************************/
@@ -436,10 +447,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   case WRS_REQ_CALIBRATION:
 	//substate 0	- first attempt to start calibration was while entering state (toWRSlaveState())
 	//		  here we repeat if faild before
-
+	DBG("PROBLEM: repeating attempt to enable calibration\n");
 	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
 	    {
 	      //reset timeout [??????????//]
+	      DBG("PROBLEM: succedded to enable calibratin\n");
 	      timerStart(&ptpPortDS->wrTimers[WRS_REQ_CALIBRATION],
 			 ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION] );
 
@@ -451,7 +463,10 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1;
 	    }
 	    else
+	    {
+	       DBG("PROBLEM: failed to enable calibratin\n");
 	      break; //try again
+	    }
 
 	//substate 1	- waiting for HW to finish measurement
 	case WRS_REQ_CALIBRATION_1:
@@ -508,7 +523,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 /**********************************  WRS_RESP_CALIB_REQ  ***************************************************************************/
   case WRS_RESP_CALIB_REQ:
 
-#ifdef 	WRPTPv2						
+#ifdef 	WRPTPv2	
 	  if( ptpd_netif_calibration_pattern_enable( 	ptpPortDS->netPath.ifaceName, \
 							ptpPortDS->otherNodeCalPeriod, \
 							0, \
@@ -519,9 +534,13 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 							ptpPortDS->otherNodeCalibrationPattern, \
 							ptpPortDS->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
 #endif
+	  {
 	    ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
+	  }
 	  else
+	  {
 	    break;   //try again
+	  }
 
       //substate 1	- waiting for instruction from the master
       case WRS_RESP_CALIB_REQ_1 :
@@ -760,7 +779,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     DBGWRFSM("entering  WR_LOCK (modded?)\n");
 
 
-    if( ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+#ifdef MACIEK_HACKs
+        if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave)
+#else
+	if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+#endif
       ptpPortDS->wrPortState = WRS_S_LOCK_1; //go to substate 1
     else
      ptpPortDS->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
@@ -827,7 +850,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
       ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_2; // go to substate 1
       break;
     }
-
     //turn on calibration when entering state
     if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
     {
@@ -840,9 +862,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
       ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1; // go to substate 1
     }
     else
+    {
       //crap, probably calibration module busy with
       //calibrating other port, repeat attempt to enable calibration
       ptpPortDS->wrPortState = WRS_REQ_CALIBRATION;
+    }
 
     break;
 
@@ -881,7 +905,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	else
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->wrStateTimeout;
 	
-	
+	DBG("PROBLEM: trying to enable calibration pattern\n");
 	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
 				ptpPortDS->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
@@ -892,9 +916,15 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 				ptpPortDS->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
 
 #endif
+	{
+	  DBG("PROBLEM: Succeded to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
+	}
 	else
+	{
+	  DBG("PROBLEM: failed to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ;   //try again
+	}
 
     }
     else
