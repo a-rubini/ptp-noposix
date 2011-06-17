@@ -678,6 +678,8 @@ typedef struct {
 	IntervalTimer wrTimers[WR_TIMER_ARRAY_SIZE];
 	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
+	ForeignMasterRecord secondaryForeignMaster;
+	
 } PtpPortDS;
 
 /**

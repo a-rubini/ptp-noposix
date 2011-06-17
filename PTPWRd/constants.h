@@ -414,5 +414,6 @@ enum{
 #define B_better_by_topology_then_A	2
 
 #define A_equals_B			0
+#define DSC_error			0
 
 #endif /*CONSTANTS_H_*/

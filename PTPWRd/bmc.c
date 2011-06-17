@@ -146,10 +146,13 @@ void m1(PtpPortDS *ptpPortDS)
 
 	/*White Rabbit*/
 #ifdef WRPTPv2
-	ptpPortDS->parentWrConfig      	  = ptpPortDS->wrConfig;
-	ptpPortDS->parentIsWRnode     = (ptpPortDS->wrConfig != NON_WR) ;
-	ptpPortDS->parentWrModeON     = ptpPortDS->wrModeON;
-	ptpPortDS->parentCalibrated = ptpPortDS->calibrated;
+	ptpPortDS->parentWrConfig      	= ptpPortDS->wrConfig;
+	ptpPortDS->parentIsWRnode     	= (ptpPortDS->wrConfig != NON_WR) ;
+	ptpPortDS->parentWrModeON     	= ptpPortDS->wrModeON;
+	ptpPortDS->parentCalibrated 	= ptpPortDS->calibrated;
+	
+	primarySlavePortNumber		= ptpPortDS->portIdentity.portNumber;
+	
 #else
 	ptpPortDS->parentWrNodeMode   = ptpPortDS->wrMode;
 	ptpPortDS->parentIsWRnode     = (ptpPortDS->wrMode != NON_WR) ;
@@ -161,7 +164,11 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
 }
+void m3(PtpPortDS *ptpPortDS)
+{
 
+    // it seems to be doing nothing
+}
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
 void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
@@ -211,6 +218,24 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->timeSource = announce->timeSource;
 }
 
+void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
+{
+	
+	
+	/*Copy new foreign master data set from Announce message*/
+	memcpy(ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
+	ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
+	ptpPortDS->secondaryForeignMaster.foreignMasterAnnounceMessages = 0;
+
+	/*header and announce field of each Foreign Master are usefull to run Best Master Clock Algorithm*/
+	msgUnpackHeader(buf,&ptpPortDS->secondaryForeignMaster.header);
+	msgUnpackAnnounce(buf,&pptpPortDS->secondaryForeignMaster.announce,&ptpPortDS->secondaryForeignMaster.header);
+
+	DBG("New secondary foreign Master added \n");
+
+	ptpPortDS->secondaryForeignMaster.receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
+	
+}
 
 /*Copy local data set into header and announce message. 9.3.4 table 12*/
 void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
@@ -237,6 +262,9 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
 	announce->wr_flags =  announce->wr_flags | ptpPortDS->wrModeON     << 3;
 #endif	
 }
+
+
+
 
 char* clockDescription(MsgHeader *header, MsgAnnounce *announce)
 {
@@ -472,18 +500,18 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 							comp = memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
 							if (comp < 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. A better than B by clock ID\n");
-								return -1;
+								DBGBMC("DCA: .. .. .. .. .. .. A better than B by GrandMaster ID\n");
+								return A_better_then_B;
 							}
 							else if (comp > 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. B better than A clock ID\n");
-								return 1;
+								DBGBMC("DCA: .. .. .. .. .. .. B better than A GrandMaster ID\n");
+								return B_better_then_A;
 							}
 							else
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. not good: clock ID\n");
-								return 0;
+								DBGBMC("DCA: .. .. .. .. .. .. not good: GrandMaster ID [should not get here]\n");
+								return DSC_error;
 							}
 						}
 						else //Priority2 are not identical
@@ -492,17 +520,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 							if (comp < 0)
 							{
 								DBGBMC("DCA: .. .. .. .. .. A better than B by Priority2\n");
-								return -1;
+								return A_better_then_B;
 							}
 							else if (comp > 0)
 							{
 								DBGBMC("DCA: .. .. .. .. .. B better than A by Priority2\n");
-								return 1;
+								return B_better_then_A;
 							}
 							else
 							{
 								DBGBMC("DCA: .. .. .. .. .. not good: Priority2\n");
-								return 0;
+								return DSC_error;
 							}
 						}
 					}
@@ -513,16 +541,16 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 						if (comp < 0)
 						{
 							DBGBMC("DCA: .. .. .. .. A better than B by offsetScaledLogVariance\n");
-							return -1;
+							return A_better_then_B;
 						}
 						else if (comp > 0)
 						{
 							DBGBMC("DCA: .. .. .. .. B better than A by offsetScaledLogVariance\n");
-							return 1;
+							return B_better_then_A;
 						}
 						else
 						{	DBGBMC("DCA: .. .. .. .. not good: offsetScaledLogVariance\n");
-							return 0;
+							return DSC_error;
 						}
 					}
 
@@ -534,17 +562,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 					if (comp < 0)
 					{
 						DBGBMC("DCA: .. .. .. A better than B by clockAccuracy\n");
-						return -1;
+						return A_better_then_B;
 					}
 					else if (comp > 0)
 					{
 						DBGBMC("DCA: .. .. .. B better than A by clockAccuracy\n");
-						return 1;
+						return B_better_then_A;
 					}
 					else
 					{	
 						DBGBMC("DCA: .. .. .. not good: clockAccuracy\n");
-						return 0;
+						return DSC_error;
 					}
 				}
 
@@ -556,17 +584,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				if (comp < 0)
 				{
 					DBGBMC("DCA: .. .. A better than B by clockClass\n");
-					return -1;
+					return A_better_then_B;
 				}
 				else if (comp > 0)
 				{
 					DBGBMC("DCA: .. .. B better than A by clockClass\n");
-					return 1;
+					return B_better_then_A;
 				}
 				else
 				{
 					DBGBMC("DCA: .. .. not good:  clockClass\n");
-					return 0;
+					return DSC_error;
 				}
 			}
 		}
@@ -577,17 +605,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 			if (comp < 0)
 			{
 				DBGBMC("DCA: .. A better than B by Priority1\n");
-				return -1;
+				return A_better_then_B;
 			}
 			else if (comp > 0)
 			{
 				DBGBMC("DCA: .. B better than A by Priority1\n");
-				return 1;
+				return B_better_then_A;
 			}
 			else
 			{
 				DBGBMC("DCA: .. not good: Priority1\n");
-				return 0;
+				return DSC_error;
 			}
 		}
 
@@ -615,28 +643,30 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	
 	copyD0(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,ptpPortDS);
 
-	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128)
+	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128) // (4)
 	{
 		DBGBMC("SDA: .. clockClass < 128\n");
 		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
 					  &ptpPortDS->msgTmp.announce,
 					   ptpPortDS->portIdentity.portNumber,
-					   header,announce,receptionPortNumber,ptpPortDS)<0))
+					   header,announce,receptionPortNumber,ptpPortDS)<0)) // (5): better or better by to topology
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
-			m1(ptpPortDS);
+			m1(ptpPortDS); //(7)
 			return PTP_MASTER;
 		}
 		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
 					       &ptpPortDS->msgTmp.announce,
 					        ptpPortDS->portIdentity.portNumber,
-					        header,announce,receptionPortNumber,ptpPortDS)>0))
+					        header,announce,receptionPortNumber,ptpPortDS)>0)) //better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1: PTP_PASSIVE =modify=>> PTP_SLAVE\n");
-			s1(header,announce,ptpPortDS);
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1: =>> PTP_SLAVE [modifiedBMC]\n");
+			
 #ifdef WRPTPv2			
+			s2(header,announce,ptpPortDS); //(8)
 			return PTP_SLAVE;
 #else
+			s1(header,announce,ptpPortDS);
 			return PTP_PASSIVE;
 #endif			
 		}
@@ -664,10 +694,10 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 					  &ptpPortDS->ptpClockDS->bestForeign->header,
 					  &ptpPortDS->ptpClockDS->bestForeign->announce,
 					   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-					  ptpPortDS)<0))		
+					  ptpPortDS)<0))	// (6) better or better by to topology	
 		{		
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1: PTP_MASTER\n");
-			m1(ptpPortDS);
+			m1(ptpPortDS);//(9) actually, m2(), but it's the same as m1()
 			return PTP_MASTER;
 		}
 		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
@@ -677,15 +707,15 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 						&ptpPortDS->ptpClockDS->bestForeign->header,
 						&ptpPortDS->ptpClockDS->bestForeign->announce,
 						 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-						 ptpPortDS)>0))
+						 ptpPortDS)>0)) //better or better by to topology
 		{
 #ifdef WRPTPv2
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
-			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber)
+			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber) //(10)
 			{
 				
 				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1: PTP_SLAVE\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
-				s1(header,announce,ptpPortDS);
+				s1(header,announce,ptpPortDS); //(11)
 				return PTP_SLAVE;
 			}
 			else
@@ -696,19 +726,19 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 				if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,
 							  &ptpPortDS->ptpClockDS->bestForeign->announce,
 							   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-							   header,announce,receptionPortNumber,ptpPortDS))<0)	
+							   header,announce,receptionPortNumber,ptpPortDS)) == A_better_by_topology_then_B)	//(12): better by topology
 				{		
 					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES =>  PTP_SLAVE [modifiedBMC->> to be implemented]\n");
-					s1(header,announce,ptpPortDS); //TODO: change according to the spec
+					s2(header,announce,ptpPortDS); // (13)
 					return PTP_SLAVE;
 				}
 				else if ((bmcDataSetComparison( &ptpPortDS->ptpClockDS->bestForeign->header,
 								&ptpPortDS->ptpClockDS->bestForeign->announce,
 								 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-								 header,announce,receptionPortNumber,ptpPortDS))>0)
+								 header,announce,receptionPortNumber,ptpPortDS)) != A_better_by_topology_then_B)	//better by topology
 				{
 					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO =>  PTP_MASTER [m3() to be implemented]\n");
-					m1(ptpPortDS); //TODO: change according to the spec
+					m3(ptpPortDS); // (14)
 					return PTP_MASTER;			
 				}
 				else
