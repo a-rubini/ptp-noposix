@@ -989,8 +989,8 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
   case WRS_WR_LINK_ON:
     DBGWRFSM("entering  WRS_LINK_ON\n");
 
-    ptpPortDS->wrModeON = TRUE;
-
+    ptpPortDS->wrModeON 	= TRUE;
+    
     if(ptpPortDS->wrMode == WR_MASTER)
 #ifdef WRPTPv2
       issueWRSignalingMsg(WR_MODE_ON,rtOpts, ptpPortDS);
@@ -999,6 +999,17 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 #endif
     /*Assume that Master is calibrated and in WR mode, it will be verified with the next Annonce msg*/
     ptpPortDS->parentWrModeON     = TRUE;
+    
+    /*
+     * this is nasty, we need to updatae the announce messaegs, because it is used by s1() in 
+     * bmc() to update parentWrModeON, which is (in turn) used in the condition to 
+     * to trigger SYNCHRONIZATION_FAULT.
+     * the problem is, that it takes few bmc() executions before new Announce message is received
+     * from the WR Master
+     */
+    ptpPortDS->foreign[ptpPortDS->foreign_record_best].announce.wr_flags = \
+	ptpPortDS->foreign[ptpPortDS->foreign_record_best].announce.wr_flags | WR_IS_WR_MODE;
+    
     ptpPortDS->parentCalibrated = TRUE;
 
     ptpPortDS->wrPortState = WRS_WR_LINK_ON;

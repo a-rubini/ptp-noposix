@@ -635,10 +635,10 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		 		  {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
 				      if(ptpPortDS->parentWrModeON  == FALSE)
-					DBG("parent node left White Rabbit Mode- WR Master-forced");
+					DBG("parent node left White Rabbit Mode- WR Master-forced\n");
 					
 				      if(ptpPortDS->wrModeON             == FALSE)
-					DBG("this node left White Rabbit Mode - WR Slave-forced ");
+					DBG("this node left White Rabbit Mode - WR Slave-forced\n");
 					
 					DBG("re-synchronization\n");
 				      
