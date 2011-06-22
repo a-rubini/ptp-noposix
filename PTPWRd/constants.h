@@ -59,7 +59,7 @@
 #define DEFAULT_PARENTS_STATS			FALSE
 
 /* features, only change to refelect changes in implementation */
-#define NUMBER_PORTS		1
+#define NUMBER_PORTS		2
 #define VERSION_PTP		2
 #define TWO_STEP_FLAG		0x02
 #define BOUNDARY_CLOCK		FALSE

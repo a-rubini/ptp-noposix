@@ -206,7 +206,12 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	*(UInteger16*)(buf+50)=flip16(ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance);
 	*(UInteger8*)(buf+52)=ptpPortDS->ptpClockDS->grandmasterPriority2;
 	memcpy((buf+53),ptpPortDS->ptpClockDS->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
-	*(UInteger16*)(buf+61)=flip16(ptpPortDS->ptpClockDS->stepsRemoved);
+	
+	/* I had a problem with  stepRemoved overwriting the last word of grandmasterIdentity, 
+	 * now it's maybe not nice but it works :),
+	 */
+	*(UInteger8*)(buf+61)= 0xFF & (ptpPortDS->ptpClockDS->stepsRemoved);//flip16(ptpPortDS->ptpClockDS->stepsRemoved);
+	*(UInteger8*)(buf+62)= 0xFF & (ptpPortDS->ptpClockDS->stepsRemoved >> 8);//flip16(ptpPortDS->ptpClockDS->stepsRemoved);
 	*(Enumeration8*)(buf+63)=ptpPortDS->ptpClockDS->timeSource;
 
 	/*
@@ -277,6 +282,11 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);
+// 	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+// 	    *(UInteger8*)(buf+53), *(UInteger8*)(buf+54),
+// 	    *(UInteger8*)(buf+55), *(UInteger8*)(buf+56),
+// 	    *(UInteger8*)(buf+57), *(UInteger8*)(buf+58),
+// 	    *(UInteger8*)(buf+59), *(UInteger8*)(buf+60));
 	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
 #ifdef WRPTPv2	
@@ -344,7 +354,8 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	announce->grandmasterClockQuality.offsetScaledLogVariance = flip16(*(UInteger16*)(buf+50));
 	announce->grandmasterPriority2 = *(UInteger8*)(buf+52);
 	memcpy(announce->grandmasterIdentity,(buf+53),CLOCK_IDENTITY_LENGTH);
-	announce->stepsRemoved = flip16(*(UInteger16*)(buf+61));
+	//
+	announce->stepsRemoved = 0xFFFF & ((*(UInteger8*)(buf+61)) | (*(UInteger8*)(buf+62) << 8));
 	announce->timeSource = *(Enumeration8*)(buf+63);
 
 	/*White Rabbit- only flags in a reserved space of announce message*/

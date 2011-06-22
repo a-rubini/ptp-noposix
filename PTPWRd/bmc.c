@@ -118,6 +118,8 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	
 	//WRPTP
 	ptpClockDS->primarySlavePortNumber=0;
+	
+	ptpClockDS->Ebest = -1;
 }
 /////////////
 
@@ -205,6 +207,19 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber	= ptpPortDS->portIdentity.portNumber;
 	
+	
+	DBGBMC(" S1: g-masterIdentity[announce]. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	    announce->grandmasterIdentity[0], announce->grandmasterIdentity[1],
+	    announce->grandmasterIdentity[2], announce->grandmasterIdentity[3],
+	    announce->grandmasterIdentity[4], announce->grandmasterIdentity[5],
+	    announce->grandmasterIdentity[6], announce->grandmasterIdentity[7]);	
+
+	DBGBMC(" S1: g-masterIdentity[clockDS].. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[0], ptpPortDS->ptpClockDS->grandmasterIdentity[1],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
+	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);	    
+	    
 #else
 	ptpPortDS->parentWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
 	DBGBMC(" S1: parentWrNodeMode....  0x%x\n",ptpPortDS->parentWrNodeMode);
@@ -310,34 +325,14 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 			      PtpPortDS *ptpPortDS)
 {
 	/*
-	 * This implementation is not precisely as in the standard !@!!!!!
-	 * see: page 90, Figure 28
-	 * The return (non-error) values should be 4
-	 * 1) A bettter then B
-	 * 2) B better then A
-	 * 3) A better by topology than B
-	 * 4) B better by topology then A
-	 * 
-	 * then, error values
-	 * 5) error-1: Receiver=Sender
-	 * 6) error-2: A=B
+	 * The original implementation of BMC was modified:
+	 * - entire BMC from IEEE1588 was implemented (before a simplified version was only implemented)
+	 * - the WR modification (cosmetics) is included
 	 *
-	 * in this implementation:
-	 * (1) = (3)
-	 * (2) = (4)
-	 * (5) = (6)
+	 * So, now, there is a full-blown modifiedBM, beware
 	 *
-	 * If I'm not mistaken, it will cause problems in the low-most decision of
-	 * State Decision Algorithm (SDA): "Ebest better by topology than Erbest"
-	 * If Ebest is absolutely better (A+1>B) than Erbest, it is not
-	 * better by topology, so the decision should be NO, and the state
-	 * should be MASTER, but in this implementation it will be PASSIVE.....
-	 * see IEEE book, page 83, case 5
-	 * this is true, provided that the State Decision Alg (SDA) is implemented as in 
-	 * the standard, but it is not ! It seems that it is only for Ordinary Clock, or..
-	 * I do not understand something :)
-	 *
-	 */  
+	 */
+	
 	DBGBMC("DCA: Data set comparison \n");
 	//DBGBMC("DCA: Comparing A%s with B%s\n",clockDescription(headerA,announceA),clockDescription(headerB,announceB));
 	
@@ -371,6 +366,18 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	  return 1;
 	}
 #endif
+
+	if(receptionPortNumberA == 0) // the indexing of ports starts from 1, 0 indicates no port
+	{
+	  DBG("A better B because B is empty !!!\n");
+	  return A_better_then_B;
+	}
+	else if(receptionPortNumberB == 0)
+	{
+	  DBG("B better A because B is empty !!!\n");
+	  return B_better_then_A;
+	}
+
 	/*Identity comparison*/
 	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH)) // (1)
 	{
@@ -635,6 +642,8 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 /*State decision algorithm 9.3.3 Fig 26*/
 UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 receptionPortNumber, RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
+	Integer8 comp;
+	
 	DBGBMC("SDA: State Decision Algorith,\n");
 	if (rtOpts->slaveOnly)
 	{
@@ -644,9 +653,9 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		  return PTP_SLAVE;
 	}
 
-	if ((!ptpPortDS->number_foreign_records) && (ptpPortDS->portState == PTP_LISTENING))
+	if ((!ptpPortDS->number_foreign_records) && (ptpPortDS->portState == PTP_LISTENING)) //(2)
 	{
-		DBGBMC("SDA: .. No foreing nasters : PTP_LISTENING\n");
+		DBGBMC("SDA: .. No foreing nasters : PTP_LISTENING [3]\n");
 		return PTP_LISTENING;
 	}
 	
@@ -655,19 +664,19 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128) // (4)
 	{
 		DBGBMC("SDA: .. clockClass < 128\n");
-		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
-					  &ptpPortDS->msgTmp.announce,
-					   ptpPortDS->portIdentity.portNumber,
-					   header,announce,receptionPortNumber,ptpPortDS)<0)) // (5): better or better by to topology
+		
+		comp =  bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
+					     &ptpPortDS->msgTmp.announce,
+					      ptpPortDS->portIdentity.portNumber,
+					      header,announce,receptionPortNumber,ptpPortDS);
+		
+		if (comp < 0) // (5): better or better by to topology
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [7]\n");
 			m1(ptpPortDS); //(7)
 			return PTP_MASTER;
 		}
-		else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
-					       &ptpPortDS->msgTmp.announce,
-					        ptpPortDS->portIdentity.portNumber,
-					        header,announce,receptionPortNumber,ptpPortDS)>0)) //better or better by to topology
+		else if (comp>0) //better or better by to topology
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s2(): =>> PTP_SLAVE [modifiedBMC][8]\n");
 			
@@ -697,26 +706,23 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		DBGBMC("SDA: .. clockClass > 128\n");
 		//if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS))<0)
 		/* compare  D0 with Ebest */
-		if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
-					  &ptpPortDS->msgTmp.announce,
-					   ptpPortDS->portIdentity.portNumber,
-					  &ptpPortDS->ptpClockDS->bestForeign->header,
-					  &ptpPortDS->ptpClockDS->bestForeign->announce,
-					   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-					  ptpPortDS)<0))	// (6) better or better by to topology	
+		
+		comp =  bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
+					     &ptpPortDS->msgTmp.announce,
+					      ptpPortDS->portIdentity.portNumber,
+					     &ptpPortDS->ptpClockDS->bestForeign->header,
+					     &ptpPortDS->ptpClockDS->bestForeign->announce,
+					      ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+					      ptpPortDS);
+		
+		if ((comp < 0))	// (6) better or better by to topology	
 		{		
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [9]\n");
 			m1(ptpPortDS);//(9) actually, m2(), but it's the same as m1()
 			return PTP_MASTER;
 		}
 		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
-		else if ((bmcDataSetComparison( &ptpPortDS->msgTmpHeader,
-						&ptpPortDS->msgTmp.announce,
-						 ptpPortDS->portIdentity.portNumber,
-						&ptpPortDS->ptpClockDS->bestForeign->header,
-						&ptpPortDS->ptpClockDS->bestForeign->announce,
-						 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-						 ptpPortDS)>0)) //better or better by to topology
+		else if (comp>0) //better or better by to topology
 		{
 #ifdef WRPTPv2
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
@@ -729,24 +735,23 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 			}
 			else
 			{
-				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO ->> no implemented -> PTP_SLAVE\n", \
+				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO \n", \
 				ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber, ptpPortDS->portIdentity.portNumber);
 				
-				if ((bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,
-							  &ptpPortDS->ptpClockDS->bestForeign->announce,
-							   ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-							   header,announce,receptionPortNumber,ptpPortDS)) == A_better_by_topology_then_B)	//(12): better by topology
+				comp = bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,
+							    &ptpPortDS->ptpClockDS->bestForeign->announce,
+							     ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
+							     header,announce,receptionPortNumber,ptpPortDS);
+				
+				if (comp == A_better_by_topology_then_B)	//(12): better by topology
 				{		
-					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: YES => s2()  PTP_SLAVE [modifiedBMC][13]\n");
+					DBGBMC("SDA: .. .. .. .. Ebest better by topology (ONLY !!!) then Erbest: YES => s2()  PTP_SLAVE [modifiedBMC][13]\n");
 					s2(header,announce,ptpPortDS); // (13)
 					return PTP_SLAVE;
 				}
-				else if ((bmcDataSetComparison( &ptpPortDS->ptpClockDS->bestForeign->header,
-								&ptpPortDS->ptpClockDS->bestForeign->announce,
-								 ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber,
-								 header,announce,receptionPortNumber,ptpPortDS)) != A_better_by_topology_then_B)	//better by topology
+				else if (comp != A_better_by_topology_then_B)	//better by topology
 				{
-					DBGBMC("SDA: .. .. .. .. Ebest better or better by topology then Erbest: NO => m3() PTP_MASTER [14] \n");
+					DBGBMC("SDA: .. .. .. .. Ebest better by topology (ONLY !!) then Erbest: NO (it means it can be better) => m3() PTP_MASTER [14] \n");
 					m3(ptpPortDS); // (14)
 					return PTP_MASTER;			
 				}
@@ -781,9 +786,9 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 	DBG("BMC: Best Master Clock Algorithm @ working\n");
 	Integer16 i,best;
 
-////////// move this  -- all below
-//         do it separately for multiple ports
-	if (!ptpPortDS->number_foreign_records)
+
+	//if (!ptpPortDS->number_foreign_records) //this causes problems in boundary clock -> overwriting data of grandmaster
+	if (ptpPortDS->ptpClockDS->Ebest < 0) // no foreignMasters in entire ptpClock (all ports)
 	{
 		DBGBMC("BMC: .. no foreign masters\n");
 		if (ptpPortDS->portState == PTP_MASTER)
