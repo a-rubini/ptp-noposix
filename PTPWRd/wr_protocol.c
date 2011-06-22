@@ -383,37 +383,73 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
       //substate 0  	- locking_enable failed when called while entering this state (toWRSlaveState()) so we
       //		  we need to try again
-#ifdef MACIEK_HACKs
-        if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave)
-#else
-	if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
-#endif
-	  {
+
+        //if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave)
+	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
+	{
+	   DBGWRFSM("locking primary slave\n");
+	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_OK )
+	      ptpPortDS->wrPortState = WRS_S_LOCK_1;
+	}
+	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
+	{
+	   DBGWRFSM("locking secondary slave\n");
+	   //TODO: make for more secondary slaves
+	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
+	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	
+	}
+	else
+	{
+	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	}
+
+	if( ptpPortDS->wrPortState == WRS_S_LOCK_1)
 	    DBGWRFSM("LockingSuccess\n");
-	    ptpPortDS->wrPortState = WRS_S_LOCK_1; //success, go ahead
-	  }
+
+	
 	break;
 
       //substate 1 	- polling HW
       case WRS_S_LOCK_1:
-#ifdef MACIEK_HACKs
-	 if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_READY || ptpPortDS->isSecondarySlave)
-#else	 
-	 if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_READY)
-#endif	 
-	    ptpPortDS->wrPortState = WRS_S_LOCK_2; //next level achieved
-   
+	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
+	{
+	    if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_READY)
+	      ptpPortDS->wrPortState = WRS_S_LOCK_2; //next level achieved
+	}
+	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
+	{
+	    //TODO: more secondary slaves here
+	    if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_READY)
+	     ptpPortDS->wrPortState = WRS_S_LOCK_2; //next level achieved
+	}  
+	else
+	{
+	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	}
+	
 
 	 break; //try again
 
       //substate 2 	- somehow, HW disagree to disable locking, so try again, and again...until timeout
       case WRS_S_LOCK_2:
-#ifdef MACIEK_HACKs	
-	  if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave);
-#else
-	  if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK);
-#endif
-	    toWRState(WRS_LOCKED, rtOpts, ptpPortDS);
+	
+	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
+	{
+	    if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_OK);
+	      toWRState(WRS_LOCKED, rtOpts, ptpPortDS); 
+	}
+	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
+	{
+	    //TODO: more secondary slaves here
+	    if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK);
+	      toWRState(WRS_LOCKED, rtOpts, ptpPortDS);
+	}  
+	else
+	{
+	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	}
+	
+
 	  break;
   /**********************************  M_LOCK  ***************************************************************************/
   case WRS_M_LOCK:
@@ -779,14 +815,27 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     DBGWRFSM("entering  WR_LOCK (modded?)\n");
 
 
-#ifdef MACIEK_HACKs
-        if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK || ptpPortDS->isSecondarySlave)
-#else
-	if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
-#endif
-      ptpPortDS->wrPortState = WRS_S_LOCK_1; //go to substate 1
-    else
-     ptpPortDS->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
+	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
+	{
+	   DBGWRFSM("locking primary slave\n");
+	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_OK )
+	      ptpPortDS->wrPortState = WRS_S_LOCK_1;  //go to substate 1
+	   else
+	      ptpPortDS->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
+	}
+	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
+	{
+	   DBGWRFSM("locking secondary slave\n");
+	   //TODO: make for more secondary slaves
+	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
+	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	  //go to substate 1
+	   else
+	      ptpPortDS->wrPortState = WRS_S_LOCK;   //stay in substate 0, try again
+	}
+	else
+	{
+	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	}
 
     //DBG("state WR_LOCK (modded done?)\n");
 

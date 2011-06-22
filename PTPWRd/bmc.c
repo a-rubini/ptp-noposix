@@ -87,7 +87,8 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->pending_PDelayReq_tx_ts  = 0;
 	ptpPortDS->pending_PDelayResp_tx_ts = 0;
       
-	ptpPortDS->isSecondarySlave = FALSE;
+	//ptpPortDS->isSecondarySlave = FALSE;
+	ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
 
 
@@ -165,13 +166,15 @@ void m1(PtpPortDS *ptpPortDS)
 	/*Time Properties data set*/
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
-	ptpPortDS->isSecondarySlave = FALSE;
+	//ptpPortDS->isSecondarySlave = FALSE;
+	ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
 void m3(PtpPortDS *ptpPortDS)
 {
 
     // it seems to be doing nothing
-    ptpPortDS->isSecondarySlave = FALSE;
+    //ptpPortDS->isSecondarySlave = FALSE;
+    ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
@@ -237,7 +240,8 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
 	ptpPortDS->ptpClockDS->timeSource = announce->timeSource;
 	
-	ptpPortDS->isSecondarySlave = FALSE;
+	//ptpPortDS->isSecondarySlave = FALSE;
+	ptpPortDS->wrSlaveRole = PRIMARY_SLAVE;
 }
 
 void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
@@ -245,7 +249,8 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	
 	
 	/*Copy new foreign master data set from Announce message*/
-	ptpPortDS->isSecondarySlave = TRUE;
+	//ptpPortDS->isSecondarySlave = TRUE;
+	ptpPortDS->wrSlaveRole = SECONDARY_SLAVE;
 	
 	memcpy(ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;

@@ -682,6 +682,7 @@ typedef struct {
 
 	ForeignMasterRecord secondaryForeignMaster;
 	Boolean isSecondarySlave;
+	Enumeration8 wrSlaveRole;
 	
 } PtpPortDS;
 

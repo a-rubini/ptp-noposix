@@ -406,7 +406,15 @@ enum{
 #endif;	
 };
 
+
+
 #endif
+
+enum{
+	NON_SLAVE	= 0x0,
+	PRIMARY_SLAVE 	,
+	SECONDARY_SLAVE ,
+};
 
 #define A_better_by_topology_then_B 	-2
 #define A_better_then_B 		-1

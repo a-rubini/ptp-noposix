@@ -2366,7 +2366,8 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	
 	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
 	{
-		if(ptpPortDS[Ebest].isSecondarySlave)
+		//if(ptpPortDS[Ebest].isSecondarySlave)
+		if(ptpPortDS[Ebest].wrSlaveRole == SECONDARY_SLAVE)
 			break;
 	}
 	if(Ebest == ptpPortDS->ptpClockDS->numberPorts)
@@ -2377,7 +2378,8 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
 	{
 	  
-		if(ptpPortDS[i].isSecondarySlave == FALSE)
+		//if(ptpPortDS[i].isSecondarySlave == FALSE)
+		if(ptpPortDS[i].wrSlaveRole != SECONDARY_SLAVE)
 			continue;
 		
 		if ((bmcDataSetComparison(&ptpPortDS[i].secondaryForeignMaster.header,   	\
