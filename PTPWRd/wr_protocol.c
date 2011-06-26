@@ -1197,6 +1197,8 @@ Boolean initWrData(PtpPortDS *ptpPortDS)
     ptpPortDS->wrTimeouts[i] = ptpPortDS->wrStateTimeout;
   }
     ptpPortDS->wrTimeouts[WRS_PRESENT] = 1000;
+    ptpPortDS->wrTimeouts[WRS_S_LOCK]  = 10000;
+    ptpPortDS->wrTimeouts[WRS_M_LOCK]  = 10000;
 /*
   // TODO: fixme: locking timeout should be bigger ????
   ptpPortDS->wrTimeouts[WRS_S_LOCK]   = 10000;

@@ -653,6 +653,20 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				   }
+				   else if(ptpPortDS->portState	   	 == PTP_SLAVE && \
+					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
+					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
+					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
+					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \           
+				            ptpPortDS->wrMode            != WR_SLAVE )
+				   {
+				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+				      DBG("re-synchronization -  two WR links which could be speaking "\
+					  "White Rabbit are not doing this. try to synch \n");
+				      ptpPortDS->wrMode = WR_SLAVE;
+				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);				    
+				     
+				   }
 			}
 			
 		}
