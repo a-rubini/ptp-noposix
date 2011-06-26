@@ -42,7 +42,7 @@ CORELIBS = libwripc.a libptpnetif.a
 LDFLAGS = #-L. -lwripc -lptpnetif
 
 # Flags from the original Makefiles
-CFLAGS += -DPTPD_NO_DAEMON -DNEW_SINGLE_WRFSM 
+CFLAGS += -DPTPD_NO_DAEMON  #-DNEW_SINGLE_WRFSM 
 #CFLAGS += -DDEBUG
 CFLAGS += -DPTPD_DBG
 CFLAGS += -DPTPD_DBGMSG

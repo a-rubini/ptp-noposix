@@ -358,15 +358,9 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     {
           
       
-# ifdef NEW_SINGLE_WRFSM
-      toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
-# else
-      toWRSlaveState(PTPWR_PRESENT, rtOpts, ptpPortDS);
 
-      ptpPortDS->portState = PTP_UNCALIBRATED;
-      break;
-    }
-# endif      
+      toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
+     
 #endif 
 
 #ifndef WRPTPv2
@@ -384,11 +378,8 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     {
       DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
       
-# ifdef NEW_SINGLE_WRFSM
+
       toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
-# else
-      toWRMasterState(PTPWR_LOCK, rtOpts, ptpPortDS);
-# endif
 
       ptpPortDS->portState = PTP_UNCALIBRATED;
       break;

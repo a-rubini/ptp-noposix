@@ -469,6 +469,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	  if(ptpPortDS->msgTmpManagementId == LOCKED)
 #endif	    
 	  {
+
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpPortDS);
 	  }
 
@@ -1195,6 +1196,7 @@ Boolean initWrData(PtpPortDS *ptpPortDS)
   {
     ptpPortDS->wrTimeouts[i] = ptpPortDS->wrStateTimeout;
   }
+    ptpPortDS->wrTimeouts[WRS_PRESENT] = 1000;
 /*
   // TODO: fixme: locking timeout should be bigger ????
   ptpPortDS->wrTimeouts[WRS_S_LOCK]   = 10000;

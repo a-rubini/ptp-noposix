@@ -789,7 +789,6 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
  	UInteger16 len = 0;
  	switch(wr_managementId)
  	{
-#ifdef NEW_SINGLE_WRFSM
 	  case CALIBRATE: //new fsm
 
 
@@ -812,18 +811,7 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 	    len = 12; // TODO
 
 
-#else
- 	  case SLAVE_CALIBRATE:
- 	  case MASTER_CALIBRATE:
 
-	    put_be32(buf+54, ptpPortDS->calPeriod);
-#ifndef WRPTPv2		    
-	    put_be32(buf+58, ptpPortDS->calibrationPattern);
-	    put_be16(buf+62, ptpPortDS->calibrationPatternLen);
-#endif	    
-	    len = 10; //TODO
-
-#endif
 
 	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 #ifndef WRPTPv2		    
@@ -834,12 +822,9 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 
 	    break;
 
-#ifdef NEW_SINGLE_WRFSM
+
 	  case CALIBRATED: //new fsm
-#else
-	  case SLAVE_CALIBRATED:
-	  case MASTER_CALIBRATED:
-#endif
+
 
 
 	    /*delta TX*/
@@ -1191,7 +1176,7 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 	{
  	  switch(*wr_managementId)
  	  {
-#ifdef NEW_SINGLE_WRFSM
+
 	    case CALIBRATE:
 
 	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+54);
@@ -1205,17 +1190,7 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 	      else
 		DBGM(" calibrationSendPattern........ FALSE \n");
 
-#else
- 	    case MASTER_CALIBRATE:
- 	    case SLAVE_CALIBRATE:
 
-	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+54);
-# ifndef WRPTPv2      	      
-	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+58);
-	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+62);
-# endif
-
-#endif
 
 	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 #ifndef WRPTPv2		      
@@ -1224,12 +1199,9 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 #endif
 	      break;
 
-#ifdef NEW_SINGLE_WRFSM
+
 	    case CALIBRATED:
-#else
-	    case MASTER_CALIBRATED:
-	    case SLAVE_CALIBRATED:
-#endif
+
 	      /*delta TX*/
 	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
 	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);

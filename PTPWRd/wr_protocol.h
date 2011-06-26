@@ -1,28 +1,7 @@
 #ifndef WR_PROTOCOL_H_
 #define WR_PROTOCOL_H_
 
-#ifndef NEW_SINGLE_WRFSM
-    /*
-      handle actions and events for 'wrPortState'
-    */
-    void doWRSlaveState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
-    /*
-      perform actions required when leaving 'wrPortState' and entering 'state'
-    */
-    void toWRSlaveState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
-
-    /*
-      handle actions and events for 'wrPortState'
-    */
-    void doWRMasterState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
-
-    /*
-      perform actions required when leaving 'wrPortState' and entering 'state'
-    */
-    void toWRMasterState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
-
-#else
     /*
       handle actions and events for 'wrPortState'
     */
@@ -33,7 +12,7 @@
     */
     void toWRState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
-#endif
+
 
 /*
 returns TRUE if the port is UP (cable connected)
