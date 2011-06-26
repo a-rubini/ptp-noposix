@@ -96,6 +96,13 @@ UInteger8 returnCurrentWRMainState( PtpPortDS *ptpPortDS)
    case WRS_REQ_CALIBRATION:
    case WRS_REQ_CALIBRATION_1:
    case WRS_REQ_CALIBRATION_2:
+   case WRS_REQ_CALIBRATION_3:
+   case WRS_REQ_CALIBRATION_4:
+   case WRS_REQ_CALIBRATION_5:
+   case WRS_REQ_CALIBRATION_6:
+   case WRS_REQ_CALIBRATION_7:
+   case WRS_REQ_CALIBRATION_8:
+     
 
      state = WRS_REQ_CALIBRATION;
      break;
@@ -461,7 +468,9 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 #else	    
 	  if(ptpPortDS->msgTmpManagementId == LOCKED)
 #endif	    
+	  {
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpPortDS);
+	  }
 
 
 	  break;
@@ -1127,7 +1136,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
   }
 
-#ifndef WRPTPv2  
+#ifdef WRPTPv2  
   /******** WR TIMEOUT STAFF **********
    * turn of timeout of exitingState
    * turn out timeout of enteringState,
