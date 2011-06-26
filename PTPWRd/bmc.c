@@ -80,14 +80,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	/*Init other stuff*/
 	ptpPortDS->number_foreign_records = 0;
 	ptpPortDS->max_foreign_records = rtOpts->max_foreign_records;
-
-	ptpPortDS->pending_tx_ts            = FALSE;
-	ptpPortDS->pending_Synch_tx_ts      = 0;
-	ptpPortDS->pending_DelayReq_tx_ts   = 0;
-	ptpPortDS->pending_PDelayReq_tx_ts  = 0;
-	ptpPortDS->pending_PDelayResp_tx_ts = 0;
-      
-	//ptpPortDS->isSecondarySlave = FALSE;
+    
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
 	
 	ptpPortDS->linkUP = FALSE;

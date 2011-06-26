@@ -1828,7 +1828,6 @@ void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,SYNC_LENGTH,&ptpPortDS->netPath,&ptpPortDS->synch_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		ptpPortDS->pending_Synch_tx_ts = FALSE;
 		DBGV("Sync message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... SYNC:   failed");
 	}
@@ -1836,8 +1835,6 @@ void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	{
 		DBG("issue  ..... SYNC: succedded [synch timestamp: %s]\n", \
 		format_wr_timestamp(ptpPortDS->synch_tx_ts));
-		ptpPortDS->pending_tx_ts = TRUE;
-		ptpPortDS->pending_Synch_tx_ts = TRUE;
 		ptpPortDS->sentSyncSequenceId++;
 	}
 
@@ -1885,8 +1882,6 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,DELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->delayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		// ptpPortDS->new_tx_tag_read = FALSE;
-		// ptpPortDS->pending_DelayReq_tx_ts = FALSE;
 		DBGV("delayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... DELAY_REQ: failed\n");
 	}
@@ -1894,8 +1889,6 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	{
 		DBG("issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpPortDS->delayReq_tx_ts));
 		ptpPortDS->sentDelayReqSequenceId++;
-		// ptpPortDS->pending_tx_ts = TRUE;
-		// ptpPortDS->pending_DelayReq_tx_ts = TRUE;
 	}
 }
 
@@ -1913,7 +1906,6 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-// ptpPortDS->pending_PDelayReq_tx_ts = FALSE;
 		DBGV("PdelayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_REQ, failed\n");
 	}
@@ -1921,8 +1913,6 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	{
 		DBG("issue  ..... PDELAY_REQ, succedded \n");
 		DBGV("PDelayReq MSG sent ! \n");
-		/*	ptpPortDS->pending_tx_ts = TRUE;
-		ptpPortDS->pending_PDelayReq_tx_ts = TRUE; */
 		ptpPortDS->sentPDelayReqSequenceId++;
 	}
 }
@@ -1938,14 +1928,11 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayResp_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		/*	ptpPortDS->pending_PDelayResp_tx_ts = FALSE; */
 		DBGV("PdelayResp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_RESP, failed\n");
 	}
 	else
 	{
-		/* ptpPortDS->pending_tx_ts = TRUE;
-		ptpPortDS->pending_PDelayResp_tx_ts = TRUE; */
 		DBG("issue  ..... PDELAY_RESP, succedded [sending PDelayReq receive time: sec = %lld nanosec = %lld]\n",\
 		(unsigned long long)ptpPortDS->pdelay_req_receive_time.seconds,\
 		(unsigned long long)ptpPortDS->pdelay_req_receive_time.nanoseconds);

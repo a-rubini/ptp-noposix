@@ -264,11 +264,12 @@ typedef struct
 } ForeignMasterRecord;
 
 /**
- * \brief Clock data sets
+ * \struct PtpClockDS
+ * \brief Clock data structure - all PTP Data Sets common to entire Boundardy Clock
  */
 typedef struct
 {
-/******** defaultDS ***************/
+	/******** defaultDS ***************/
 
 	/*Static members*/
 	Boolean twoStepFlag;
@@ -284,7 +285,7 @@ typedef struct
 	UInteger8 domainNumber;
 	Boolean slaveOnly;
 	
-/******** brief Current data set *****/
+	/******** Current data set *****/
 
 	/*Dynamic members*/
 	UInteger16 stepsRemoved;
@@ -294,7 +295,7 @@ typedef struct
 	UInteger16 primarySlavePortNumber;
 	UInteger16 secondarySlavePortNumber;
 	
-/********   Parent data set ********/
+	/********   Parent data set ********/
 	
 	/*Dynamic members*/
 	PortIdentity parentPortIdentity;
@@ -306,7 +307,7 @@ typedef struct
 	UInteger8 grandmasterPriority1;
 	UInteger8 grandmasterPriority2;
 	
-/**********  Time Property data set *********/
+	/**********  Time Property data set *********/
 	/*Dynamic members*/
 	Integer16 currentUtcOffset;
 	Boolean currentUtcOffsetValid;
@@ -317,7 +318,7 @@ typedef struct
 	Boolean ptpTimescale;
 	Enumeration8 timeSource;
 	
-/**********  custom data set *********/	
+	/**********  custom data set *********/	
 	
 	Integer16  Ebest;
 	Boolean globalStateDecisionEvent;
@@ -327,82 +328,26 @@ typedef struct
 
 /**
  * \struct PtpPortDS
- * \brief Main program data structure
+ * \brief Port Data structure - all the PTP Data Sets (+ implementation-specific) common to a single port
  */
-/* main program data structure */
 typedef struct {
 
+	/*
+	 * pointer to a common clock Data Set 
+	 * which is common to all ports (pointer from all
+	 * port DSs to single clock DS)
+	 */
 	PtpClockDS *ptpClockDS;
 	
-/***** Default data set ******/
+	/***** Default data set ******/
 	NetPath netPath;
 
 	ClockIdentity clockIdentity; //TODO: should be in clockDS
-  /*
-   ******* White Rabbit *******
-   *      
-   */
-	//WRPTPv2: move these to portDS
-	Boolean parentIsWRnode; 
-	Boolean parentWrModeON; 
-	Boolean parentCalibrated;
-	Enumeration8 parentWrNodeMode; 
 
-	FixedDelta otherNodeDeltaTx; 
-	FixedDelta otherNodeDeltaRx; 
-
-/****** Port configuration data set ***********/
+	/****** Port configuration data set ***********/
 
 	/*Static members*/
 	PortIdentity portIdentity;
-	/*
-	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
-	 * Can be:
-	 * NON_WR
-	 * WR_S_ONLY
-	 * WR_M_ONLY
-	 * WR_M_AND_S
-	 */	
-	Enumeration8 wrConfig;	
-
-	/*
-	 * If fixed delays are known (most probably a deterministric PHY is used),
-	 * they are stored in this static fields, if they are not known, 
-	 * the filds shall be set to 0x0
-	 */	
-	FixedDelta knownDeltaTx; 
-	FixedDelta knownDeltaRx; 
-	
-	/*
-	 * If fixed delays are known (most probably a deterministric PHY is used),
-	 * a TRUE value of deltasKnown indicates it and validates the values of
-	 * knownDeltaTx and knownDeltaRx
-	 */		
-	Boolean deltasKnown;
-	
-	/*
-	 * Determines the timeout (in microseconds) for 
-	 * an execution of a state of the WR State Machine
-	 * (excluding REQ_CALIBRATION and CAL_REQ_RESP, if calPeriod known)
-	 */	
-	UInteger32 wrStateTimeout; 
-
-	/*
-	 * Determines the number of times a state of WR State Machine is re-entered 
-	 * (as a consequence of wrStateTimeout expiration) before the WR Link Setup is abandoned. 
-	 * If the number of the given state execution retries equals wrStateRetry, 
-	 * the EXC\_TIMEOUT\_RETRY event is generated (see \ref{sec:wrEventsAndConditions}).
-	 */	
-	UInteger8 wrStateRetry;
-	
-	/*
-	 * The wrConfig of the parent port (send with Announce msg)
-	 */	
-	Enumeration8 parentWrConfig; 
-	/*
-	 * Calibration parameters of the current port
-	 */
-	UInteger32 calPeriod;//[us]
 	
 	/*Dynamic members*/
 	Enumeration8 portState;
@@ -487,27 +432,76 @@ typedef struct {
 	UInteger8 port_communication_technology;
 	Octet port_uuid_field[PTP_UUID_LENGTH];
 
-	wr_servo_state_t wr_servo;
+	struct {
+		IntervalTimer pdelayReq;
+		IntervalTimer delayReq;
+		IntervalTimer sync;
+		IntervalTimer announceReceipt;
+		IntervalTimer announceInterval;
 
-	/***********White Rabbit ***************/
-
-	/*
-	 * white rabbit FSM state
-	 */
-	Enumeration8  wrPortState;
+	} timers;
 
 	/*
 	 * stores current managementId
 	 * it's set to null when used
 	 */
-	Enumeration16 msgTmpManagementId;
+	Enumeration16 msgTmpManagementId;	
+	
+/*************************************White Rabbit ************************************************/
+
+      //////////////// White Rabbit staff specified in WR SPEC
+	/*
+	 * Indicates WR configuration of the port
+	 * NON_WR
+	 * WR_S_ONLY
+	 * WR_M_ONLY
+	 * WR_M_AND_S
+	 */	
+	Enumeration8 wrConfig;	
 
 	/*
-	 * stores current wrMessageID
-	 * it's set to null when used
-	 */
-	Enumeration16 msgTmpWrMessageID;
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * they are stored in this static fields, if they are not known, 
+	 * the filds shall be set to 0x0
+	 */	
+	FixedDelta knownDeltaTx; 
+	FixedDelta knownDeltaRx; 
 	
+	/*
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * a TRUE value of deltasKnown indicates it and validates the values of
+	 * knownDeltaTx and knownDeltaRx
+	 */		
+	Boolean deltasKnown;
+	
+	/*
+	 * Determines the timeout (in microseconds) for 
+	 * an execution of a state of the WR State Machine
+	 * (excluding REQ_CALIBRATION and CAL_REQ_RESP, if calPeriod known)
+	 */	
+	UInteger32 wrStateTimeout; 
+
+	/*
+	 * Determines the number of times a state of WR State Machine is re-entered 
+	 * (as a consequence of wrStateTimeout expiration) before the WR Link Setup is abandoned. 
+	 * If the number of the given state execution retries equals wrStateRetry, 
+	 * the EXC\_TIMEOUT\_RETRY event is generated (see \ref{sec:wrEventsAndConditions}).
+	 */	
+	UInteger8 wrStateRetry;
+	
+	/*
+	 * The wrConfig of the parent port (send with Announce msg)
+	 */	
+	Enumeration8 parentWrConfig; 
+	/*
+	 * Calibration parameters of the current port
+	 */
+	UInteger32 calPeriod;//[us]
+
+	/*
+	 * white rabbit FSM state
+	 */
+	Enumeration8  wrPortState;
 	
 	/*
 	 * This says whether PTPd is run for:
@@ -536,13 +530,43 @@ typedef struct {
 	Boolean calibrated;
 
 	/*
-	 * Fixed elays
+	 * Fixed delays of the port
 	 */
 	FixedDelta deltaTx; 
 	FixedDelta deltaRx; 
 
+	/*
+	 * Fixed delays of the other port
+	 */	
+	FixedDelta otherNodeDeltaTx; 
+	FixedDelta otherNodeDeltaRx; 	
+	
+	/*
+	 * tell us whether the port on 
+	 * the other side of the link works in WR
+	 * mode at the moment starts with FALSE
+	 */	
+	Boolean parentWrModeON; 
+	
+	/*
+	 * value of calibrated of the other port
+	 */
+	Boolean parentCalibrated;
+	
+	/*
+	 * Mode of the port on the other side of the link
+	 */
+	Enumeration8 parentWrNodeMode; 
 
+	/*
+	 * Indicates whether the other port requested
+	 * calibration pattern
+	 */
 	UInteger16 otherNodeCalSendPattern; 
+	
+	/*
+	 * Calibration period requested by the other port
+	 */
 	UInteger32 otherNodeCalPeriod;      
 	
 	/*
@@ -552,32 +576,33 @@ typedef struct {
 	 * self message to read timestam and know that
 	 * follow up should be read)
 	 */
-	Enumeration8   pending_follow_up;
-
+	
 	/*
 	 * Alpha parameter, represents physical
 	 * medium correlation
 	 * used to obtan asymmetry
 	 */
-	UInteger32 scalled_alpha;
-
+	UInteger32 scalled_alpha;	 // not used :-(
+    ////////////// White Rabbit implementation-specific //////////////////////
+	
+	/*
+	 * indicates that the port on the other side of the link
+	 * is WR-enabled (i.e. slave_only, master_only or M_and_S)
+	 */
+	Boolean parentIsWRnode;
+	/*
+	 * stores current wrMessageID
+	 * it's set to null when used
+	 */
+	Enumeration16 msgTmpWrMessageID;	
+	
 	/******White rabbit HW timestamps *******/
 
 	/*
-	 * if any Tx timestamps should
-	 * be read (any pending) it's true
+	 * used by White Rabbit servo control (questions to Tomek)
 	 */
-	Boolean pending_tx_ts;
-
-	/*
-	 * pending flags for each kind
-	 * of tx message (not needed for Rx
-	 */
-	Boolean pending_Synch_tx_ts;
-	Boolean pending_DelayReq_tx_ts;
-	Boolean pending_PDelayReq_tx_ts;
-	Boolean pending_PDelayResp_tx_ts;
-
+	wr_servo_state_t wr_servo;
+	
 	/*
 	 * for storing frame_tags which keep
 	 * track of which timestamp is read from HW
@@ -607,22 +632,32 @@ typedef struct {
 	 */
 	UInteger8 currentWRstateCnt;
 
-	struct {
-		IntervalTimer pdelayReq;
-		IntervalTimer delayReq;
-		IntervalTimer sync;
-		IntervalTimer announceReceipt;
-		IntervalTimer announceInterval;
-
-	} timers;
 
 	IntervalTimer wrTimers[WR_TIMER_ARRAY_SIZE];
 	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
+	/*
+	 * secondary foreign master for this port.
+	 * only one possible, because we don't care about
+	 * non-point-to-point connections
+	 */
 	ForeignMasterRecord secondaryForeignMaster;
+	
+	/*
+	 * this is true if port is a secondary slave (by modifiedBMC)
+	 */
 	Boolean isSecondarySlave;
+	
+	/*
+	 * role of the port slave-wise, i.e.:
+	 * NON_SLAVE, PRIMARY_SLAVE, SECONDARY_SLAVE.
+	 */
 	Enumeration8 wrSlaveRole;
 	
+	/*
+	 * Tells whether the port is connected (linkUP=TRUE)
+	 * or disconnected
+	 */
 	Boolean linkUP;
 	
 } PtpPortDS;
@@ -658,20 +693,15 @@ typedef struct {
 
 	/********* White Rabbit ********/
 	UInteger16	portNumber;
-
 	UInteger32	calPeriod;
 	//tmp
 	UInteger8	overrideClockIdentity;
-
-	Enumeration8 wrConfig;	
-	
-	FixedDelta knownDeltaTx; 
-	FixedDelta knownDeltaRx; 
-	
-	Boolean deltasKnown;
-	
-	UInteger32 wrStateTimeout; 
-	UInteger8 wrStateRetry;
+	Enumeration8 	wrConfig;	
+	FixedDelta 	knownDeltaTx; 
+	FixedDelta 	knownDeltaRx; 
+	Boolean 	deltasKnown;
+	UInteger32 	wrStateTimeout; 
+	UInteger8 	wrStateRetry;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/
