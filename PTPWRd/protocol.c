@@ -507,16 +507,17 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   m1(ptpPortDS);
   msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 
-#ifdef WRPTPv2
-  if(ptpPortDS->wrConfig != NON_WR)
-#else
-  if(ptpPortDS->wrMode != NON_WR)
-#endif    
-  {
-    initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
-    // TODO: set appropriately classes if slaveOnly or masterOnly
-  }
-
+#ifndef NewTxCal  
+    #ifdef WRPTPv2
+      if(ptpPortDS->wrConfig != NON_WR)
+    #else
+      if(ptpPortDS->wrMode != NON_WR)
+    #endif    
+      {
+	initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
+	// TODO: set appropriately classes if slaveOnly or masterOnly
+      }
+#endif
   toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
   return TRUE;

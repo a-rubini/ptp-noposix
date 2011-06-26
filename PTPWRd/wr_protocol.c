@@ -483,19 +483,101 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   case WRS_REQ_CALIBRATION:
 	//substate 0	- first attempt to start calibration was while entering state (toWRSlaveState())
 	//		  here we repeat if faild before
-	DBG("PROBLEM: repeating attempt to enable calibration\n");
+
+#ifdef NewTxCal	      
+	    if(ptpd_netif_calibration_pattern_enable(ptpPortDS->netPath.ifaceName, 0, 0, 0) == PTPD_NETIF_OK)
+	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1;
+	    else
+	      break; // go again
+
+	    // no break here
+	case WRS_REQ_CALIBRATION_1:
+
+	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_TX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_2; // go to substate 1
+	    else
+	      break; // again
+
+	    // no braek here
+	case WRS_REQ_CALIBRATION_2:
+	    
+	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_TX, ptpPortDS->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
+	    {
+		printf("TX fixed delay = %d\n\n",(int)delta);
+		ptpPortDS->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
+		ptpPortDS->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
+		DBGWRFSM("Tx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	        DBGWRFSM("Tx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.lsb);
+	
+		ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_3;
+	    }
+	    else
+		break; // again
+
+	case WRS_REQ_CALIBRATION_3:
+	    
+    
+	    if(ptpd_netif_calibrating_disable(PTPD_NETIF_TX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+		ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_4;
+	    else
+		break; // again
+
+	case WRS_REQ_CALIBRATION_4:
+
+	    if(ptpd_netif_calibration_pattern_disable(ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+		ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_5;
+	    else
+		break; // again    
+    
+	case WRS_REQ_CALIBRATION_5:
+	    
+	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_6;
+	    else
+	      break; //try again
+
+	//substate 1	- waiting for HW to finish measurement
+	case WRS_REQ_CALIBRATION_6:
+
+	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
+	    {
+	      DBGWRFSM("RX fixed delay = %d\n",delta);
+	      ptpPortDS->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
+	      ptpPortDS->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
+	      DBGWRFSM("Rx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	      DBGWRFSM("Rx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.lsb);
+
+	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_7;
+	    }
+	    else
+	      break; //try again
+	    
+	case WRS_REQ_CALIBRATION_7:
+
+	    if( ptpd_netif_calibrating_disable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_8;
+	    else
+	      break; // try again
+	    
+	    
+	 case WRS_REQ_CALIBRATION_8:
+
+	    issueWRSignalingMsg(CALIBRATED,rtOpts, ptpPortDS);
+   
+	    toWRState(WRS_CALIBRATED, rtOpts, ptpPortDS);
+	    ptpPortDS->calibrated = TRUE;	    
+	    
+	    
+#else
 	    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
 	    {
 	      //reset timeout [??????????//]
-	      DBG("PROBLEM: succedded to enable calibratin\n");
+	
 	      timerStart(&ptpPortDS->wrTimers[WRS_REQ_CALIBRATION],
 			 ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION] );
 
-#ifdef WRPTPv2	      
+
 	      issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
-#else	      
-	      issueWRManagement(CALIBRATE,rtOpts, ptpPortDS);
-#endif	      
 	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1;
 	    }
 	    else
@@ -526,14 +608,12 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    if( ptpd_netif_calibrating_disable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) != PTPD_NETIF_OK)
 	      break; // try again
 
-#ifdef WRPTPv2
+
 	    issueWRSignalingMsg(CALIBRATED,rtOpts, ptpPortDS);
-#else
-	    issueWRManagement(CALIBRATED,rtOpts, ptpPortDS);
-#endif	    
+   
 	    toWRState(WRS_CALIBRATED, rtOpts, ptpPortDS);
 	    ptpPortDS->calibrated = TRUE;
-
+#endif
 
 
     break;
@@ -866,7 +946,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
 
 
-   case WRS_REQ_CALIBRATION:
+   case WRS_REQ_CALIBRATION: 
     /* WRS_REQ_CALIBRATION state implements 3 substates:
      * 0 - enable calibration
      * 1 - calibration enabled, polling
@@ -874,7 +954,11 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      */
     DBGWRFSM("entering  WRS_REQ_CALIBRATION\n");
 
-#ifdef WRPTPv2   
+#ifdef NewTxCal          
+    //TODO: I don't really like it here !!
+    issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
+#endif
+
     if(ptpPortDS->calPeriod > 0)
     {
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->calPeriod;
@@ -882,8 +966,8 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     }
     else
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->wrStateTimeout;
-#endif   
-   
+ 
+  
     if( ptpPortDS->calibrated == TRUE)
     {
       /*
@@ -891,31 +975,53 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
        * just go to the last step of this state
        * which is going to WRS_CALIBRATED
        */
-#ifdef WRPTPv2
+
+#ifndef NewTxCal      
       issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
-#else
-      issueWRManagement(CALIBRATE,rtOpts, ptpPortDS);
-#endif      
-      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_2; // go to substate 1
+#endif   
+      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_7; // go to substate 1
       break;
     }
-    //turn on calibration when entering state
-    if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+    
+#ifdef NewTxCal    
+    if(ptpd_netif_calibration_pattern_enable(ptpPortDS->netPath.ifaceName, 0, 0, 0) == PTPD_NETIF_OK)
     {
-      //successfully enabled calibration, inform master
-#ifdef WRPTPv2
-      issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
-#else      
-      issueWRManagement(CALIBRATE,rtOpts, ptpPortDS);
-#endif      
-      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1; // go to substate 1
+	if(ptpd_netif_calibrating_enable(PTPD_NETIF_TX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+	{      
+	  
+	    ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_2; // go to substate 1
+	  
+	}
+	else
+	{
+	    ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1;
+	}
     }
     else
     {
       //crap, probably calibration module busy with
-      //calibrating other port, repeat attempt to enable calibration
-      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION;
+      //calibrating other port, repeat attempt to enable calibration      
+      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION;    
     }
+    
+    
+#else   
+     //turn on calibration when entering state
+     if(ptpd_netif_calibrating_enable(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName) == PTPD_NETIF_OK)
+     {
+       //successfully enabled calibration, inform master
+ 
+       issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
+       
+       ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_1; // go to substate 1
+     }
+     else
+     {
+       //crap, probably calibration module busy with
+       //calibrating other port, repeat attempt to enable calibration
+       ptpPortDS->wrPortState = WRS_REQ_CALIBRATION;
+     }
+#endif
 
     break;
 

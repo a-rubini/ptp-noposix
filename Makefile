@@ -51,6 +51,7 @@ CFLAGS += -DPTPD_DBGBMC
 CFLAGS += -DWRPTPv2
 CFLAGS += -DNETIF_VERBOSE
 CFLAGS += -DMACIEK_HACKs
+CFLAGS += -DNewTxCal
 
 # Targets follows (note that the freestanding version is only an object
 all: check $(TARGETS)
