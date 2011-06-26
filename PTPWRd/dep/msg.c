@@ -929,7 +929,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    );
 	DBGM(" recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
 	DBGM(" tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
-	DBGM(" tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
+	//DBGM(" tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
 	DBGM(" tlv_organizID ................ 0x%x\n", WR_TLV_ORGANIZATION_ID);
 	DBGM(" tlv_magicNumber............... 0x%x\n", WR_TLV_MAGIC_NUMBER);
 	DBGM(" tlv_versionNumber............. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
@@ -986,8 +986,12 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
 	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
-
-	    len = 22;
+// 	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)get_be32(buf+56));
+// 	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)get_be32(buf+60));
+// 
+// 	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)get_be32(buf+64));
+// 	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)get_be32(buf+68));
+	    len = 24;
 
 	    break;
 
@@ -1082,7 +1086,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	DBGM(" tlv_wrMessageID............... 0x%x\n", *wrMessageID);
 
 	/*This is not nice way of doing it, need to be changed later !!!!!*/
-	if(*wrMessageID == CALIBRATE || *wrMessageID == CALIBRATE)
+	if(*wrMessageID == CALIBRATE || *wrMessageID == CALIBRATED)
 	{
  	  switch(*wrMessageID)
  	  {

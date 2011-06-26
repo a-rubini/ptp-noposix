@@ -537,11 +537,17 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	linkUP = isPortUp(&ptpPortDS->netPath);
 
-	if(  linkUP == FALSE )
+	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
 	{
+		DBG("\n");
+		DBG("\n");
+		DBG("----->> LINK DOWN  <<---------\n");
+		DBG("\n");
+		DBG("\n");
 		ptpPortDS->wrModeON = FALSE;
 		ptpPortDS->calibrated = FALSE;
-		//ptpPortDS->record_update = TRUE;
+		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
+		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
 		if(ptpPortDS->wrMode == WR_MASTER)
 		   ptpPortDS->wrMode = NON_WR;
 		
@@ -551,7 +557,17 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		//toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		//return;
 	}
-
+	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
+	{
+		DBG("\n");
+		DBG("\n");
+		DBG("----->> LINK UP  <<---------\n");
+		DBG("\n");
+		DBG("\n");
+	}
+	ptpPortDS->linkUP = linkUP;
+	
+	
 	ptpPortDS->message_activity = FALSE;
 
 	switch(ptpPortDS->portState)
@@ -2403,5 +2419,21 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 		ptpPortDS->ptpClockDS->secondarySlavePortNumber);
 
 	return TRUE;
+
+}
+
+
+Boolean clearForeignMasters(PtpPortDS *ptpPortDS)
+{
+    Integer16 i;
+  
+    for (i=0;i<ptpPortDS->number_foreign_records;i++)
+      ptpPortDS->foreign[i].receptionPortNumber = 0;// we recognize that ForeignMaster record is empty
+						    // by the value of receptionPortNumber - port numbers
+						    // starts from 1, 0 value indicates empty record
+    
+    ptpPortDS->foreign_record_i 	= 0;
+    ptpPortDS->number_foreign_records	= 0;
+    ptpPortDS->foreign_record_best	= 0;
 
 }

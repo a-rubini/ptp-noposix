@@ -89,6 +89,8 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       
 	//ptpPortDS->isSecondarySlave = FALSE;
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
+	
+	ptpPortDS->linkUP = FALSE;
 }
 
 
@@ -260,7 +262,7 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.header);
 	msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.announce,&ptpPortDS->secondaryForeignMaster.header);
 
-	DBG("New secondary foreign Master added \n");
+	DBG("Secondary foreign Master added/updated \n");
 
 	ptpPortDS->secondaryForeignMaster.receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
 	
@@ -833,6 +835,7 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 	if (!ptpPortDS->number_foreign_records)
 	{
 	    //nothing to look for
+	    ptpPortDS->foreign_record_best = 0;
 	    return -1;
 	}
 

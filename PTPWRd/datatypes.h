@@ -684,6 +684,8 @@ typedef struct {
 	Boolean isSecondarySlave;
 	Enumeration8 wrSlaveRole;
 	
+	Boolean linkUP;
+	
 } PtpPortDS;
 
 /**

@@ -176,6 +176,7 @@ void msgPDelayReq_display(MsgPDelayReq*);
  */
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
+Boolean clearForeignMasters(PtpPortDS *ptpPortDS);
 
 Boolean globalBestForeignMastersUpdate(PtpPortDS*);
 
