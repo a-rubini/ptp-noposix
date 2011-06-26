@@ -105,9 +105,9 @@
 
 #define WR_ANNOUNCE_TLV_LENGTH		0x0A
 
-#define WR_ANNOUNCE_LENGTH	(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH + 4)
+#define WR_ANNOUNCE_LENGTH		(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH + 4)
 #define WR_MANAGEMENT_TLV_LENGTH	 6
-#define WR_MANAGEMENT_LENGTH	 (MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
+#define WR_MANAGEMENT_LENGTH	 	(MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
 
 /* memory footprint tweak for WRPC */
 #ifdef WRPC_EXTRA_SLIM
@@ -125,8 +125,7 @@
 
 ///// new staff for WRPTPv2
 
-
-#define TLV_TYPE_ORG_EXTENSION 	0x0003 //organization specific 
+#define TLV_TYPE_ORG_EXTENSION 		0x0003 //organization specific 
 
 #define WR_PRIORITY1                    64
 
@@ -141,6 +140,8 @@
 #define WR_DEFAULT_DELTA_TX		0
 #define WR_DEFAULT_DELTA_RX		0
 
+#define     SEND_CALIBRATION_PATTERN 	0X0001
+#define NOT_SEND_CALIBRATION_PATTERN 	0X0000
 
 
 /** \}*/
@@ -330,16 +331,21 @@ enum{
 	ANN_SUFIX = 0x2000,
 };
 
-#define     SEND_CALIBRATION_PATTERN 0X0001
-#define NOT_SEND_CALIBRATION_PATTERN 0X0000
 
-
+/**
+ * \brief White Rabbit slave port's role 
+ */
 
 enum{
 	NON_SLAVE	= 0x0,
 	PRIMARY_SLAVE 	,
 	SECONDARY_SLAVE ,
 };
+
+/** \name Best Master Clock 
+  Here are constants used in the full implementation of BMC.
+.*/
+ /**\{*/
 
 #define A_better_by_topology_then_B 	-2
 #define A_better_then_B 		-1
@@ -348,5 +354,7 @@ enum{
 
 #define A_equals_B			0
 #define DSC_error			0
+
+/** \}*/
 
 #endif /*CONSTANTS_H_*/

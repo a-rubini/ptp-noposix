@@ -50,15 +50,9 @@ static inline unsigned long pow_2(int exp)
 
 #ifndef WRPC_EXTRA_SLIM
 
-//added by ML
+
 /*
- * implementation of multi-port daemon
- * each port independant
- * at the moment:
- * - not much tested
- * TODO:
- * - only one port is allowed to calibrate at a time, need to implement some synch of that
- * - test
+ * 
  */
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  {
@@ -77,7 +71,9 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      if(!doInit(rtOpts, currentPtpPortDSData))
      {
        // doInit Failed!  Exit
-       DBG("\n--------------------------------------------------\n---------------- port %d failed to doInit()-----------------------------\n--------------------------------\n",(i+1));
+       DBG("\n--------------------------------------------------\n"\
+           "---------------- port %d failed to doInit()-----------------------------\n"\
+           "--------------------------------\n",(i+1));
        //return;
      }
      currentPtpPortDSData++;
@@ -141,10 +137,12 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 #endif
 
-/* loop forever. doState() has a switch for the actions and events to be
-   checked for 'port_state'. the actions and events may or may not change
-   'port_state' by calling toState(), but once they are done we loop around
-   again and perform the actions required for the new 'port_state'. */
+/* 
+ * loop forever. doState() has a switch for the actions and events to be
+ * checked for 'port_state'. the actions and events may or may not change
+ * 'port_state' by calling toState(), but once they are done we loop around
+ * again and perform the actions required for the new 'port_state'. 
+ */
 void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   DBG("event POWERUP\n");
@@ -240,6 +238,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
   case PTP_UNCALIBRATED:
     /*
+     * TODO:
      * add here transition to WR_IDLE state of WR FSM
      * this is to accommodate the fact that PTP FSM can, by itself
      * want to leave the state (timeout, or BMC) before WR FSM finishes
@@ -314,8 +313,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      * here we have case of slave which
      * detectes that calibration is needed
      */
-    // WRPTPv2: we might not need it TODO: investigate
-    
 
    /********* evaluating candidate for WR Slave **********
     *
@@ -416,9 +413,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   DBG("Initialization: manufacturerIdentity: %s\n", MANUFACTURER_ID);
 
   /* initialize networking */
-
   netShutdown(&ptpPortDS->netPath);
-
 
   /* network init */
   if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
@@ -434,8 +429,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   initDataPort(rtOpts, ptpPortDS);
 
   /* 
-   * attempt autodetection only if non wr config is set, 
-   * otherwise, the configured setting is forced
+   * attempt autodetection, otherwise the configured setting is forced
    */
   if(ptpPortDS->wrConfig == WR_MODE_AUTO)
     autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO handle error
@@ -453,11 +447,15 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   m1(ptpPortDS);
   msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 
+  /*
+   * The tx calibration cannot be done at the start of ptpd, many reasons, e.x.;
+   * if non-WR device is connected it can hang
+   * an alternative solution (calibration during Link Setup) is ifdef-ed with NewTxCal
+   */
 #ifndef NewTxCal  
       if(ptpPortDS->wrConfig != NON_WR)
       {
 	initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
-	// TODO: set appropriately classes if slaveOnly or masterOnly
       }
 #endif
   toState(PTP_LISTENING, rtOpts, ptpPortDS);
@@ -466,17 +464,14 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 }
 
 /*
- handle actions and events for 'port_state'
- here WR adds:
- -
+ * handle actions and events for 'port_state'
  */
 void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	UInteger8 state;
 	Boolean linkUP;
 
-	//DBG("DoState : %d\n", ptpPortDS->portState);
-
+	// checking whetehr link up and running (connected)
 	linkUP = isPortUp(&ptpPortDS->netPath);
 
 	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
@@ -490,15 +485,12 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		ptpPortDS->calibrated = FALSE;
 		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
 		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
+
 		if(ptpPortDS->wrMode == WR_MASTER)
 		   ptpPortDS->wrMode = NON_WR;
 		
-
-		/* if the link goes down, go to FAULTY state immediately */
-
-		//toState(PTP_FAULTY, rtOpts, ptpPortDS);
-		//return;
 	}
+	
 	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
 	{
 		DBG("\n");
@@ -507,11 +499,12 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		DBG("\n");
 		DBG("\n");
 	}
-	ptpPortDS->linkUP = linkUP;
+	/*
+	 * remember the current state 
+	 * we do it like this to detect the transformation (edge)
+	 */
+	ptpPortDS->linkUP = linkUP; 
 	
-	
-	ptpPortDS->message_activity = FALSE;
-
 	switch(ptpPortDS->portState)
 	{
 	case PTP_LISTENING:
@@ -520,7 +513,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	case PTP_MASTER:
 		/*State decision Event*/
 		/*kind-of-non-WRFSM-preemption implementation*/
-		//if(ptpPortDS->record_update && ptpPortDS->wrPortState == WRS_IDLE)
+		
+		// it is executed globally for all ports in the same for()
 		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)		  
 		{
 			DBGV("event STATE_DECISION_EVENT\n");
@@ -544,16 +538,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 					* as transcient state between sth and SLAVE
 					* as specified in PTP state machine: Figure 23, 78p
 					*/
-					/*
-					if((ptpPortDS->wrConfig          == WR_S_ONLY  || \
-					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
-					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
-					    ptpPortDS->parentWrConfig    == WR_M_AND_S))
-					{
-					  DBG("wrMode <= WR_SLAVE\n");
-					  ptpPortDS->wrMode  = WR_SLAVE;
-					}
-					*/
+
 					/* Candidate for WR Slave */
 					ptpPortDS->wrMode  = WR_SLAVE;
 					DBG("recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
@@ -599,6 +584,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				   }
+				   /* new test staff (candidate to wrspec */
 				   else if(ptpPortDS->portState	   	 == PTP_SLAVE && \
 					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
 					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
@@ -650,8 +636,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	case PTP_PASSIVE:
 	case PTP_SLAVE:
 
-		//if( linkUP == TRUE)
-		  handle(rtOpts, ptpPortDS);
+		handle(rtOpts, ptpPortDS);
 
 		if(timerExpired(&ptpPortDS->timers.announceReceipt) || linkUP == FALSE)
 		{
@@ -689,7 +674,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	case PTP_MASTER:
 
-		//if( linkUP == TRUE)
 		if(ptpPortDS->wrMode == WR_MASTER  && ptpPortDS->wrPortState != WRS_IDLE)
 		{
 			/* handling messages inside: handle()*/
@@ -730,8 +714,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		break;
 
 	case PTP_DISABLED:
-		//if( linkUP == TRUE)
-		  handle(rtOpts, ptpPortDS);
+
+		handle(rtOpts, ptpPortDS);
 		break;
 
 	default:
@@ -742,8 +726,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
 /*
-check and handle received messages
-*/
+ * check and handle received messages
+ */
 void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
@@ -751,8 +735,6 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	Boolean isFromSelf;
 	TimeInternal time = { 0, 0 };
 	
-
-
 	/* In White Rabbit event and general message are received in the same
 	* way, no difference, any of the functions (netRecvEvent and netRecvGeneral
 	* can receive any event, need to clean things later */
@@ -768,7 +750,6 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}
 	else if(!length) /* nothing received, just exit */
 	{
-	  //DBG(" nothing received, just exit, len = %d\n", (int)length);
 		return;
 	}
 
@@ -817,8 +798,6 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	if(!isFromSelf && time.seconds > 0)
 		subTime(&time, &time, &rtOpts->inboundLatency);
 
-	//DBG("handle: messageType = 0x%x => ",ptpPortDS->msgTmpHeader.messageType);
-  
 	switch(ptpPortDS->msgTmpHeader.messageType)
 	{
 	case ANNOUNCE:
@@ -1061,23 +1040,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 	case PTP_MASTER:
 	default :
 
-/* WR switch never works in boundary clock mode */
-#if 0
-			if (!isFromSelf)
-			{
-				DBG("HandleSync: Sync message received from another Master  \n");
-				break;
-			}
-
-			else
-			{
-				/*Add latency*/
-				addTime(time,time,&rtOpts->outboundLatency);
-				DBG("HandleSync: Sync message received from self\n");
-				issueFollowup(time,rtOpts,ptpPortDS);
-				break;
-			}
-#endif
 		  break;
 	}
 }
@@ -1123,9 +1085,6 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		  }
 
 		case PTP_SLAVE:
-
-//		isFromCurrentParent = !memcmp(ptpPortDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
-//							  && (ptpPortDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
 
 
 		if (msgIsFromCurrentParent(header, ptpPortDS))
@@ -1226,15 +1185,6 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 		if (isFromSelf)
 		{
-/* WR: not this way in White Rabbit*/
-#if 0
-			/* Get sending timestamp from IP stack with So_TIMESTAMP*/
-			ptpPortDS->delay_req_send_time.seconds = time->seconds;
-			ptpPortDS->delay_req_send_time.nanoseconds = time->nanoseconds;
-					
-			/*Add latency*/
-			addTime(&ptpPortDS->delay_req_send_time,&ptpPortDS->delay_req_send_time,&rtOpts->outboundLatency);
-#endif
 			break;
 		}
 
@@ -1460,7 +1410,7 @@ if (!rtOpts->E2E_mode)
 					/*Store t4 (Fig 35)*/
 					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
-//
+
 					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
 					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
 
@@ -1472,7 +1422,6 @@ if (!rtOpts->E2E_mode)
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 					ptpPortDS->lastPdelayRespCorrectionField.seconds = correctionField.seconds;
 					ptpPortDS->lastPdelayRespCorrectionField.nanoseconds = correctionField.nanoseconds;
-//
 					break;
 				}//Two Step Clock
 
@@ -1488,8 +1437,6 @@ if (!rtOpts->E2E_mode)
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
 					printf("\n\n ----------- calculate after receiving handlePDelayResp [one step] msg ---------\n");
-
-					//					updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,FALSE);
 
 					printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
@@ -1630,8 +1577,6 @@ if (!rtOpts->E2E_mode)
 
 			DBG("\n\n ------------ calculate after receiving handlePDelayRespFollowUp msg --------\n");
 
-			//			updatePeerDelay (&ptpPortDS->owd_filt,rtOpts,ptpPortDS,&correctionField,TRUE);
-
 			DBG("\n -------------------------------finish calculation ------------------------\n\n");
 
 			break;
@@ -1678,19 +1623,12 @@ else //(End to End mode..)
 
 #endif // WR_MODE_ONLY
 
-/*
-WR: custom White Rabbit management
-*/
 void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	MsgManagement management;
 
 	if(isFromSelf)
 		return;
-
-
-	msgUnpackWRManagement(ptpPortDS->msgIbuf,&management,&(ptpPortDS->msgTmpManagementId),ptpPortDS);
-
 
 	switch(ptpPortDS->msgTmpManagementId)
 	{
@@ -1713,9 +1651,6 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 
 	msgUnpackWRSignalingMsg(ptpPortDS->msgIbuf,&signalingMsg,&(ptpPortDS->msgTmpWrMessageID),ptpPortDS);
-
-	// a hack
-	//ptpPortDS->msgTmpManagementId = ptpPortDS->msgTmpWrMessageID;
 
 	switch(ptpPortDS->msgTmpWrMessageID)
 	{
@@ -1778,8 +1713,6 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	     ptpPortDS->wrMode = WR_MASTER;
 	     ///////////////////////////////////////////
 	     toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
-
-	     //toState(PTP_UNCALIBRATED,rtOpts,ptpPortDS);
 	}
 
 }
@@ -1837,9 +1770,6 @@ void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 		format_wr_timestamp(ptpPortDS->synch_tx_ts));
 		ptpPortDS->sentSyncSequenceId++;
 	}
-
-
-
 }
 
 
@@ -2123,7 +2053,6 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	
 	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
 	{
-		//if(ptpPortDS[Ebest].isSecondarySlave)
 		if(ptpPortDS[Ebest].wrSlaveRole == SECONDARY_SLAVE)
 			break;
 	}
@@ -2134,8 +2063,6 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	
 	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
 	{
-	  
-		//if(ptpPortDS[i].isSecondarySlave == FALSE)
 		if(ptpPortDS[i].wrSlaveRole != SECONDARY_SLAVE)
 			continue;
 		

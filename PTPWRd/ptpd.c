@@ -94,14 +94,13 @@ int main(int argc, char **argv)
 
 
 
-//    if(rtOpts.wrMode == WR_SLAVE)
-//    	ptpd_init_exports();
-    initDataClock(&rtOpts, &ptpClockDS);
-  /* do the protocol engine */
+   initDataClock(&rtOpts, &ptpClockDS);
+
+    /* do the protocol engine */
    if(rtOpts.portNumber == 1)
-     protocol(&rtOpts, ptpPortDS);	 //forever loop..
+     protocol(&rtOpts, ptpPortDS);		 //forever loop for single port
    else if(rtOpts.portNumber > 1)
-     multiProtocol(&rtOpts, ptpPortDS); 	//forever loop when many ports (not fully implemented/tested)
+     multiProtocol(&rtOpts, ptpPortDS); 	//forever loop when many ports
    else
      ERROR("Not appropriate portNumber\n");
 

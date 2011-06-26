@@ -698,127 +698,6 @@ void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 
 
 
-UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_managementId)
-{
-
-	if (ptpPortDS->wrMode == NON_WR)
-	  return 0;
-
-	/*changes in header*/
-	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
-	*(char*)(buf+0)= *(char*)(buf+0) | 0x0D; //Table 19
-
-	//*(UInteger16*)(buf+2) = flip16(WR_MANAGEMENT_LENGTH);
-
-	*(UInteger8*)(buf+32)=0x04; //Table 23
-
-	/*Management message*/
-	//target portIdentity
-	memcpy((buf+34),ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
-	put_be16(buf + 42,ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
-
-	//Hops staff, we dont care at the moment
-	*(Integer8*)(buf+44) = 0;
-	*(Integer8*)(buf+45) = 0;
-
-	/*White Rabbit command*/
-	*(Integer8*)(buf+46) = 0x00 | WR_CMD;
-
-
-	/*Management TLV*/
-
-	*(Integer16*)(buf+48) = flip16(WR_TLV_TYPE);
-
-	DBGM("------------ msgPackWRManagement-------\n");
-	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6],
-	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]
-	    );
-	DBGM(" recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
-	DBGM(" management CMD................ %u\n", WR_CMD);
-	DBGM(" management ID................. 0x%x\n", wr_managementId);
-
- 	UInteger16 len = 0;
- 	switch(wr_managementId)
- 	{
-	  case CALIBRATE: //new fsm
-
-
-
-	    if(ptpPortDS->calibrated)
-	    {
-	      put_be16(buf+54, 0x0000);
-	      DBGM(" calibrationSendPattern........ FALSE \n");
-	    }
-	    else
-	    {
-	      put_be16(buf+54, 0x0001);
-	      DBGM(" calibrationSendPattern........ TRUE \n");
-	    }
-	    put_be32(buf+56, ptpPortDS->calPeriod);
-	    len = 12; // TODO
-
-
-
-
-	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
-
-
-	    break;
-
-
-	  case CALIBRATED: //new fsm
-
-
-
-	    /*delta TX*/
-	    put_be32(buf+54, ptpPortDS->deltaTx.scaledPicoseconds.msb);
-	    put_be32(buf+58, ptpPortDS->deltaTx.scaledPicoseconds.lsb);
-
-	    /*delta RX*/
-	    put_be32(buf+62, ptpPortDS->deltaRx.scaledPicoseconds.msb);
-	    put_be32(buf+66, ptpPortDS->deltaRx.scaledPicoseconds.lsb);
-
-	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.msb);
-	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.lsb);
-
-	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
-	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
-
-
-	    len = 16;
-
-	    break;
-
-	  default:
-	    //no data
-
-	    len = 0;
-
-	    break;
-
-	}
-	//header len
-	put_be16(buf + 2, WR_MANAGEMENT_LENGTH + len);
-	//TLV len
-	*(Integer16*)(buf+50) = flip16(WR_MANAGEMENT_TLV_LENGTH + len);
-	*(Enumeration16*)(buf+52) = flip16(wr_managementId);
-
-	DBGM(" messageLength................. %u\n", WR_MANAGEMENT_LENGTH + len);
-	DBGM(" wr management len............. %u\n", WR_MANAGEMENT_TLV_LENGTH + len);
-
-
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-
-
-	return (WR_MANAGEMENT_LENGTH + len);
-}
 UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID)
 {
 
@@ -830,8 +709,6 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x0C; //Table 19 -> signaling
 
-	//*(UInteger16*)(buf+2) = flip16(WR_MANAGEMENT_LENGTH);
-
 	*(UInteger8*)(buf+32)=0x05; //Table 23 -> all other
 
 	//target portIdentity
@@ -840,7 +717,6 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 
 
 	/*WR TLV*/
-
 	*(UInteger16*)(buf+44) = flip16(TLV_TYPE_ORG_EXTENSION);
 	//leave lenght free
 	*(UInteger16*)(buf+48) = flip16((WR_TLV_ORGANIZATION_ID >> 8));
@@ -849,7 +725,6 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	//wrMessageId
 	*(UInteger16*)(buf+54) = flip16(wrMessageID);
 	
-
 	DBGM("------------ msgPackWRSignalingMSG-------\n");
 	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0],
@@ -872,9 +747,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
  	UInteger16 len = 0;
  	switch(wrMessageID)
  	{
-	  case CALIBRATE: //new fsm
-
-
+	  case CALIBRATE: 
 
 	    if(ptpPortDS->calibrated)
 	    {
@@ -912,11 +785,6 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
 	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
-// 	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)get_be32(buf+56));
-// 	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)get_be32(buf+60));
-// 
-// 	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)get_be32(buf+64));
-// 	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)get_be32(buf+68));
 	    len = 24;
 
 	    break;
@@ -933,11 +801,9 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	put_be16(buf + 2, WR_SIGNALING_MSG_BASE_LENGTH + len);
 	//TLV len
 	*(Integer16*)(buf+46) = flip16(len);
-	
 
 	DBGM(" messageLength................. %u\n",  WR_SIGNALING_MSG_BASE_LENGTH + len);
 	DBGM(" WR TLV len.................... %u\n", len);
-
 
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
@@ -1054,102 +920,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	  }
 	}
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-	//DBG("WR management message: actionField = 0x%x tlv_type = 0x%x  wr_managementId = 0x%x\n",management->actionField, tlv_type, *wr_managementId);
+
 }
 
-
-
-/*Unpack WR Management message from IN buffer of ptpPortDS to msgtmp.Announce*/
-void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *wr_managementId, PtpPortDS *ptpPortDS )
-{
-
-
-	UInteger16 len = (UInteger16)get_be16(buf+2);
-
-	memcpy(management->targetPortIdentity.clockIdentity,(buf+34),CLOCK_IDENTITY_LENGTH);
-	management->targetPortIdentity.portNumber = (UInteger16)get_be16(buf+42);
-
-	management->startingBoundaryHops = *(Integer8*)(buf+44);
-	management->boundaryHops         = *(Integer8*)(buf+45);
-	management->actionField          = *(Enumeration4*)(buf+46);
-
-	if(management->actionField != WR_CMD)
-	{
-	  DBG("handle Management msg, failed, This is not a White Rabbit Command, actionField = 0x%x\n",management->actionField);
-	  return;
-	}
-
-	Integer16 tlv_type = flip16(*(Integer16*)(buf+48));
-
-	if(tlv_type != WR_TLV_TYPE)
-	{
-	  DBG("handle Management msg, failed, unrecognized TLV type in WR_CMD management, tlv_type = 0x%x \n",tlv_type);
-	  return;
-	}
-	*wr_managementId = flip16(*(Enumeration16*)(buf+52));
-
-
-	DBGM("------------ msgUnpackWRManagement-------\n");
-	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-	    management->targetPortIdentity.clockIdentity[0],
-	    management->targetPortIdentity.clockIdentity[1],
-	    management->targetPortIdentity.clockIdentity[2],
-	    management->targetPortIdentity.clockIdentity[3],
-	    management->targetPortIdentity.clockIdentity[4],
-	    management->targetPortIdentity.clockIdentity[5],
-	    management->targetPortIdentity.clockIdentity[6],
-	    management->targetPortIdentity.clockIdentity[7]
-	    );
-	DBGM(" target PortId................. %u\n", management->targetPortIdentity.portNumber);
-	DBGM(" management CMD................ %u\n", management->actionField);
-	DBGM(" tlv type...................... 0x%x\n", tlv_type);
-	DBGM(" management ID................. 0x%x\n", *wr_managementId);
-
-	/*This is not nice way of doing it, need to be changed later !!!!!*/
-	if(len > WR_MANAGEMENT_LENGTH)
-	{
- 	  switch(*wr_managementId)
- 	  {
-
-	    case CALIBRATE:
-
-	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+54);
-	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+56);
-	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
-		DBGM(" calibrationSendPattern........ TRUE \n");
-	      else
-		DBGM(" calibrationSendPattern........ FALSE \n");
-
-
-
-	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
-	      break;
-
-
-	    case CALIBRATED:
-
-	      /*delta TX*/
-	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb = get_be32(buf+54);
-	      ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb = get_be32(buf+58);
-
-	      /*delta RX*/
-	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+62);
-	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+66);
-
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb);
-
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
-
-	      break;
-
-	    default:
-	      //no data
-	      break;
-	  }
-	}
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-	//DBG("WR management message: actionField = 0x%x tlv_type = 0x%x  wr_managementId = 0x%x\n",management->actionField, tlv_type, *wr_managementId);
-}
 
