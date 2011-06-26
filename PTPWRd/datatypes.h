@@ -254,9 +254,9 @@ typedef struct
 {
 	PortIdentity foreignMasterPortIdentity;
 	UInteger16 foreignMasterAnnounceMessages;
-#ifdef WRPTPv2	
+
 	UInteger16 receptionPortNumber;
-#endif
+
 	//This one is not in the spec
 	MsgAnnounce  announce;
 	MsgHeader    header;
@@ -338,44 +338,6 @@ typedef struct {
 	NetPath netPath;
 
 	ClockIdentity clockIdentity; //TODO: should be in clockDS
-#ifndef WRPTPv2	
-	/*Static members*/
-	Boolean twoStepFlag;
-
-	UInteger16 numberPorts;
-
-	/*Dynamic members*/
-	ClockQuality clockQuality;
-
-	
-	/*Configurable members*/
-	UInteger8 priority1;
-	UInteger8 priority2;
-	UInteger8 domainNumber;
-	Boolean slaveOnly;
-
-	
-/***** Current data set ******/
-	/*Dynamic members*/
-	UInteger16 stepsRemoved;
-	TimeInternal offsetFromMaster;
-	TimeInternal meanPathDelay;
-
-	UInteger16 primarySlavePortNumber;
-	
-
-/******* Parent data set *******/
-
-  /*Dynamic members*/
-	PortIdentity parentPortIdentity;
-	Boolean parentStats;
-	UInteger16 observedParentOffsetScaledLogVariance;
-	Integer32 observedParentClockPhaseChangeRate;
-	ClockIdentity grandmasterIdentity;
-	ClockQuality grandmasterClockQuality;
-	UInteger8 grandmasterPriority1;
-	UInteger8 grandmasterPriority2;
-#endif
   /*
    ******* White Rabbit *******
    *      
@@ -387,26 +349,12 @@ typedef struct {
 	Enumeration8 parentWrNodeMode; 
 
 	FixedDelta otherNodeDeltaTx; 
-	FixedDelta otherNodeDeltaRx; //WRPTPv2: parentPortDeltaRx
+	FixedDelta otherNodeDeltaRx; 
 
-/******* Global time properties data set *********/
-#ifndef WRPTPv2
-	/*Dynamic members*/
-	Integer16 currentUtcOffset;
-	Boolean currentUtcOffsetValid;
-	Boolean leap59;
-	Boolean leap61;
-	Boolean timeTraceable;
-	Boolean frequencyTraceable;
-	Boolean ptpTimescale;
-	Enumeration8 timeSource;
-#endif
 /****** Port configuration data set ***********/
 
 	/*Static members*/
 	PortIdentity portIdentity;
-#ifdef WRPTPv2
-
 	/*
 	 * Indicates predefined WR Mode of the port (based on startup cmd or HW reading on startup).
 	 * Can be:
@@ -451,7 +399,6 @@ typedef struct {
 	 * The wrConfig of the parent port (send with Announce msg)
 	 */	
 	Enumeration8 parentWrConfig; 
-#endif
 	/*
 	 * Calibration parameters of the current port
 	 */
@@ -594,18 +541,10 @@ typedef struct {
 	FixedDelta deltaTx; 
 	FixedDelta deltaRx; 
 
-#ifndef WRPTPv2
-	UInteger32 calibrationPattern;       //WRPTPv2: portCalPattern
-	UInteger16 calibrationPatternLen;    //WRPTPv2: portCalPatternLen
-#endif
 
-	UInteger16 otherNodeCalSendPattern; //WRPTPv2: parentPortCalSendPattern ??
-	UInteger32 otherNodeCalPeriod;      //WRPTPv2: parentPortCalPeriod
+	UInteger16 otherNodeCalSendPattern; 
+	UInteger32 otherNodeCalPeriod;      
 	
-#ifndef WRPTPv2	
-	UInteger32 otherNodeCalibrationPattern;     //WRPTPv2: parentPortCalPattern
-	UInteger16 otherNodeCalibrationPatternLen;  //WRPTPv2: parentPortCalPatternLen
-#endif
 	/*
 	 * used to implemetn two-step clock
 	 * this is implemented in WR differently than
@@ -721,14 +660,8 @@ typedef struct {
 	UInteger16	portNumber;
 
 	UInteger32	calPeriod;
-#ifndef WRPTPv2		
-	UInteger32	calibrationPattern;
-	UInteger16	calibrationPatternLen;
-	Enumeration8	wrMode;
-#endif	
 	//tmp
 	UInteger8	overrideClockIdentity;
-#ifdef WRPTPv2	
 
 	Enumeration8 wrConfig;	
 	
@@ -739,7 +672,6 @@ typedef struct {
 	
 	UInteger32 wrStateTimeout; 
 	UInteger8 wrStateRetry;
-#endif
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

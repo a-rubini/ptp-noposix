@@ -173,11 +173,8 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
   
   if(timerExpired(&ptpPortDS->wrTimers[currentState]))
   {
-#ifdef WRPTPv2
+
       if (ptpPortDS->currentWRstateCnt < ptpPortDS->wrStateRetry )
-#else
-      if (ptpPortDS->currentWRstateCnt < WR_DEFAULT_STATE_REPEAT )
-#endif
       {
 	DBG("WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpPortDS);
@@ -364,22 +361,16 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     DBGV("DoState WRS_PRESENT");
     handle(rtOpts, ptpPortDS);
 
-#ifdef WRPTPv2
+
     if(ptpPortDS->msgTmpWrMessageID == LOCK)
-#else      
-    if(ptpPortDS->msgTmpManagementId == LOCK)
-#endif      
     {
 
 
       toWRState(WRS_S_LOCK, rtOpts, ptpPortDS);
 
       // management message used, so clean tmp
-#ifdef WRPTPv2
+
       ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
-#else
-      ptpPortDS->msgTmpManagementId = NULL_MANAGEMENT;
-#endif      
     }
 
  DBGV("DoState WRS_PRESENT done");
@@ -463,11 +454,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	  handle(rtOpts, ptpPortDS);
 
-#ifdef WRPTPv2
 	  if(ptpPortDS->msgTmpWrMessageID == LOCKED)
-#else	    
-	  if(ptpPortDS->msgTmpManagementId == LOCKED)
-#endif	    
 	  {
 
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpPortDS);
@@ -480,11 +467,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
 	   handle(rtOpts, ptpPortDS);
-#ifdef WRPTPv2
 	   if(ptpPortDS->msgTmpWrMessageID == CALIBRATE)
-#else
-	   if(ptpPortDS->msgTmpManagementId == CALIBRATE)
-#endif	     
 	     toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpPortDS);
 
 	   break;
@@ -631,35 +614,20 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   case WRS_CALIBRATED:
 	    handle(rtOpts, ptpPortDS);
 
-#ifdef WRPTPv2    
 	    if(ptpPortDS->msgTmpWrMessageID == CALIBRATE && ptpPortDS->wrMode == WR_MASTER)
 	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpPortDS);
 	    
 	    if(ptpPortDS->msgTmpWrMessageID == WR_MODE_ON && ptpPortDS->wrMode == WR_SLAVE)
 	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpPortDS);
-#else
-	    if(ptpPortDS->msgTmpManagementId == CALIBRATE && ptpPortDS->wrMode == WR_MASTER)
-	      toWRState(WRS_RESP_CALIB_REQ, rtOpts, ptpPortDS);
-
-	    if(ptpPortDS->msgTmpManagementId == WR_MODE_ON && ptpPortDS->wrMode == WR_SLAVE)
-	      toWRState(WRS_WR_LINK_ON, rtOpts, ptpPortDS);
-#endif
 	    break;
 
 /**********************************  WRS_RESP_CALIB_REQ  ***************************************************************************/
   case WRS_RESP_CALIB_REQ:
 
-#ifdef 	WRPTPv2	
 	  if( ptpd_netif_calibration_pattern_enable( 	ptpPortDS->netPath.ifaceName, \
 							ptpPortDS->otherNodeCalPeriod, \
 							0, \
 							0) == PTPD_NETIF_OK)
-#else
-	  if( ptpd_netif_calibration_pattern_enable( 	ptpPortDS->netPath.ifaceName, \
-							ptpPortDS->otherNodeCalPeriod, \
-							ptpPortDS->otherNodeCalibrationPattern, \
-							ptpPortDS->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
-#endif
 	  {
 	    ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
 	  }
@@ -672,11 +640,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       case WRS_RESP_CALIB_REQ_1 :
 
 	    handle(rtOpts, ptpPortDS);
-#ifdef WRPTPv2
 	    if(ptpPortDS->msgTmpWrMessageID == CALIBRATED /* || timeout */)
-#else	      
-	    if(ptpPortDS->msgTmpManagementId == CALIBRATED /* || timeout */)
-#endif	      
 	    {
 	      if(ptpPortDS->otherNodeCalSendPattern ==  TRUE)
 		ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_2;
@@ -714,7 +678,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	     * While entering the state, we sent WR_MODE_ON to the Master and set wrModeON TRUE and assuming that Master
 	     * is calibrated, set grandmaster to wrModeON and calibrated, see (toWRSlaveState())
 	     */
-#ifdef WRPTPv2	    
 	    /*
 	     * kind-of non-pre-emption of WR FSM is
 	     * implemented by banning change of PTP state
@@ -723,7 +686,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	     * changing PTP state
 	     */
 	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
-#endif
 	    if(ptpPortDS->wrMode == WR_SLAVE)
 	      /* 
 	       * this is MASTER_CLOCK_SELECTED event defined in PTP in 9.2.6.13
@@ -734,9 +696,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    else
 	      DBGWRFSM("SHIT !!!\n");
 
-#ifndef WRPTPv2
-	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
-#endif
 	    break;
 
 
@@ -772,18 +731,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
    */
   UInteger8 exitingState = returnCurrentWRMainState(ptpPortDS);
 
-#ifndef WRPTPv2  
-  /******** WR TIMEOUT STAFF **********
-   * turn of timeout of exitingState
-   * turn out timeout of enteringState
-   */
-  wrTimetoutManage(enteringState,exitingState,rtOpts,ptpPortDS);
-#endif
-
-
-#ifdef WRPTPv2
   Enumeration8 tmpWrMode;
-#endif  
   
   /* leaving state tasks */
   switch(ptpPortDS->wrPortState)
@@ -888,11 +836,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     DBGWRFSM("entering  WRS_PRESENT\n");
     /*send message to the Master to enforce entering UNCALIBRATED state*/
     
-#ifdef WRPTPv2
     issueWRSignalingMsg(SLAVE_PRESENT,rtOpts, ptpPortDS);
-#else
-    issueWRManagement(SLAVE_PRESENT,rtOpts, ptpPortDS);
-#endif
     ptpPortDS->wrPortState = WRS_PRESENT;
     break;
 
@@ -936,22 +880,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     DBGWRFSM("entering  WR_LOCKED\n");
 
     /* say Master that you are locked */
-#ifdef WRPTPv2
     issueWRSignalingMsg(LOCKED,rtOpts, ptpPortDS);
-#else
-    issueWRManagement(LOCKED,rtOpts, ptpPortDS);
-#endif
     ptpPortDS->wrPortState = WRS_LOCKED;
     break;
 
   case WRS_M_LOCK:
     /* no substates here*/
     DBGWRFSM("entering  WRS_M_LOCK\n");
-#ifdef WRPTPv2
     issueWRSignalingMsg(LOCK,rtOpts, ptpPortDS);
-#else
-    issueWRManagement(LOCK,rtOpts, ptpPortDS);
-#endif
     ptpPortDS->wrPortState = WRS_M_LOCK;
     break;
 
@@ -1060,8 +996,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
        * turn on calibration pattern
        */
 
-#ifdef 	WRPTPv2
-
 	if(ptpPortDS->otherNodeCalPeriod > 0)
 	{
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->otherNodeCalPeriod;
@@ -1074,13 +1008,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
 				ptpPortDS->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
-#else
-	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
-				ptpPortDS->otherNodeCalPeriod, \
-				ptpPortDS->otherNodeCalibrationPattern, \
-				ptpPortDS->otherNodeCalibrationPatternLen) == PTPD_NETIF_OK)
-
-#endif
 	{
 	  DBG("PROBLEM: Succeded to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; //go to substate 1
@@ -1108,11 +1035,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     ptpPortDS->wrModeON 	= TRUE;
     
     if(ptpPortDS->wrMode == WR_MASTER)
-#ifdef WRPTPv2
       issueWRSignalingMsg(WR_MODE_ON,rtOpts, ptpPortDS);
-#else      
-      issueWRManagement(WR_MODE_ON,rtOpts, ptpPortDS);
-#endif
     /*Assume that Master is calibrated and in WR mode, it will be verified with the next Annonce msg*/
     ptpPortDS->parentWrModeON     = TRUE;
     
@@ -1137,7 +1060,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
   }
 
-#ifdef WRPTPv2  
   /******** WR TIMEOUT STAFF **********
    * turn of timeout of exitingState
    * turn out timeout of enteringState,
@@ -1145,11 +1067,9 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
    * WRS_RESP_CALIB_REQ and WRS_REQ_CALIBRATION states
    */
   wrTimetoutManage(enteringState,exitingState,rtOpts,ptpPortDS);
-#endif
 
 }
 
-#ifdef WRPTPv2
 /*
   It initializes White Rabbit dynamic data fields as 
   defined in the WRSPEC, talbe 1
@@ -1207,4 +1127,3 @@ Boolean initWrData(PtpPortDS *ptpPortDS)
 */  
   
 }
-#endif

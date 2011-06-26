@@ -35,18 +35,9 @@
 #define DEFAULT_CLOCK_CLASS			100
 #define DEFAULT_CLOCK_ACCURACY			0xFE
 
-#ifdef WRPTPv2
-# define DEFAULT_CLOCK_CLASS			187
-# define DEFAULT_PRIORITY1			128
-# define DEFAULT_PRIORITY2			128
-#else
-//no idea where they took these values, but for sure
-//not from the standard !!!!
-# define DEFAULT_CLOCK_CLASS			100
-# define DEFAULT_PRIORITY1			100
-# define DEFAULT_PRIORITY2			100
-
-#endif
+#define DEFAULT_CLOCK_CLASS			187
+#define DEFAULT_PRIORITY1			128
+#define DEFAULT_PRIORITY2			128
 #define DEFAULT_CLOCK_VARIANCE			-4000 //To be determined in 802.1AS...so same value of ptpdv1 is used
 
 /* In WR mode we need only one foreign master */
@@ -111,15 +102,8 @@
 #define WR_DEFAULT_INIT_REPEAT		3
 
 /*White Rabbit package Size*/
-#ifdef WRPTPv2
-# define WR_ANNOUNCE_TLV_LENGTH		0x0A
-#else
-# ifdef WR_IN_HEADER_AND_ANNBODY
-#  define WR_ANNOUNCE_TLV_LENGTH	0
-# else
-#  define WR_ANNOUNCE_TLV_LENGTH	6
-# endif
-#endif
+
+#define WR_ANNOUNCE_TLV_LENGTH		0x0A
 
 #define WR_ANNOUNCE_LENGTH	(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH + 4)
 #define WR_MANAGEMENT_TLV_LENGTH	 6
@@ -140,7 +124,7 @@
 #define WR_MASTER_CLOCK_CLASS		5
 
 ///// new staff for WRPTPv2
-#ifdef WRPTPv2
+
 
 #define TLV_TYPE_ORG_EXTENSION 	0x0003 //organization specific 
 
@@ -157,7 +141,7 @@
 #define WR_DEFAULT_DELTA_TX		0
 #define WR_DEFAULT_DELTA_RX		0
 
-#endif
+
 
 /** \}*/
 
@@ -270,20 +254,13 @@ enum {
  */
 /*White Rabbit node */
 enum{
-#ifdef WRPTPv2
 	NON_WR      = 0x0,
 	WR_S_ONLY   = 0x2, 
 	WR_M_ONLY   = 0x1,
 	WR_M_AND_S  = 0x3,
 	WR_MODE_AUTO= 0x4, // only for ptpx - not in the spec
-#else
-	NON_WR    = 0x0,
-	WR_SLAVE  = PTPD_NETIF_RX, //2; just for convenient useage with ptpd_netif interface
-	WR_MASTER = PTPD_NETIF_TX, //1; just for convenient useage with ptpd_netif interface
-#endif	
 };
 
-#ifdef WRPTPv2
 /**
  * \brief Indicate current White Rabbit mode of a given port (non wr/wr master/wr slave) [White Rabbit]
  */
@@ -294,7 +271,7 @@ enum{
 	WR_SLAVE  = PTPD_NETIF_RX, // just for convenient useage with ptpd_netif interface
 	WR_MASTER = PTPD_NETIF_TX, // just for convenient useage with ptpd_netif interface
 };
-#endif	
+
 /**
  * \brief Values of Management Actions (extended for WR), see table 38 [White Rabbit]
  */
@@ -342,7 +319,6 @@ enum {
  * \brief White Rabbit commands (for new implementation, single FSM), see table 38 [White Rabbit]
  */
 enum{
- #ifdef WRPTPv2 
 	
 	NULL_WR_TLV = 0x0000,
 	SLAVE_PRESENT	= 0x1000,
@@ -352,15 +328,6 @@ enum{
 	CALIBRATED,
 	WR_MODE_ON,	
 	ANN_SUFIX = 0x2000,
- #else
-	NULL_MANAGEMENT = 0x0000,
-	SLAVE_PRESENT	= 0x6000,
-	LOCK,
-	LOCKED,
-	CALIBRATE,
-	CALIBRATED,
-	WR_MODE_ON,
-#endif
 };
 
 #define     SEND_CALIBRATION_PATTERN 0X0001

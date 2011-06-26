@@ -183,11 +183,7 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	/*changes in header*/
 	*(char*)(buf+0)= *(char*)(buf+0) & 0xF0; //RAZ messageType
 	*(char*)(buf+0)= *(char*)(buf+0) | 0x0B; //Table 19
-#ifdef WRPTPv2
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
-#else
-	if (ptpPortDS->wrMode != NON_WR)
-#endif	  
 	   put_be16(buf + 2,WR_ANNOUNCE_LENGTH);
 	else
 	   put_be16(buf + 2,ANNOUNCE_LENGTH);
@@ -218,7 +214,6 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	 * White rabbit message in the suffix of PTP announce message
 	 */
 	UInteger16 wr_flags = 0;
-#ifdef WRPTPv2
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)	
 	{
 
@@ -231,14 +226,6 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	  //wrMessageId
 	  *(UInteger16*)(buf+74) = flip16(ANN_SUFIX);
 	  wr_flags = wr_flags | ptpPortDS->wrConfig;
-#else
-	if (ptpPortDS->wrMode != NON_WR)
-	{
-	  *(UInteger16*)(buf+64) = flip16(WR_TLV_TYPE);
-	  *(UInteger16*)(buf+66) = flip16(WR_ANNOUNCE_TLV_LENGTH);
-	  
-	  wr_flags = wr_flags | ptpPortDS->wrMode;
-#endif
 
 	  
 
@@ -247,19 +234,11 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 
 	  if (ptpPortDS->wrModeON)
 	    wr_flags = WR_IS_WR_MODE | wr_flags;
-#ifdef WRPTPv2
 	  *(UInteger16*)(buf+76) = flip16(wr_flags);
-#else
-	  *(UInteger16*)(buf+68) = flip16(wr_flags);
-#endif
 	}
 
 	DBGM("------------ msgPackAnnounce ----------\n");
-#ifdef WRPTPv2
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
-#else
-	if (ptpPortDS->wrMode != NON_WR)
-#endif	  
 	  DBGM(" messageLength................. %u\n", WR_ANNOUNCE_LENGTH);
 	else
 	  DBGM(" messageLength................. %u\n", ANNOUNCE_LENGTH);
@@ -289,7 +268,6 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 // 	    *(UInteger8*)(buf+59), *(UInteger8*)(buf+60));
 	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
-#ifdef WRPTPv2	
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 	{
 
@@ -299,12 +277,6 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	  DBGM(" [WR suffix] tlv_magicNumber... 0x%x\n", WR_TLV_MAGIC_NUMBER);
 	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
 	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", ANN_SUFIX);
-#else
-	if (ptpPortDS->wrMode != NON_WR)
-	{
-	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", WR_TLV_TYPE);
-	  DBGM(" [WR suffix] tlv_length........ %d\n",   WR_ANNOUNCE_TLV_LENGTH);
-#endif
 	  if((wr_flags & WR_NODE_MODE) == NON_WR)
 	    DBGM(" [WR suffix] wr_flags.......... NON_WR\n");
 	  else if((wr_flags & WR_NODE_MODE) == WR_S_ONLY)
@@ -335,18 +307,15 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 {
 	UInteger16 tlv_type;
-#ifdef WRPTPv2	
 	UInteger32 tlv_organizationID;
 	UInteger16 tlv_magicNumber;
 	UInteger16 tlv_versionNumber;
 	UInteger16 tlv_wrMessageID;
-#endif	
-	
+
 	announce->originTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
 	announce->originTimestamp.secondsField.lsb = flip32(*(UInteger32*)(buf+36));
 	announce->originTimestamp.nanosecondsField = flip32(*(UInteger32*)(buf+40));
 	announce->currentUtcOffset = flip16(*(UInteger16*)(buf+44));
-
 
 	announce->grandmasterPriority1 = *(UInteger8*)(buf+47);
 	announce->grandmasterClockQuality.clockClass = *(UInteger8*)(buf+48);
@@ -364,16 +333,13 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	if(messageLen > ANNOUNCE_LENGTH)
 	{
 	  tlv_type   = (UInteger16)get_be16(buf+64);
-#ifdef WRPTPv2
 	  tlv_organizationID = flip16(*(UInteger16*)(buf+68)) << 8;
 	  tlv_organizationID = flip16(*(UInteger16*)(buf+70)) >> 8  | tlv_organizationID;
 	  tlv_magicNumber    = 0xFF00 & (flip16(*(UInteger16*)(buf+70)) << 8);
 	  tlv_magicNumber    = flip16(*(UInteger16*)(buf+72)) >>  8 | tlv_magicNumber;
 	  tlv_versionNumber  = 0xFF & flip16(*(UInteger16*)(buf+72));
 	  tlv_wrMessageID    = flip16(*(UInteger16*)(buf+74));
-#endif
 
-#ifdef WRPTPv2
 	  if(tlv_type           == TLV_TYPE_ORG_EXTENSION   && \
 	     tlv_organizationID == WR_TLV_ORGANIZATION_ID   && \
 	     tlv_magicNumber    == WR_TLV_MAGIC_NUMBER      && \
@@ -383,12 +349,6 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	    announce->wr_flags   = (UInteger16)get_be16(buf+76);
 	  }
 
-#else
-	  if(tlv_type == WR_TLV_TYPE)
-	  {
-	    announce->wr_flags   = (UInteger16)get_be16(buf+68);
-	  }
-#endif
 	}
 
 	DBGM("------------ msgUnpackAnnounce ----------\n");
@@ -410,12 +370,10 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 	{
 	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", tlv_type);
 	  DBGM(" [WR suffix] tlv_length........ %d\n", (UInteger16)get_be16(buf+66));
-#ifdef WRPTPv2
 	  DBGM(" [WR suffix] tlv_organizID .....0x%x\n", tlv_organizationID);
 	  DBGM(" [WR suffix] tlv_magicNumber... 0x%x\n", tlv_magicNumber);
 	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", tlv_versionNumber);
 	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", tlv_wrMessageID);
-#endif	  
 	  DBGM(" [WR suffix] wr_flags.......... 0x%x\n", announce->wr_flags);
 	  if((announce->wr_flags & WR_NODE_MODE) == NON_WR)
 	    DBGM(" [WR suffix] wr_flags.......... NON_WR\n");
@@ -804,20 +762,12 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
 	    put_be32(buf+56, ptpPortDS->calPeriod);
-#ifndef WRPTPv2	    
-	    put_be32(buf+60, ptpPortDS->calibrationPattern);
-	    put_be16(buf+64, ptpPortDS->calibrationPatternLen);
-#endif
 	    len = 12; // TODO
 
 
 
 
 	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
-#ifndef WRPTPv2		    
-	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
-	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
-#endif
 
 
 	    break;
@@ -869,7 +819,6 @@ UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wr_
 
 	return (WR_MANAGEMENT_LENGTH + len);
 }
-#ifdef WRPTPv2
 UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID)
 {
 
@@ -938,18 +887,10 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	      DBGM(" calibrationSendPattern........ TRUE \n");
 	    }
 	    put_be32(buf+58, ptpPortDS->calPeriod);
-#ifndef WRPTPv2		    
-	    put_be32(buf+62, ptpPortDS->calibrationPattern);
-	    put_be16(buf+66, ptpPortDS->calibrationPatternLen);
-#endif	    
 	    len = 20;
 
 
 	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
-#ifndef WRPTPv2		    
-	    DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
-	    DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
-#endif
 
 
 	    break;
@@ -1080,10 +1021,6 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+56);
 	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+58);
-#ifndef WRPTPv2      
-	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+62);
-	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+66);
-#endif
 	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
@@ -1091,10 +1028,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 
 	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->otherNodeCalPeriod);
-#ifndef WRPTPv2		      
-	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
-	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
-#endif
+
 	      break;
 
 	    case CALIBRATED:
@@ -1123,7 +1057,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	//DBG("WR management message: actionField = 0x%x tlv_type = 0x%x  wr_managementId = 0x%x\n",management->actionField, tlv_type, *wr_managementId);
 }
 
-#endif /*WRPTPv2*/
+
 
 /*Unpack WR Management message from IN buffer of ptpPortDS to msgtmp.Announce*/
 void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *wr_managementId, PtpPortDS *ptpPortDS )
@@ -1181,10 +1115,6 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 
 	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+54);
 	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+56);
-# ifndef WRPTPv2      	      
-	      ptpPortDS->otherNodeCalibrationPattern    = get_be32(buf+60);
-	      ptpPortDS->otherNodeCalibrationPatternLen = get_be16(buf+64);
-# endif
 	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		DBGM(" calibrationSendPattern........ TRUE \n");
 	      else
@@ -1193,10 +1123,6 @@ void msgUnpackWRManagement(void *buf,MsgManagement *management, Enumeration16 *w
 
 
 	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
-#ifndef WRPTPv2		      
-	      DBGM(" calibrationPattern............ %s \n", printf_bits(ptpPortDS->calibrationPattern));
-	      DBGM(" calibrationPatternLen......... %u [bits]\n", ptpPortDS->calibrationPatternLen);
-#endif
 	      break;
 
 

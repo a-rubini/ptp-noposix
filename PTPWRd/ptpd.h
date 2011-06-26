@@ -205,22 +205,13 @@ extern void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 extern void handle(RunTimeOpts*,PtpPortDS*);
 
 
-#ifdef WRPTPv2
+
 void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, 
 			     PtpPortDS *ptpPortDS );
 extern UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID);
 
 extern void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS);
 
-#else
-extern void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,
-			      PtpPortDS*);
-extern void msgUnpackWRManagement(void *buf,MsgManagement *management,
-				  Enumeration16 *wr_managementId,
-				  PtpPortDS *ptpPortDS );
-extern UInteger16 msgPackWRManagement(void *buf,PtpPortDS *ptpPortDS,
-					   Enumeration16 wr_managementId);				  
-#endif
 			      
 #if __STDC_HOSTED__
 	extern void ptpd_init_exports(void);

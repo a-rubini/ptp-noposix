@@ -251,31 +251,20 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
    case 'A':
 	   DBGNPI("WR AUTO MODE\n");
 	   rtOpts->portNumber = 2;//WR_PORT_NUMBER;
-#ifdef WRPTPv2	   
 	   rtOpts->wrConfig = WR_MODE_AUTO;
-#endif	   
 	   break;
 
    case 'S':
-#ifdef WRPTPv2
 	   rtOpts->wrConfig = WR_S_ONLY;
-#else
-	   rtOpts->wrMode = WR_SLAVE;
-#endif	   
 
 	   DBGNPI("WR Slave\n");
 	   break;
 
    case 'M':
-#ifdef WRPTPv2
 	   rtOpts->wrConfig = WR_M_ONLY;
-#else     
-	   rtOpts->wrMode = WR_MASTER;
-#endif	   
 
 	   DBGNPI("WR Master\n");
 	   break;
-#ifdef WRPTPv2
 
    case 'B':
 	   rtOpts->wrConfig = WR_M_AND_S;
@@ -285,7 +274,6 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	   rtOpts->wrConfig = NON_WR;
 	   DBGNPI("NON_WR wrMode !! \n");
 	   break;	   
-#endif	   
 	   
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);

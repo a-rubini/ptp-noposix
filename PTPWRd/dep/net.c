@@ -182,46 +182,9 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     ptpPortDS->port_uuid_field[4],\
     ptpPortDS->port_uuid_field[5]);
 
-#ifdef WRPTPv2 
 
   ptpPortDS->wrConfig = rtOpts->wrConfig;
   
-#else 
-/*moved to separate function*/
-  // fixme: error handling
-  halexp_get_port_state(&pstate, netPath->ifaceName);
-
-
-  DBG(" netif_WR_mode = %d\n", pstate.mode);
-
-   if(rtOpts->wrMode == NON_WR)
-   {
-     switch(pstate.mode)
-     {
-	case HEXP_PORT_MODE_WR_MASTER:
-	   DBG("wrMode(auto config) ....... MASTER\n");
-	   ptpPortDS->wrMode = WR_MASTER;
-	   //tmp solution
-	   break;
-	case HEXP_PORT_MODE_WR_SLAVE:
-	   DBG("wrMode(auto config) ........ SLAVE\n");
-	   ptpPortDS->wrMode = WR_SLAVE;
-	   ptpd_init_exports();
-	   //tmp solution
-	   break;
-	case HEXP_PORT_MODE_NON_WR:
-	default:
-	   DBG("wrMode(auto config) ........ NON_WR\n");
-	   ptpPortDS->wrMode = NON_WR;
-	   //tmp solution
-	   break;
-     }
-   }else
-   {
-     ptpPortDS->wrMode = rtOpts->wrMode;
-     DBG("wrMode (............ FORCE ON STARTUP\n");
-   }
-#endif
 
   DBG("netInit: exiting OK\n");
 

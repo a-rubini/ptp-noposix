@@ -18,11 +18,7 @@ void issueAnnounce(RunTimeOpts*,PtpPortDS*);
 void issueSync(RunTimeOpts*,PtpPortDS*);
 void issueFollowup(RunTimeOpts*,PtpPortDS*);
 void issueDelayReq(RunTimeOpts*,PtpPortDS*);
-#ifdef WRPTPv2
 void issueWRSignalingMsg(Enumeration16,RunTimeOpts*,PtpPortDS*);
-#else
-void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts*,PtpPortDS*);
-#endif
 void addForeign(Octet*,MsgHeader*,PtpPortDS*);
 
 void handleSignaling(MsgHeader*,Octet*,ssize_t,Boolean,RunTimeOpts*,PtpPortDS*);
@@ -195,7 +191,6 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
-#ifdef WRPTPv2	
   /*
    * kind-of non-pre-emption of WR FSM is
    * implemented by banning change of PTP state
@@ -203,7 +198,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
    */
   if(ptpPortDS->wrPortState !=WRS_IDLE)
       return ;
-#endif  
+
   ptpPortDS->message_activity = TRUE;
 
   /**
@@ -321,7 +316,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      */
     // WRPTPv2: we might not need it TODO: investigate
     
-#ifdef WRPTPv2
 
    /********* evaluating candidate for WR Slave **********
     *
@@ -350,41 +344,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       ptpPortDS->wrMode = NON_WR;
     }
     
-#else
-    if( ptpPortDS->wrMode            == WR_SLAVE  && \
-        ptpPortDS->parentWrNodeMode == WR_MASTER && \
-        (ptpPortDS->parentWrModeON  == FALSE     || \
-         ptpPortDS->wrModeON             == FALSE     ))
-    {
-          
-      
 
-      toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
-     
-#endif 
-
-#ifndef WRPTPv2
-// moved to PTP Master state
-
-
-    /*********** White Rabbit MASTER *************
-     *
-     * her we have case of master which
-     * was forced to enter UNCALIBRATED state
-     *
-     */
-    
-    if(ptpPortDS->wrMode == WR_MASTER)
-    {
-      DBG("PTP_FSM .... entering PTP_UNCALIBRATED ( WR_MASTER )\n");
-      
-
-      toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
-
-      ptpPortDS->portState = PTP_UNCALIBRATED;
-      break;
-    }
-#endif
     /* Standard PTP, go straight to SLAVE */
     DBG("PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
     ptpPortDS->portState  = PTP_SLAVE;
@@ -459,9 +419,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   netShutdown(&ptpPortDS->netPath);
 
-#ifndef WRPTPv2
-  ptpPortDS->wrConfig = rtOpts->wrConfig;
-#endif
 
   /* network init */
   if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
@@ -476,7 +433,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   /* all the protocol (PTP + WRPTP) initialization */
   initDataPort(rtOpts, ptpPortDS);
 
-#ifdef WRPTPv2
   /* 
    * attempt autodetection only if non wr config is set, 
    * otherwise, the configured setting is forced
@@ -485,7 +441,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO handle error
   else
     DBG("wrConfig .............. FORCED configuration\n")  ;
-#endif
 
   /* Create the timers (standard PTP only, the WR ones are created in another function) */
   timerInit(&ptpPortDS->timers.sync, "Sync");
@@ -499,11 +454,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 
 #ifndef NewTxCal  
-    #ifdef WRPTPv2
       if(ptpPortDS->wrConfig != NON_WR)
-    #else
-      if(ptpPortDS->wrMode != NON_WR)
-    #endif    
       {
 	initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
 	// TODO: set appropriately classes if slaveOnly or masterOnly
@@ -568,14 +519,9 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	case PTP_SLAVE:
 	case PTP_MASTER:
 		/*State decision Event*/
-#ifdef WRPTPv2
 		/*kind-of-non-WRFSM-preemption implementation*/
 		//if(ptpPortDS->record_update && ptpPortDS->wrPortState == WRS_IDLE)
-		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)
-#else
-		if(ptpPortDS->record_update)  // make this global clockwise !!!!
-#endif		  
-		  
+		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)		  
 		{
 			DBGV("event STATE_DECISION_EVENT\n");
 			ptpPortDS->record_update = FALSE;
@@ -691,7 +637,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 		/* Execute WR protocol state machine */
 		
-#ifdef WRPTPv2	
 		if(ptpPortDS->wrMode == WR_SLAVE)
 			/* handling messages inside: handle()*/
 			doWRState(rtOpts, ptpPortDS);
@@ -699,15 +644,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			toState(PTP_SLAVE, rtOpts, ptpPortDS);
 		
 		ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
-#else
-		if(ptpPortDS->wrMode == WR_SLAVE || ptpPortDS->wrMode == WR_MASTER)
-			/* handling messages inside: handle()*/
-			doWRState(rtOpts, ptpPortDS);
-		else
-			toState(PTP_SLAVE, rtOpts, ptpPortDS);
-		
-		ptpPortDS->msgTmpManagementId =  NULL_MANAGEMENT;
-#endif		
 		break;
 
 	case PTP_LISTENING:
@@ -754,7 +690,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	case PTP_MASTER:
 
 		//if( linkUP == TRUE)
-#ifdef WRPTPv2		
 		if(ptpPortDS->wrMode == WR_MASTER  && ptpPortDS->wrPortState != WRS_IDLE)
 		{
 			/* handling messages inside: handle()*/
@@ -764,9 +699,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		}
 		else
 			handle(rtOpts, ptpPortDS);
-#else		  
-		handle(rtOpts, ptpPortDS);
-#endif	  
 
 		if(timerExpired(&ptpPortDS->timers.sync))
 		{
@@ -819,28 +751,6 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	Boolean isFromSelf;
 	TimeInternal time = { 0, 0 };
 	
-#if 0
-	/*
-	* TODO: implement netSelect()
-	*/
-	if(!ptpPortDS->message_activity)
-	{
-		ret = netSelect(0, &ptpPortDS->netPath);
-
-		if(ret < 0)
-		{
-			PERROR("failed to poll sockets, ret = %d\n", ret);
-			toState(PTP_FAULTY, rtOpts, ptpPortDS);
-			return;
-		}
-		else if(!ret)
-		{
-			DBGV("handle: nothing, ret= %d\n",ret);
-			return;
-		}
-		/* else length > 0 */
-	}
-#endif
 
 
 	/* In White Rabbit event and general message are received in the same
@@ -1026,7 +936,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			if(ptpPortDS->msgTmp.announce.wr_flags != NON_WR)
 				DBG("handle ..... WR_ANNOUNCE:  message from another White Rabbit node [wr_flag != NON_WR]\n");
 			
-#ifdef WRPTPv2			
 			/*******  bug fix ???? *****
 			* the problem was that we update directly the data in portDS but later
 			* we executed BMC which uses data of foreignMasters, this was not updated,
@@ -1036,9 +945,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			*/
 			msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].header);
 			msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].announce,&ptpPortDS->foreign[ptpPortDS->foreign_record_best].header);
-#else			
-			s1(header,&ptpPortDS->msgTmp.announce,ptpPortDS);
-#endif
 			/*Reset Timer handling Announce receipt timeout*/
 			timerStart(&ptpPortDS->timers.announceReceipt,
 				   ptpPortDS->announceReceiptTimeout * 1000 *
@@ -1788,74 +1694,18 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 	switch(ptpPortDS->msgTmpManagementId)
 	{
-#ifndef WRPTPv2
-//we dont' use this staff !!!
-	case CALIBRATE:
-
-		DBG("WR Management msg [CALIBRATE]:	\
-	\n\tcalibrateSendPattern  = %32x			\
-	\n\tcalPeriod             = %32lld us\n",\
-		    ptpPortDS->otherNodeCalSendPattern,	  \
-		    (unsigned long long)ptpPortDS->otherNodeCalPeriod);
-		break;
-
-	case CALIBRATED:
-
-		DBG("WR Management msg [CALIBRATED]: \
-	\n\tdeltaTx = %16lld			     \
-	\n\tdeltaRx = %16lld\n", 
-		    ((unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb, \
-		    ((unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
-		break;
-
-	case SLAVE_PRESENT:
-		DBG("\n\nhandle WR Management msg [SLAVE_PRESENT], succedded \n\n\n");
-		break;
-	      
-	case LOCK:
-		DBG("\n\nhandle WR Management msg [LOCK], succedded \n\n");
-		break;
-
-	case LOCKED:
-
-		DBG("\n\nhandle WR Management msg [LOCKED], succedded \n\n");
-		break;
-
-	case WR_MODE_ON:
-
-		DBG("\n\nhandle WR Management msg [WR_LINK_ON], succedded \n\n");
-		break;
-
-	default:
-		DBG("\n\nhandle WR Management msg [UNKNOWN], failed \n\n");
-		break;
-#else
 	default:
 		DBG("\n\nhandle Management msg : no support !!! \n\n");
 		break;
-#endif		
 	}
 
 
-#ifndef WRPTPv2
-//we dont' use this staff !!!
-	/*
-	* here the master recognizes that it talks with WR slave
-	* which identifies itself and the calibration is statrted
-	* if the calibration is already being done, just ignore this
-	*/
-	if(ptpPortDS->wrMode        == WR_MASTER &&
-	   ptpPortDS->msgTmpManagementId == SLAVE_PRESENT && 
-	   ptpPortDS->portState          != PTP_UNCALIBRATED )
-	  toState(PTP_UNCALIBRATED,rtOpts,ptpPortDS);
-#endif	  
 
 }
 
 
 void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS) 
 {
-#ifdef WRPTPv2  
 	MsgSignaling signalingMsg;
 
 	if(isFromSelf)
@@ -1932,11 +1782,6 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	     //toState(PTP_UNCALIBRATED,rtOpts,ptpPortDS);
 	}
 
-		
-
-		
-		
-#endif /*WRPTPv2*/
 }
 
 
@@ -1946,12 +1791,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	UInteger16 announce_len;
 
 	msgPackAnnounce(ptpPortDS->msgObuf,ptpPortDS);
-#ifdef WRPTPv2
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
-#else
-	if (ptpPortDS->wrMode != NON_WR)
-#endif
-	
 		announce_len = WR_ANNOUNCE_LENGTH;
 	else
 		announce_len = ANNOUNCE_LENGTH;
@@ -2160,28 +2000,7 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 }
 #endif
 
-#ifndef WRPTPv2
-// this function seems to be unsued
-void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
-{
-	msgPackWRManagement(ptpPortDS->msgObuf,ptpPortDS, SLAVE_PRESENT);
 
-	DBG("Issuing management NON-WR msg, managementId = 0x%x\n",SLAVE_PRESENT);
-	if (!netSendGeneral(ptpPortDS->msgObuf,WR_MANAGEMENT_LENGTH,&ptpPortDS->netPath))
-	{
-		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("Management message can't be sent -> FAULTY state \n");
-		DBG("issue: Management Msg, failed\n");
-	}
-	else
-	{
-		DBG("issue: Management Msg, succedded\n");
-		DBGV("FOllowUp MSG sent ! \n");
-	}
-}
-#endif
-
-#ifdef WRPTPv2
 void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	UInteger16 len;
@@ -2200,24 +2019,11 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 		switch(wrMessageID)
 		{
 		case CALIBRATE:
-#ifdef WRPTPv2			  
 			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalPeriod    	       = %32lld us\n\n",	\
 			    !ptpPortDS->calibrated,			\
 			    (unsigned long long)ptpPortDS->calPeriod);
-#else
-			DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
-		  \n\t\tcalibrationSendPattern = %32x			\
-		  \n\t\tcalPeriod    	       = %32lld us		\
-		  \n\t\tcalibrationPattern     = %s			\
-		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpPortDS->calibrated,			\
-			    (unsigned long long)ptpPortDS->calPeriod, \
-			    printf_bits(ptpPortDS->calibrationPattern),	\
-			    (unsigned)ptpPortDS->calibrationPatternLen);
-
-#endif
 			break;
 
 		case CALIBRATED:
@@ -2243,62 +2049,6 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 		}
 	}
 }
-#else
-/* WR: custom White Rabbit management messages */
-void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
-{
-	UInteger16 len;
-
-	len = msgPackWRManagement(ptpPortDS->msgObuf,ptpPortDS, wr_managementId);
-
-	if (!netSendGeneral(ptpPortDS->msgObuf,len,&ptpPortDS->netPath))
-	{
-		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("Management message can't be sent -> FAULTY state \n");
-		DBG("issue: WR Management Msg, failed \n");
-	}
-	else
-	{
-		switch(wr_managementId)
-		{
-		case CALIBRATE:
-			DBG("\n\nissue WR Management msg [CALIBRATE], succedded, \
-		  \n\t\tcalibrationSendPattern = %32x			\
-		  \n\t\tcalPeriod      	       = %32lld us		\
-		  \n\t\tcalibrationPattern     = %s			\
-		  \n\t\tcalibrationPatternLen  = %32d bits\n\n",\
-			    !ptpPortDS->calibrated,			\
-			    (unsigned long long)ptpPortDS->calPeriod, \
-			    printf_bits(ptpPortDS->calibrationPattern),	\
-			    (unsigned)ptpPortDS->calibrationPatternLen);
-
-			break;
-
-		case CALIBRATED:
-			DBG("\n\nissue WR Management msg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n\n", \
-			    ((unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.lsb, \
-			    ((unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
-			break;
-		case SLAVE_PRESENT:
-			DBG("\n\nissue WR Management msg [SLAVE_PRESENT], succedded \n\n");
-			break;
-		case LOCK:
-			DBG("\n\nissue WR Management msg [LOCK], succedded \n\n");
-			break;
-		case LOCKED:
-			DBG("\n\nissue WR Management msg [LOCKED], succedded \n\n");
-			break;
-		case WR_MODE_ON:
-			DBG("\n\nissue WR Management msg [WR_MODE_ON], succedded \n\n");
-			break;
-		default:
-			DBG("\n\nissue WR Management msg [UNKNOWN], failed \n\n");
-			break;
-		}
-	}
-}
-
-#endif /*WRPTPv2*/
 void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 {
 	int i,j;
@@ -2350,10 +2100,8 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 		DBGV("New foreign Master added \n");
 
 		ptpPortDS->foreign_record_i = (ptpPortDS->foreign_record_i+1) % ptpPortDS->max_foreign_records;
-#ifdef WRPTPv2
 		ptpPortDS->foreign[j].receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
 		DBG("addForeign..: portIdentity.portNumber=%d\n",ptpPortDS->portIdentity.portNumber);
-#endif
 		
 	}
 

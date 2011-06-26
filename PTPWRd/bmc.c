@@ -151,19 +151,10 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->grandmasterPriority2 = ptpPortDS->ptpClockDS->priority2;
 
 	/*White Rabbit*/
-#ifdef WRPTPv2
 	ptpPortDS->parentWrConfig      	= ptpPortDS->wrConfig;
 	ptpPortDS->parentIsWRnode     	= (ptpPortDS->wrConfig != NON_WR) ;
 	ptpPortDS->parentWrModeON     	= ptpPortDS->wrModeON;
 	ptpPortDS->parentCalibrated 	= ptpPortDS->calibrated;
-	
-	
-#else
-	ptpPortDS->parentWrNodeMode   = ptpPortDS->wrMode;
-	ptpPortDS->parentIsWRnode     = (ptpPortDS->wrMode != NON_WR) ;
-	ptpPortDS->parentWrModeON     = ptpPortDS->wrModeON;
-	ptpPortDS->parentCalibrated = ptpPortDS->calibrated;
-#endif	
 
 	/*Time Properties data set*/
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
@@ -206,7 +197,7 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	DBGBMC(" S1: parentIsWRnode............ 0x%x\n", ptpPortDS->parentIsWRnode);
 	DBGBMC(" S1: parentWrModeON............ 0x%x\n", ptpPortDS->parentWrModeON);
 	DBGBMC(" S1: parentCalibrated.......... 0x%x\n", ptpPortDS->parentCalibrated);	
-#ifdef WRPTPv2
+
 	ptpPortDS->parentWrConfig      =   announce->wr_flags & WR_NODE_MODE;
 	DBGBMC(" S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
 	
@@ -225,12 +216,6 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);	    
 	    
-#else
-	ptpPortDS->parentWrNodeMode   =   announce->wr_flags & WR_NODE_MODE;
-	DBGBMC(" S1: parentWrNodeMode....  0x%x\n",ptpPortDS->parentWrNodeMode);
-#endif
-
-	
 	
 	/*Timeproperties DS*/
 	ptpPortDS->ptpClockDS->currentUtcOffset = announce->currentUtcOffset;
@@ -282,16 +267,9 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
 	memcpy(header->sourcePortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
 
 	/*White Rabbit*/
-#ifdef WRPTPv2
 	announce->wr_flags = (announce->wr_flags | ptpPortDS->wrConfig) & WR_NODE_MODE  ;
 	announce->wr_flags =  announce->wr_flags | ptpPortDS->calibrated << 2;
 	announce->wr_flags =  announce->wr_flags | ptpPortDS->wrModeON     << 3;
-
-#else
-	announce->wr_flags = (announce->wr_flags | ptpPortDS->wrMode) & WR_NODE_MODE  ;
-	announce->wr_flags =  announce->wr_flags | ptpPortDS->calibrated << 2;
-	announce->wr_flags =  announce->wr_flags | ptpPortDS->wrModeON     << 3;
-#endif	
 }
 
 
@@ -344,35 +322,6 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	//DBGBMC("DCA: Comparing A%s with B%s\n",clockDescription(headerA,announceA),clockDescription(headerB,announceB));
 	
 	short comp = 0;
-#ifndef WRPTPv2	
-	if(announceA->wr_flags & WR_MASTER)
-	  DBG("A is WR_MASTER\n");
-	else if(announceA->wr_flags & WR_SLAVE)
-	  DBG("A is WR_SLAVE\n");
-	else
-	  DBG("A is not WR\n");
-
-	if(announceB->wr_flags & WR_MASTER)
-	  DBG("B is WR_MASTER\n");
-	else if(announceB->wr_flags & WR_SLAVE)
-	  DBG("B is WR_SLAVE\n");
-	else
-	  DBG("B is not WR\n");
-
-
-	/*white rabbit staff*/
-	if(announceA->wr_flags & WR_MASTER && !(announceB->wr_flags & WR_MASTER))
-	{
-	  DBG("A better B [White Rabbit]\n");
-	  return -1;
-	}
-
-	if(announceB->wr_flags & WR_MASTER && !(announceA->wr_flags & WR_MASTER))
-	{
-	  DBG("B better A [White Rabbit]\n");
-	  return 1;
-	}
-#endif
 
 	if(receptionPortNumberA == 0) // the indexing of ports starts from 1, 0 indicates no port
 	{
@@ -687,13 +636,8 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s2(): =>> PTP_SLAVE [modifiedBMC][8]\n");
 			
-#ifdef WRPTPv2			
 			s2(header,announce,ptpPortDS); //(8)
 			return PTP_SLAVE;
-#else
-			s1(header,announce,ptpPortDS);
-			return PTP_PASSIVE;
-#endif			
 		}
 		else
 		{
@@ -731,7 +675,6 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
 		else if (comp>0) //better or better by to topology
 		{
-#ifdef WRPTPv2
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
 			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber) //(10)
 			{
@@ -768,15 +711,6 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 				}				  
 			}
 
-#else
-			/*
-			 * For a boundary clock we should have more staff here !!!!!!!!
-			 * see: page 87, Figure 26
-			 */			
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s1(): PTP_SLAVE\n");
-			s1(header,announce,ptpPortDS);
-			return PTP_SLAVE;
-#endif			
 		}
 		else
 		{
