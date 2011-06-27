@@ -22,13 +22,6 @@ returns TRUE if the port is UP (cable connected)
 */
 Boolean isPortUp(NetPath *netPath);
 
-/*
-polls HW for TX timestamp
-@return
-    TRUE  	- if timestamp read,
-    FALSE	- otherwise
-*/
-Boolean getWRtxTimestamp(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 /*
   this function manages WR timeouts, each main state (except IDLE) has timeout
@@ -52,6 +45,7 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts,
 */
 UInteger8 returnCurrentWRMainState(PtpPortDS*);
 
+#ifndef NewTxCal
 /*
 Function tries to read fixed delays (if PTPWRd restarted, they are remembered by HW
 if delays not known, Tx fixed delays are measured
@@ -64,9 +58,22 @@ return:
 
 */
 Boolean initWRcalibration(const char *ifaceName,PtpPortDS *ptpPortDS );
+#endif
 
+/*
+A function a value in a bit form
+ 
+return:
+ value of "bits" in a bit form in a "string"
+ */
 char *printf_bits(UInteger32 bits);
 
+/*
+A function to display WR timestamps
+ 
+return:
+ value of wr timestamp as a "string"
+ */
 char *format_wr_timestamp(wr_timestamp_t ts);
 
 
@@ -74,6 +81,6 @@ char *format_wr_timestamp(wr_timestamp_t ts);
   It initializes White Rabbit dynamic data fields as 
   defined in the WRSPEC, talbe 1
 */
-Boolean initWrData(PtpPortDS *ptpPortDS);
+void initWrData(PtpPortDS *ptpPortDS);
 
 #endif /*WR_PROTOCOL_H_*/
