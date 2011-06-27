@@ -80,6 +80,18 @@ void subTime(TimeInternal*,TimeInternal*,TimeInternal*);
 UInteger8 bmc(ForeignMasterRecord*,RunTimeOpts*,PtpPortDS*);
 
 /**
+ * \brief Data Set comparision algorithm implementation
+ * \return  
+       A_better_by_topology_then_B 	(= -2)
+      A_better_then_B 			(= -1)
+      B_better_then_A 			(= 1)
+      B_better_by_topology_then_A	(= 2)
+      A_equals_B			(= 0)
+      DSC_error				(= 0)
+ */
+Integer8 bmcDataSetComparison(MsgHeader*, MsgAnnounce*, UInteger16, MsgHeader*, \
+			      MsgAnnounce*, UInteger16, PtpPortDS*);
+/**
  * \brief Calculates Erbest - which foreign master is the best on a give port
  */
 UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS );
@@ -176,7 +188,7 @@ void msgPDelayReq_display(MsgPDelayReq*);
  */
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
-Boolean clearForeignMasters(PtpPortDS *ptpPortDS);
+void clearForeignMasters(PtpPortDS *ptpPortDS);
 
 Boolean globalBestForeignMastersUpdate(PtpPortDS*);
 

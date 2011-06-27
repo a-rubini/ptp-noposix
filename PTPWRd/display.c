@@ -361,16 +361,6 @@ void displayForeignMaster (PtpPortDS *ptpPortDS){
 
 void displayOthers (PtpPortDS *ptpPortDS){
 
-int i ;
-
-//Usefull to display name of timers
-static const char timer[][26] = {
-"PDELAYREQ_INTERVAL_TIMER",
-"SYNC_INTERVAL_TIMER",
-"ANNOUNCE_RECEIPT_TIMER",
-"ANNOUNCE_INTERVAL_TIMER"
-};
-
 printf("---Ptp Others Data Set-- \n");
 printf("\n");
 printf("master_to_slave_delay : \n");

@@ -587,7 +587,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
 					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
 					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
-					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \           
+					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \
 				            ptpPortDS->wrMode            != WR_SLAVE )
 				   {
 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
@@ -648,7 +648,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				m1(ptpPortDS);
 				toState(PTP_MASTER, rtOpts, ptpPortDS);
 			}
-			else if (ptpPortDS->portState != PTP_LISTENING) //???/
+			else if (ptpPortDS->portState != PTP_LISTENING) //???
 				toState(PTP_LISTENING, rtOpts, ptpPortDS);
 		}
 
@@ -1409,8 +1409,8 @@ if (!rtOpts->E2E_mode)
 					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
+					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
+					DBG("\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
 
 					/*store t2 (Fig 35)*/
 					toInternalTime(&requestReceiptTimestamp,&ptpPortDS->msgTmp.presp.requestReceiptTimestamp);
@@ -1429,8 +1429,8 @@ if (!rtOpts->E2E_mode)
 					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
+					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
+					DBG("\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
@@ -1623,8 +1623,6 @@ else //(End to End mode..)
 
 void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean isFromSelf, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
-	MsgManagement management;
-
 	if(isFromSelf)
 		return;
 
@@ -1908,7 +1906,7 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	}
 	else
 	{
-		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %ld \n\t\t  nanosec = %lld\n",\
+		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %lld \n\t\t  nanosec = %lld\n",\
 		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.utc,\
 		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.nsec);
 	}
@@ -2031,7 +2029,8 @@ Boolean globalBestForeignMastersUpdate(PtpPortDS *ptpPortDS)
 	{
 	    if(ptpPortDS[i].record_update)
 	    {
-	      ErBest(&ptpPortDS[i].foreign,ptpPortDS);
+	      ErBest(ptpPortDS[i].foreign,ptpPortDS);
+	      //ErBest(&ptpPortDS[i].foreign,ptpPortDS); //TODO (13): check how it worked
 	      returnValue = TRUE;
 	      DBG("GLOBAL UPDATE: updating Erbest on port=%d\n",ptpPortDS[i].portIdentity.portNumber);
 	    }
@@ -2088,7 +2087,7 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 }
 
 
-Boolean clearForeignMasters(PtpPortDS *ptpPortDS)
+void clearForeignMasters(PtpPortDS *ptpPortDS)
 {
     Integer16 i;
   
