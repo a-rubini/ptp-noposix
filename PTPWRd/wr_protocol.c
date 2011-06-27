@@ -210,7 +210,8 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 	 * RE-INITIALIZATION OF White Rabbit Data Sets
 	 * (chapter (Re-)Initialization of wrspec
 	 */	
-	initWrData(ptpPortDS);
+	//TODO (7)
+	initWrData(ptpPortDS, INIT); //INIT mode because we don't need to remember WR port mode and port role
       }
 
   }
@@ -730,7 +731,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 /* perform actions required when leaving 'wrPortState' and entering 'state' */
 void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
-  Enumeration8 tmpWrMode;
+
   /*
    * this (exitingState) have to do with substates and timeouts,
    * if we exit one of substates, the value of exiting state
@@ -752,9 +753,8 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      * with a "hack" to remember the desired wrMode,
      * Fixme/TODO (7): do it nicer
      */
-    tmpWrMode = ptpPortDS->wrMode;
-    initWrData(ptpPortDS);
-    ptpPortDS->wrMode = tmpWrMode; //re-set the desired wrMode    
+    initWrData(ptpPortDS, RE_INIT);
+
     
     
     DBGWRFSM("exiting WRS_IDLE\n");
@@ -1094,12 +1094,12 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
   Called in the places defined in the WRSpec, (Re-)Initialization 
   section
 */
-void initWrData(PtpPortDS *ptpPortDS)
+void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
 {
   
   DBG("White Rabbit data (re-)initialization\n");
   int i=0;
-  ptpPortDS->wrMode 			   = NON_WR;
+  //ptpPortDS->wrMode 			   = NON_WR;
   ptpPortDS->wrModeON    		   = FALSE;
   ptpPortDS->wrPortState 		   = WRS_IDLE;
   ptpPortDS->calibrated  		   = ptpPortDS->deltasKnown;
@@ -1139,4 +1139,12 @@ void initWrData(PtpPortDS *ptpPortDS)
     ptpPortDS->wrTimeouts[WRS_S_LOCK]  = 10000;
     ptpPortDS->wrTimeouts[WRS_M_LOCK]  = 10000;
   
+  // Fixme/TODO (7): do it nicer 
+  if(mode == INIT)
+  {
+    ptpPortDS->wrMode 	   = NON_WR;
+    //implementation specific
+    ptpPortDS->wrSlaveRole = NON_SLAVE;  
+  }
+    
 }

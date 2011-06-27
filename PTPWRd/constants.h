@@ -32,7 +32,6 @@
 #define DEFAULT_QUALIFICATION_TIMEOUT		2
 #define DEFAULT_FOREIGN_MASTER_TIME_WINDOW	4
 #define DEFAULT_FOREIGN_MASTER_THRESHOLD	2
-#define DEFAULT_CLOCK_CLASS			100
 #define DEFAULT_CLOCK_ACCURACY			0xFE
 
 #define DEFAULT_CLOCK_CLASS			187
@@ -53,7 +52,6 @@
 #define NUMBER_PORTS		2
 #define VERSION_PTP		2
 #define TWO_STEP_FLAG		0x02
-#define BOUNDARY_CLOCK		FALSE
 #define SLAVE_ONLY		FALSE
 #define NO_ADJUST		FALSE
 
@@ -340,6 +338,15 @@ enum{
 	NON_SLAVE	= 0x0,
 	PRIMARY_SLAVE 	,
 	SECONDARY_SLAVE ,
+};
+
+/**
+ * \brief White Rabbit data initialization  mode
+ */
+
+enum{
+	INIT,
+	RE_INIT,
 };
 
 /** \name Best Master Clock 

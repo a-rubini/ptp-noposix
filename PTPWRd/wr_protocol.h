@@ -81,6 +81,6 @@ char *format_wr_timestamp(wr_timestamp_t ts);
   It initializes White Rabbit dynamic data fields as 
   defined in the WRSPEC, talbe 1
 */
-void initWrData(PtpPortDS *ptpPortDS);
+void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode);
 
 #endif /*WR_PROTOCOL_H_*/

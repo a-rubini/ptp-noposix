@@ -11,7 +11,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   DBG("initDataPort\n");
 
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
-	//TODO: should be in initDataClock()
+	//TODO (11): should be in initDataClock()
 	for (i=0;i<CLOCK_IDENTITY_LENGTH;i++)
 	{
 
@@ -54,10 +54,10 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	/* 
 	 * White Rabbit - init dynamic data fields 
 	 */
-	initWrData(ptpPortDS);
+	initWrData(ptpPortDS, INIT);
 	
 
-/*Port configuration data set */
+	/*Port configuration data set */
 
 	/*PortIdentity Init (portNumber = 1 for an ardinary clock spec 7.5.2.3)*/
 	memcpy(ptpPortDS->portIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
@@ -75,18 +75,15 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	/*Initialize seed for random number used with Announce Timeout (spec 9.2.6.11)*/
 	srand(time(NULL));
-	//ptpPortDS->R = getRand();
 
 	/*Init other stuff*/
 	ptpPortDS->number_foreign_records = 0;
 	ptpPortDS->max_foreign_records = rtOpts->max_foreign_records;
     
-	ptpPortDS->wrSlaveRole = NON_SLAVE;
-	
 	ptpPortDS->linkUP = FALSE;
 }
 
-
+/* initialize ptpClockDS*/
 void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 {
 	fprintf(stderr, "DBG: initDataClock");
@@ -95,7 +92,6 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	ptpClockDS->numberPorts = rtOpts->portNumber;
 	ptpClockDS->clockQuality.clockAccuracy = rtOpts->clockQuality.clockAccuracy;
 	ptpClockDS->clockQuality.offsetScaledLogVariance = rtOpts->clockQuality.offsetScaledLogVariance;
-
 	
 	if(rtOpts->priority1 == DEFAULT_PRIORITY1 && rtOpts->wrConfig != NON_WR)
 	  ptpClockDS->priority1 = WR_PRIORITY1;  
@@ -109,7 +105,6 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	if(rtOpts->slaveOnly)
            rtOpts->clockQuality.clockClass = 255;
 
-
 	ptpClockDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
 	
 	//WRPTP
@@ -117,7 +112,6 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	
 	ptpClockDS->Ebest = -1;
 }
-/////////////
 
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpPortDS *ptpPortDS)
@@ -152,15 +146,11 @@ void m1(PtpPortDS *ptpPortDS)
 	/*Time Properties data set*/
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
-	//ptpPortDS->isSecondarySlave = FALSE;
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
 void m3(PtpPortDS *ptpPortDS)
 {
-
-    // it seems to be doing nothing
-    //ptpPortDS->isSecondarySlave = FALSE;
-    ptpPortDS->wrSlaveRole = NON_SLAVE;
+	ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
@@ -171,7 +161,6 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->stepsRemoved = announce->stepsRemoved + 1;
 
 	/*Parent DS*/
-
 	memcpy(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 	
 	ptpPortDS->ptpClockDS->parentPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
@@ -220,7 +209,6 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->ptpTimescale = ((header->flagField[1] & 0x08) == 0x08);
 	ptpPortDS->ptpClockDS->timeSource = announce->timeSource;
 	
-	//ptpPortDS->isSecondarySlave = FALSE;
 	ptpPortDS->wrSlaveRole = PRIMARY_SLAVE;
 }
 
@@ -229,7 +217,6 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	
 	
 	/*Copy new foreign master data set from Announce message*/
-	//ptpPortDS->isSecondarySlave = TRUE;
 	ptpPortDS->wrSlaveRole = SECONDARY_SLAVE;
 	
 	memcpy(ptpPortDS->secondaryForeignMaster.foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
@@ -265,38 +252,18 @@ void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
 	announce->wr_flags =  announce->wr_flags | ptpPortDS->wrModeON     << 3;
 }
 
+/*
+Data set comparison bewteen two foreign masters (9.3.4 fig 27)
 
+return:
+      A_better_by_topology_then_B 	(= -2)
+      A_better_then_B 			(= -1)
+      B_better_then_A 			(= 1)
+      B_better_by_topology_then_A	(= 2)
+      A_equals_B			(= 0)
+      DSC_error				(= 0)
 
-
-char* clockDescription(MsgHeader *header, MsgAnnounce *announce)
-{
-	char *tmp;
-	char wrConfig[10];
-	
-	if(announce->wr_flags & WR_M_ONLY)
-	  strcpy(wrConfig,"WR_M_ONLY\0");
-	else if(announce->wr_flags & WR_S_ONLY)
-	 strcpy(wrConfig,"WR_S_ONLY\0");
-	else if(announce->wr_flags & WR_M_AND_S)
-	  strcpy(wrConfig,"WR_M_AND_S\0");
-	else
-	  strcpy(wrConfig,"NON_WR\0");
-
- 	sprintf(tmp, " [clkId=%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx port=%d wrConfig=%s] ",
- 	    header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
- 	    header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
- 	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
-	    header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7],
- 	    header->sourcePortIdentity.portNumber,   
- 	    wrConfig
- 	    );
-
-	return tmp;
-
-}
-
-/*Data set comparison bewteen two foreign masters (9.3.4 fig 27)
- * return similar to memcmp() */
+*/
 
 Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteger16 receptionPortNumberA,
 			      MsgHeader *headerB, MsgAnnounce *announceB, UInteger16 receptionPortNumberB,
@@ -312,7 +279,6 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	 */
 	
 	DBGBMC("DCA: Data set comparison \n");
-	//DBGBMC("DCA: Comparing A%s with B%s\n",clockDescription(headerA,announceA),clockDescription(headerB,announceB));
 	
 	short comp = 0;
 
@@ -336,13 +302,11 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 		if (announceA->stepsRemoved > announceB->stepsRemoved+1) //(2)
 		{
 		    DBGBMC("DCA: .. B better than A \n");
-		    //return 1;// B better than A
 		    return B_better_then_A;
 		}
 		else if (announceB->stepsRemoved > announceA->stepsRemoved+1) //(2)
 		{
 		    DBGBMC("DCA: .. A better than B \n");
-		    //return -1;//A better than B
 		    return A_better_then_B;
 		}
 		else //A within 1 of B
@@ -358,7 +322,6 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(4)
 				{
 				    DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
-				    //return 0;
 				    return A_equals_B;
 				}
 				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)//(4)
@@ -374,7 +337,10 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				    return B_better_by_topology_then_A;
 				}
 				else 
+				{
 				   DBGBMC("Impossible to get here \n");
+				   return DSC_error;
+				}
 
 			}
 			else if (announceB->stepsRemoved > announceA->stepsRemoved) //(3)
@@ -397,7 +363,10 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				    return A_better_by_topology_then_B;
 				}
 				else 
+				{
 				   DBGBMC("Impossible to get here \n");
+				   return DSC_error;
+				}
 			}
 			else // steps removed A = steps removed B
 			{
@@ -406,16 +375,7 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(6)
 				{
 					
-					//Compare Port Numbers of receivers of A and B
-					//TODO:
-					if(receptionPortNumberA == receptionPortNumberB) //(7)
-					{
-					    DBG("DCA: .. Sender=Receiver : Error -2");
-					    //return 0;
-					    return A_equals_B;
-					
-					}
-					else if(receptionPortNumberA < receptionPortNumberB) //(7)
+					if(receptionPortNumberA < receptionPortNumberB) //(7)
 					{
 					    DBGBMC("DCA: .. .. .. .. A better by topology than B (Compare Port Numbers of Receivers of A and B : A < B)\n");
 					    return A_better_by_topology_then_B;
@@ -425,19 +385,21 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 					    DBGBMC("DCA: .. .. .. .. B better by topology than A (Compare Port Numbers of Receivers of A and B : A > B)\n");
 					    return B_better_by_topology_then_A;
 					}
-
+					else // receptionPortNumberA == receptionPortNumberB //(7)
+					{
+					    DBG("DCA: .. Sender=Receiver : Error -2");
+					    return A_equals_B;
+					}
 					
 					
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{
 					DBGBMC("DCA: .. .. A better by topology than B \n");
-					//return -1;
 					return A_better_by_topology_then_B;
 				}
 				else
 				{	DBGBMC("DCA: .. .. B better by topologythan A \n");
-					//return 1;
 					return B_better_by_topology_then_A;
 				}
 			}
@@ -588,7 +550,11 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 
 }
 
-/*State decision algorithm 9.3.3 Fig 26*/
+/*
+State decision algorithm 9.3.3 Fig 26
+
+return: recommended state
+*/
 UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 receptionPortNumber, RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 {
 	Integer8 comp;
@@ -648,7 +614,6 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		 *
 		 */
 		DBGBMC("SDA: .. clockClass > 128\n");
-		//if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS))<0)
 		/* compare  D0 with Ebest */
 		
 		comp =  bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
@@ -665,7 +630,6 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 			m1(ptpPortDS);//(9) actually, m2(), but it's the same as m1()
 			return PTP_MASTER;
 		}
-		//else if ((bmcDataSetComparison(&ptpPortDS->msgTmpHeader,&ptpPortDS->msgTmp.announce,header,announce,ptpPortDS)>0))
 		else if (comp>0) //better or better by to topology
 		{
 			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
@@ -714,14 +678,17 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	return PTP_PASSIVE; /* only reached in error condition */
 
 }
+/* 
+modified Best Master Clock (modifiedBMC) algorithm as specified in ptp 9.3.2 and wrspec 6.4
 
+return: recommended state
+*/
 UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS *ptpPortDS )
 {
 	DBG("BMC: Best Master Clock Algorithm @ working\n");
-	Integer16 i,best;
+	Integer16 best;
 
-
-	//if (!ptpPortDS->number_foreign_records) //this causes problems in boundary clock -> overwriting data of grandmaster
+	//TODO (3): check what happens when all/Ebest is removed, maybe needs some extra cleaning
 	if (ptpPortDS->ptpClockDS->Ebest < 0) // no foreignMasters in entire ptpClock (all ports)
 	{
 		DBGBMC("BMC: .. no foreign masters\n");
@@ -733,26 +700,17 @@ UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS 
 		}
 	}
 
-// 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
-// 	{
-// 		DBGBMC("BMC: .. looking at %d foreign master\n",i);
-// 		if ((bmcDataSetComparison(&foreignMaster[i].header,&foreignMaster[i].announce,
-// 								 &foreignMaster[best].header,&foreignMaster[best].announce,ptpPortDS)) < 0)
-// 		{
-// 			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
-// 			best = i;
-// 		}
-// 	}
-// 
-// 	DBGBMC("BMC: the best foreign master index: %d\n",best);
-// 	ptpPortDS->foreign_record_best = best;
-////////// move this - all above
-
 	best = ptpPortDS->foreign_record_best;
 
-	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce, foreignMaster[best].receptionPortNumber, rtOpts,ptpPortDS);
+	return bmcStateDecision(&foreignMaster[best].header,&foreignMaster[best].announce, \
+		foreignMaster[best].receptionPortNumber, rtOpts,ptpPortDS);
 }
 
+/*
+calculate ErBest (best foreign master) for a particular port
+
+return: index of the best Foreign Master in the foreignMaster table for the port
+*/
 UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 {
 	Integer16 i,best;
@@ -766,6 +724,7 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 	    return -1;
 	}
 
+	//go through all foreign masters and compare, find the best one
 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
 	{
 		DBGBMC("BMC: .. looking at %d foreign master\n",i);
@@ -789,7 +748,16 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 
 	return best;
 }
+/* 
 
+Finds the globally (for entire Boundary Clock) best foreign master. This data is 
+remembered in ptpClockDS: Ebest (port index) and bestForeign (pointer to the record)
+
+return: index of the port on which the best foreignMaster record is located, 
+	so the globally best foreign master can be found by reading the best record 
+	(index: foreign_record_best) of the port with the index of the returned value.
+
+*/
 UInteger8 EBest(PtpPortDS *ptpPortDS )
 {
 	Integer16 i;
@@ -799,13 +767,14 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
   
 	DBGBMC("EBest - looking for the best ForeignMaster for all ports\n");
 	
+	//look for the first port with non-empty foreign master records
 	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
 	{
 		if(ptpPortDS[Ebest].number_foreign_records > 0)
 			break;
 	}
 	
-	
+	// compare the Erbest (best for the port) foreign masters
 	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
 	{
 	  
@@ -828,10 +797,12 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 			Ebest = i;
 		}
 	}
+	//remember the index of the port with the best foreign master record
 	ptpPortDS->ptpClockDS->Ebest = Ebest;
 	
 	ERbest_b = ptpPortDS[Ebest].foreign_record_best;
 	
+	//remember the pointer to Ebest globally
 	ptpPortDS->ptpClockDS->bestForeign = &ptpPortDS[Ebest].foreign[ERbest_b];
 	
 	DBGBMC("Ebest: the port with the best foreign master number=%d, the foreign master record number=%d\n",\
