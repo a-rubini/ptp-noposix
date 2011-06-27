@@ -48,13 +48,12 @@ void ptpdShutdown()
 
   for (i=0; i < MAX_PORT_NUMBER; i++)
   {
-     netShutdown(&currentPtpdClockData->netPath);
      if (currentPtpdClockData->foreign)
      {
        DBG("freeing: p=%d\n",i+1);
        free(currentPtpdClockData->foreign);
      }
-     //netShutdown(&currentPtpdClockData->netPath);
+
      currentPtpdClockData++;
   }
 

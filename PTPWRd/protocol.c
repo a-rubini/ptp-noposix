@@ -412,9 +412,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   DBG("Initialization: manufacturerIdentity: %s\n", MANUFACTURER_ID);
 
-  /* initialize networking */
-  netShutdown(&ptpPortDS->netPath);
-
   /* network init */
   if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
   {
@@ -423,27 +420,28 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     return FALSE;
   }
 
-  //   send_test(ptpPortDS);
-
-  /* all the protocol (PTP + WRPTP) initialization */
+  /* all port data initialization (PTP + WRPTP)  */
   initDataPort(rtOpts, ptpPortDS);
 
   /* 
    * attempt autodetection, otherwise the configured setting is forced
    */
   if(ptpPortDS->wrConfig == WR_MODE_AUTO)
-    autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO handle error
+    autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO (12): handle error
   else
     DBG("wrConfig .............. FORCED configuration\n")  ;
 
-  /* Create the timers (standard PTP only, the WR ones are created in another function) */
+  /* Create the timers (standard PTP only, the WR ones are created in another function: initWrData) */
   timerInit(&ptpPortDS->timers.sync, "Sync");
   timerInit(&ptpPortDS->timers.delayReq, "DelayReq");
   timerInit(&ptpPortDS->timers.pdelayReq, "PDelayReq");
   timerInit(&ptpPortDS->timers.announceReceipt, "AnnReceipt");
   timerInit(&ptpPortDS->timers.announceInterval, "AnnInterval");
 
+  // servo initializatin
   initClock(rtOpts, ptpPortDS);
+  
+  // parent data init
   m1(ptpPortDS);
   msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 

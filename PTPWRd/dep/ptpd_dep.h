@@ -135,7 +135,6 @@ UInteger16 msgPackManagementResponse(void*,MsgHeader*,MsgManagement*,PtpPortDS*)
 Boolean netStartup();
 Boolean netInit(NetPath*,RunTimeOpts*,PtpPortDS*);
 Boolean autoDetectPortWrConfig(NetPath*, PtpPortDS*);
-Boolean netShutdown(NetPath*);
 int netSelect(TimeInternal*,NetPath*);
 
 ssize_t netRecvMsg(Octet*, NetPath*, wr_timestamp_t*);

@@ -16,80 +16,15 @@ const mac_addr_t PTP_MULTICAST_ADDR = {0x01, 0x1b, 0x19, 0 , 0, 0};
 const mac_addr_t PTP_UNICAST_ADDR   = {0x01, 0x1b, 0x19, 0 , 0, 0};
 const mac_addr_t ZERO_ADDR          = {0x00, 0x00, 0x00, 0x00, 0x001, 0x00};
 
-/* shut down the UDP stuff */
-Boolean netShutdown(NetPath *netPath)
-{
-
-  /*  PERROR("WR: not implemented: %s\n", __FUNCTION__ ); */
-  return TRUE;
-
-#if 0
-//original implementation
-  struct ip_mreq imr;
-
-  /*Close General Multicast*/
-  imr.imr_multiaddr.s_addr = netPath->multicastAddr;
-  imr.imr_interface.s_addr = htonl(INADDR_ANY);
-
-  setsockopt(netPath->eventSock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
-  setsockopt(netPath->generalSock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
-
-  /*Close Peer Multicast*/
-  imr.imr_multiaddr.s_addr = netPath->peerMulticastAddr;
-  imr.imr_interface.s_addr = htonl(INADDR_ANY);
-
-  setsockopt(netPath->eventSock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
-  setsockopt(netPath->generalSock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &imr, sizeof(struct ip_mreq));
-
-
-  netPath->multicastAddr = 0;
-  netPath->unicastAddr = 0;
-  netPath->peerMulticastAddr = 0;
-
-  /*Close sockets*/
-  if(netPath->eventSock > 0)
-    close(netPath->eventSock);
-  netPath->eventSock = -1;
-
-  if(netPath->generalSock > 0)
-    close(netPath->generalSock);
-  netPath->generalSock = -1;
-
-  return TRUE;
-#endif
-
-}
-
 /*Test if network layer is OK for PTP*/
 UInteger8 lookupCommunicationTechnology(UInteger8 communicationTechnology)
 {
-
+  /*
+   * maybe it would be good to have it for the rabbit ??
+   */
 
   PERROR("WR: not implemented: %s\n", __FUNCTION__ );
   return PTP_DEFAULT;
-
-//original implementation
-#if 0
-
-#if defined(linux)
-
-  switch(communicationTechnology)
-  {
-  case ARPHRD_ETHER:
-  case ARPHRD_EETHER:
-  case ARPHRD_IEEE802:
-    return PTP_ETHER;
-
-  default:
-    break;
-  }
-
-#elif defined(BSD_INTERFACE_FUNCTIONS)
-
-#endif
-
-  return PTP_DEFAULT;
-#endif
 }
 
 
@@ -102,24 +37,25 @@ Boolean netStartup()
   return TRUE;
 }
 
-/* start all of the UDP stuff */
-/* must specify 'subdomainName', optionally 'ifaceName', if not then pass ifaceName == "" */
-/* returns other args */
-/* on socket options, see the 'socket(7)' and 'ip' man pages */
+/* start all of the UDP stuff 
+* must specify 'subdomainName', optionally 'ifaceName', if not then pass ifaceName == "" 
+* returns other args 
+* on socket options, see the 'socket(7)' and 'ip' man pages 
+* 
+* returns True if successful
+*/
 Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   mac_addr_t portMacAddress[6];
-  hexp_port_state_t pstate;
 
   // Create a PTP socket:
   wr_sockaddr_t bindaddr;
 
-
-
+  ////////////////// establish the network interface name //////////////////////////////
   if(rtOpts->ifaceName[ptpPortDS->portIdentity.portNumber - 1][0] != '\0')
   {
     /*interface specified at PTPd start*/
-    strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpPortDS->portIdentity.portNumber - 1]);		// TODO: network intarface
+    strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpPortDS->portIdentity.portNumber - 1]);// TODO: network intarface 
 
     DBG("Network interface : %s\n",rtOpts->ifaceName[ptpPortDS->portIdentity.portNumber - 1]  );
   }
@@ -193,12 +129,14 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 }
 /*
  * auto detect port's wrConfig 
+ *
+ * return: TRUE if successful
  */
 Boolean autoDetectPortWrConfig(NetPath *netPath, PtpPortDS *ptpPortDS)
 {
   hexp_port_state_t pstate;
   
-  // fixme: error handling
+  //TODO (12): fixme: error handling
   halexp_get_port_state(&pstate, netPath->ifaceName);
 
 
@@ -262,7 +200,11 @@ TODO: ptpd_netif_select improve
 }
 
 
-/*store received data from network to "buf" , get and store the SO_TIMESTAMP value in "time" for an event message*/
+/*
+store received data from network to "buf" , get and store the SO_TIMESTAMP value in "time" for an event message
+
+return: received msg's size
+*/
 ssize_t netRecvMsg(Octet *buf, NetPath *netPath, wr_timestamp_t *current_rx_ts)
 {
 
@@ -277,7 +219,11 @@ ssize_t netRecvMsg(Octet *buf, NetPath *netPath, wr_timestamp_t *current_rx_ts)
 
 }
 
+/*
+sending even messages,
 
+return: size of the sent msg
+*/
 ssize_t netSendEvent(Octet *buf, UInteger16 length, NetPath *netPath, wr_timestamp_t *current_tx_ts)
 {
   int ret;
@@ -292,7 +238,11 @@ ssize_t netSendEvent(Octet *buf, UInteger16 length, NetPath *netPath, wr_timesta
   return (ssize_t)ret;
 
 }
+/*
+sending general messages,
 
+return: size of the sent msg
+*/
 ssize_t netSendGeneral(Octet *buf, UInteger16 length, NetPath *netPath)
 {
   wr_timestamp_t ts;
@@ -309,7 +259,11 @@ ssize_t netSendGeneral(Octet *buf, UInteger16 length, NetPath *netPath)
 
 
 }
+/*
+sending Peer Generals messages,
 
+return: size of the sent msg
+*/
 ssize_t netSendPeerGeneral(Octet *buf,UInteger16 length,NetPath *netPath)
 {
 
@@ -324,14 +278,18 @@ ssize_t netSendPeerGeneral(Octet *buf,UInteger16 length,NetPath *netPath)
   return (ssize_t)ret;
 
 }
+/*
+sending Peer Events messages,
 
+return: size of the sent msg
+*/
 ssize_t netSendPeerEvent(Octet *buf,UInteger16 length,NetPath *netPath,wr_timestamp_t *current_tx_ts)
 {
 
   int ret;
 
   //Send a frame
-  // ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, current_tx_ts);
+  ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, current_tx_ts);
 
   if(ret <= 0)
     DBGNPI("error sending multi-cast event message\n");
