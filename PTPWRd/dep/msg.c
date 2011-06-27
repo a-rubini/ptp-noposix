@@ -421,8 +421,8 @@ void msgPackFollowUp(void *buf,PtpPortDS *ptpPortDS)
 	DBGM("------------ msgPackFollowUp-------\n");
 	DBGM(" syncSequenceId ............... %u\n", ptpPortDS->sentSyncSequenceId-1);
 	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logSyncInterval);
-	DBGM(" syncTransTimestamp.secs.hi.... %d\n", 0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32));
-	DBGM(" syncTransTimestamp.secs.lo.... %d\n", 0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc);
+	DBGM(" syncTransTimestamp.secs.hi.... %d\n", (int)(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32)));
+	DBGM(" syncTransTimestamp.secs.lo.... %d\n", (int)(0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc));
 	DBGM(" syncTransTimestamp.nsecs...... %d\n", ptpPortDS->synch_tx_ts.nsec);
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
@@ -524,8 +524,8 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	DBGM(" correctionfield.lsb........... %d\n", header->correctionfield.lsb);
 	DBGM(" sequenceId ................... %u\n", header->sequenceId);
 	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logMinDelayReqInterval);
-	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", 0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32));
-	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", 0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", (int)(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32)));
+	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", (int)(0xFFFFFFFF & ptpPortDS->current_rx_ts.utc));
 	DBGM(" delayReceiptTimestamp.nsecs... %d\n", ptpPortDS->current_rx_ts.nsec);
 	DBGM(" requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0],
@@ -541,10 +541,6 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
-
-
-
-
 
 /*pack PdelayResp message into OUT buffer of ptpPortDS*/
 void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTimestamp,PtpPortDS *ptpPortDS)
