@@ -261,11 +261,6 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);
-// 	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
-// 	    *(UInteger8*)(buf+53), *(UInteger8*)(buf+54),
-// 	    *(UInteger8*)(buf+55), *(UInteger8*)(buf+56),
-// 	    *(UInteger8*)(buf+57), *(UInteger8*)(buf+58),
-// 	    *(UInteger8*)(buf+59), *(UInteger8*)(buf+60));
 	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
 	DBGM(" timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
@@ -567,10 +562,6 @@ void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTime
 	*(UInteger8*)(buf+32) = 0x05; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
 
-	/*Pdelay_resp message*/
-// 	*(UInteger16*)(buf+34) = flip16(requestReceiptTimestamp->secondsField.msb);
-// 	*(UInteger32*)(buf+36) = flip32(requestReceiptTimestamp->secondsField.lsb);
-// 	*(UInteger32*)(buf+40) = flip32(requestReceiptTimestamp->nanosecondsField);
 	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32 ));
 	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
 	put_be32(buf+40, ptpPortDS->current_rx_ts.nsec);
@@ -638,10 +629,6 @@ void msgUnpackDelayResp(void *buf,MsgDelayResp *resp)
 /*Unpack PdelayResp message from IN buffer of ptpPortDS to msgtmp.presp*/
 void msgUnpackPDelayResp(void *buf,MsgPDelayResp *presp)
 {
-// 	presp->requestReceiptTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
-// 	presp->requestReceiptTimestamp.secondsField.lsb = flip32(*(UInteger32*)(buf+36));
-// 	presp->requestReceiptTimestamp.nanosecondsField = flip32(*(UInteger32*)(buf+40));
-
 	presp->requestReceiptTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
 	presp->requestReceiptTimestamp.secondsField.lsb = get_be32(buf+36);
 	presp->requestReceiptTimestamp.nanosecondsField = get_be32(buf+40);
@@ -668,11 +655,6 @@ void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOr
 	*(Integer32*)(buf+8) = flip32(header->correctionfield.msb);
 	*(Integer32*)(buf+12) = flip32(header->correctionfield.lsb);
 
-	/*Pdelay_resp_follow_up message*/
-// 	*(UInteger16*)(buf+34) = flip16(responseOriginTimestamp->secondsField.msb);
-// 	*(UInteger32*)(buf+36) = flip32(responseOriginTimestamp->secondsField.lsb);
-// 	*(UInteger32*)(buf+40) = flip32(responseOriginTimestamp->nanosecondsField);
-
 	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->pDelayResp_tx_ts.utc >> 32));
 	put_be32(buf+36, 0xFFFFFFFF &  ptpPortDS->pDelayResp_tx_ts.utc);
 	put_be32(buf+40, ptpPortDS->pDelayResp_tx_ts.nsec);
@@ -684,10 +666,6 @@ void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOr
 /*Unpack PdelayResp message from IN buffer of ptpPortDS to msgtmp.presp*/
 void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 {
-// 	prespfollow->responseOriginTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
-// 	prespfollow->responseOriginTimestamp.secondsField.lsb = flip32(*(UInteger32*)(buf+36));
-// 	prespfollow->responseOriginTimestamp.nanosecondsField = flip32(*(UInteger32*)(buf+40));
-
 	prespfollow->responseOriginTimestamp.secondsField.msb = flip16(*(UInteger16*)(buf+34));
 	prespfollow->responseOriginTimestamp.secondsField.lsb = get_be32(buf+36);
 	prespfollow->responseOriginTimestamp.nanosecondsField = get_be32(buf+40);
@@ -697,7 +675,7 @@ void msgUnpackPDelayRespFollowUp(void *buf,MsgPDelayRespFollowUp *prespfollow)
 }
 
 
-
+/* White Rabbit: packing WR Signaling messages*/
 UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 wrMessageID)
 {
 
@@ -810,7 +788,7 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 
 	return (WR_SIGNALING_MSG_BASE_LENGTH + len);
 }
-
+/* White Rabbit: unpacking wr signaling messages*/
 void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16 *wrMessageID, PtpPortDS *ptpPortDS )
 {
 	UInteger16 tlv_type;
