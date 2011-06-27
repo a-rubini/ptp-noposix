@@ -52,31 +52,21 @@ int main(int argc, char **argv)
      return ret;
 
     /* White rabbit debugging info*/
-    PTPD_TRACE(TRACE_SYS, "------------- INFO ----------------------\n\n")
     if(rtOpts.E2E_mode)
-      PTPD_TRACE(TRACE_SYS, "E2E_mode ........................ TRUE\n")
     else
-      PTPD_TRACE(TRACE_SYS, "P2P_mode ........................ TRUE\n")
 
-    PTPD_TRACE(TRACE_SYS, "portNumber  ..................... %d\n",rtOpts.portNumber)
     for(i = 0; i < rtOpts.portNumber; i++)
-      PTPD_TRACE(TRACE_SYS, "net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i])
 
 
     for(i = 0; i < rtOpts.portNumber; i++)
     {
 
       if(i == 0 && rtOpts.wrNodeMode == WR_SLAVE)
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ Slave \n",i+1)
       else if(rtOpts.wrNodeMode != NON_WR)
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ Master\n",i+1)
       else
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ NON WR\n",i+1)
     }
     if(rtOpts.portNumber == 1)
-	PTPD_TRACE(TRACE_SYS, "running as ...................... single port node\n")
     else
-	PTPD_TRACE(TRACE_SYS, "running as ....................... multi port node [%d]\n",rtOpts.portNumber )
 
     if(rtOpts.wrNodeMode == WR_SLAVE)
     	ptpd_init_exports();
@@ -87,11 +77,9 @@ int main(int argc, char **argv)
    else if(rtOpts.portNumber > 1)
      multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested)
    else
-     PTPD_TRACE(TRACE_ERROR, "Not appropriate portNumber\n");
 
    ptpdShutdown();
 
-   PTPD_TRACE(TRACE_SYS, "self shutdown, probably due to an error\n");
 
   return 1;
 }

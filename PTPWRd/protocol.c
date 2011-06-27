@@ -82,20 +82,17 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	}
 		
 	
-	PTPD_TRACE(TRACE_PROTO, "Using %d ports\n", rtOpts->portNumber);
 
   currentPtpClockData = ptpClock;
 
   for (i=0; i < rtOpts->portNumber; i++)
   {
-     PTPD_TRACE(TRACE_PROTO, "multiPortProtocol: initializing port %d\n", (i+1));
 //		 rtOpts->portNumber = i;
   	currentPtpClockData->portIdentity.portNumber = i;
      toState(PTP_INITIALIZING, rtOpts, currentPtpClockData);
      if(!doInit(rtOpts, currentPtpClockData))
      {
        // doInit Failed!  Exit
-       PTPD_TRACE(TRACE_ERROR, "port %d failed to doInit()\n",(i+1));
        //return;
      }
      currentPtpClockData++;
@@ -150,7 +147,6 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
    again and perform the actions required for the new 'port_state'. */
 void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
-  PTPD_TRACE(TRACE_PROTO, "event POWERUP\n");
 
   toState(PTP_INITIALIZING, rtOpts, ptpClock);
 
@@ -164,9 +160,7 @@ void protocol(RunTimeOpts *rtOpts, PtpClock *ptpClock)
       return;
 
 /*    if(ptpClock->message_activity)
-      PTPD_TRACE(TRACE_PROTO, "activity\n");
     else
-      PTPD_TRACE(TRACE_PROTO, "no activity\n");*/
 
   }
 }
@@ -224,22 +218,18 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   switch(state)
   {
   case PTP_INITIALIZING:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_INITIALIZING\n");
     ptpClock->portState = PTP_INITIALIZING;
     break;
 
   case PTP_FAULTY:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_FAULTY\n");
     ptpClock->portState = PTP_FAULTY;
     break;
 
   case PTP_DISABLED:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_DISABLED\n");
     ptpClock->portState = PTP_DISABLED;
     break;
 
   case PTP_LISTENING:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_LISTENING\n");
 
     timerStart(&ptpClock->timers.announceReceipt, 
 	       ptpClock->announceReceiptTimeout * 1000 * (pow_2(ptpClock->logAnnounceInterval)));
@@ -247,7 +237,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
    case PTP_MASTER:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_MASTER\n");
 
     timerStart(&ptpClock->timers.sync, 
 	       1000 * pow_2(ptpClock->logSyncInterval));
@@ -261,7 +250,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 
   case PTP_PASSIVE:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_PASSIVE\n");
 
     timerStart(&ptpClock->timers.pdelayReq, 
 	      1000 * pow_2(ptpClock->logMinPdelayReqInterval));
@@ -285,7 +273,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
         (ptpClock->grandmasterIsWRmode  == FALSE     || \
          ptpClock->isWRmode             == FALSE     ))
     {
-      PTPD_TRACE(TRACE_PROTO, "state PTP_UNCALIBRATED\n");
       toWRState(WRS_PRESENT, rtOpts, ptpClock);
       ptpClock->portState = PTP_UNCALIBRATED;
       break;
@@ -299,20 +286,17 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
      */
     if(ptpClock->wrNodeMode == WR_MASTER)
     {
-      PTPD_TRACE(TRACE_PROTO, "state PTP_UNCALIBRATED\n");
       toWRState(WRS_M_LOCK, rtOpts, ptpClock);
       ptpClock->portState = PTP_UNCALIBRATED;
       break;
     }
 
     /* Standard PTP, go straight to SLAVE */
-    PTPD_TRACE(TRACE_PROTO, "state PTP_SLAVE\n");
     ptpClock->portState = PTP_SLAVE;
     break;
 
 
   case PTP_SLAVE:
-    PTPD_TRACE(TRACE_PROTO, "state PTP_SLAVE\n");
     wr_servo_init(ptpClock);
 
     ptpClock->waitingForFollow = FALSE;
@@ -340,7 +324,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     break;
 
   default:
-    PTPD_TRACE(TRACE_PROTO, "to unrecognized state\n");
     break;
   }
 
@@ -356,7 +339,6 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 {
 
-  PTPD_TRACE(TRACE_PROTO, "Initialization: manufacturerIdentity: %s\n", MANUFACTURER_ID);
 
   /* initialize networking */
 
@@ -364,7 +346,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   if(!netInit(&ptpClock->netPath, rtOpts, ptpClock))
   {
-    PTPD_TRACE(TRACE_ERROR,"failed to initialize network\n");
     toState(PTP_FAULTY, rtOpts, ptpClock);
     return FALSE;
   }
@@ -404,7 +385,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	UInteger8 state;
 	Boolean linkUP;
 
-	PTPD_TRACE(TRACE_PROTO, "DoState : %d\n", ptpClock->portState);
 
 	linkUP = isPortUp(&ptpClock->netPath);
 
@@ -431,7 +411,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		/*State decision Event*/
 		if(ptpClock->record_update)
 		{
-			PTPD_TRACE(TRACE_PROTO, "event STATE_DECISION_EVENT\n");
 			ptpClock->record_update = FALSE;
 
 			state = bmc(ptpClock->foreign, rtOpts, ptpClock);
@@ -473,13 +452,11 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 	case PTP_FAULTY:
 		/* imaginary troubleshooting */
 
-		PTPD_TRACE(TRACE_PROTO, "event FAULT_CLEARED\n");
 
 		toState(PTP_INITIALIZING, rtOpts, ptpClock);
 		return;
 
 	case PTP_UNCALIBRATED:
-		PTPD_TRACE(TRACE_PROTO, "state: PTP_UNCALIBRATED\n");
 
 		/* Execute WR protocol state machine */
 
@@ -500,7 +477,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 		if(timerExpired(&ptpClock->timers.announceReceipt) || linkUP == FALSE)
 		{
-			PTPD_TRACE(TRACE_PROTO, "event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
 			ptpClock->number_foreign_records = 0;
 			ptpClock->foreign_record_i = 0;
 
@@ -517,7 +493,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		{
 			if(timerExpired(&ptpClock->timers.delayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO, "DELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
 				issueDelayReq(rtOpts,ptpClock);
 			}
 		}
@@ -525,7 +500,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		{
 			if(timerExpired(&ptpClock->timers.pdelayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO, "PDELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
 				issuePDelayReq(rtOpts,ptpClock);
 			}
 		}
@@ -538,7 +512,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		if(timerExpired(&ptpClock->timers.sync))
 		{
 
-			PTPD_TRACE(TRACE_PROTO, "event SYNC_INTERVAL_TIMEOUT_EXPIRES\n");
 			issueSync(rtOpts, ptpClock);
 			issueFollowup(rtOpts,ptpClock);
 		}
@@ -546,7 +519,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		if(timerExpired(&ptpClock->timers.announceInterval))
 		{
 
-			PTPD_TRACE(TRACE_PROTO, "event ANNOUNCE_INTERVAL_TIMEOUT_EXPIRES\n");
 			issueAnnounce(rtOpts, ptpClock);
 		}
 
@@ -554,7 +526,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		{
 			if(timerExpired(&ptpClock->timers.pdelayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO, "event PDELAYREQ_INTERVAL_TIMEOUT_EXPIRES\n");
 				issuePDelayReq(rtOpts,ptpClock);
 			}
 		}
@@ -570,7 +541,6 @@ void doState(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO, "(doState) do unrecognized state\n");
 		break;
 	}
 }
@@ -596,13 +566,11 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 		if(ret < 0)
 		{
-			PPTPD_TRACE(TRACE_ERROR,"failed to poll sockets, ret = %d\n", ret);
 			toState(PTP_FAULTY, rtOpts, ptpClock);
 			return;
 		}
 		else if(!ret)
 		{
-			PTPD_TRACE(TRACE_PROTO, "handle: nothing, ret= %d\n",ret);
 			return;
 		}
 		/* else length > 0 */
@@ -618,7 +586,6 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	if(length < 0)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Failed to receive on the event socket, len = %d\n", (int)length);
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
@@ -629,7 +596,6 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	if(length < HEADER_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Message shorter than header length\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
@@ -647,13 +613,11 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
 	if(ptpClock->msgTmpHeader.versionPTP != ptpClock->versionNumber)
 	{
-		PTPD_TRACE(TRACE_PROTO, "Ignored version %d message\n", ptpClock->msgTmpHeader.versionPTP);
 		return;
 	}
 
 	if(ptpClock->msgTmpHeader.domainNumber != ptpClock->domainNumber)
 	{
-		PTPD_TRACE(TRACE_PROTO, "Ignored message from domainNumber %d\n", ptpClock->msgTmpHeader.domainNumber);
 		return;
 	}
 
@@ -714,7 +678,6 @@ void handle(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO, "handle: unrecognized message\n");
 		break;
 	}
 }
@@ -733,15 +696,12 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 {
 	if(length < ANNOUNCE_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Too short Announce message\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
 
 	if(length > ANNOUNCE_LENGTH)
-		PTPD_TRACE(TRACE_PROTO, "Handle Announce msg, perhaps a message from another White Rabbit node\n")
 	else
-		PTPD_TRACE(TRACE_PROTO, "Handle Announce msg, standard PTP\n")
 
 	switch(ptpClock->portState )
 	{
@@ -755,7 +715,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		/* White Rabbit Extension */
 		if(ptpClock->wrNodeMode != NON_WR)
 		{
-			PTPD_TRACE(TRACE_PROTO, "Handle Announce: drop messages other than management in WR mode\n");
 			return;
 		}
 
@@ -765,7 +724,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		if (isFromSelf)
 		{
-			PTPD_TRACE(TRACE_PROTO, "HandleAnnounce : Ignore message from self \n");
 			return;
 		}
 
@@ -777,7 +735,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			msgUnpackAnnounce(ptpClock->msgIbuf,&ptpClock->msgTmp.announce,header);
 
 			if(ptpClock->msgTmp.announce.wr_flags != NON_WR)
-				PTPD_TRACE(TRACE_PROTO, "handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
 
 			s1(header,&ptpClock->msgTmp.announce,ptpClock);
 
@@ -804,11 +761,9 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		if (isFromSelf)
 		{
-			PTPD_TRACE(TRACE_PROTO, "HandleAnnounce : Ignore message from self \n");
 			return;
 		}
 
-		PTPD_TRACE(TRACE_PROTO, "Announce message from another foreign master");
 		addForeign(ptpClock->msgIbuf,header,ptpClock);
 		ptpClock->record_update = TRUE;
 		break;
@@ -825,7 +780,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 	if(length < SYNC_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Too short Sync message\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
@@ -841,14 +795,12 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 			/* White Rabbit */
 			if(ptpClock->wrNodeMode != NON_WR)
 			{
-				PTPD_TRACE(TRACE_PROTO, "Handle Announce WR mode: disregaurd messages other than management \n");
 				return;
 			}
 
 		case PTP_SLAVE:
 			if (isFromSelf)
 			{
-				PTPD_TRACE(TRACE_PROTO, "HandleSync: Ignore message from self \n");
 				return;
 			}
 
@@ -863,7 +815,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
-					PTPD_TRACE(TRACE_PROTO, "HandleSynce: two step clock mode\n");
 					ptpClock->waitingForFollow = TRUE;
 					ptpClock->recvSyncSequenceId = header->sequenceId;
 
@@ -878,7 +829,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				}
 				else
 				{
-					PTPD_TRACE(TRACE_ERROR,"BAD !!!!!!!! we don't use this; handle Sync msg, one step clock\n");
 					msgUnpackSync(ptpClock->msgIbuf,&ptpClock->msgTmp.sync);
 					integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
 					timeInternal_display(&correctionField);
@@ -901,7 +851,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 #if 0
 			if (!isFromSelf)
 			{
-				PTPD_TRACE(TRACE_PROTO, "HandleSync: Sync message received from another Master  \n");
 				break;
 			}
 
@@ -909,7 +858,6 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 			{
 				/*Add latency*/
 				addTime(time,time,&rtOpts->outboundLatency);
-				PTPD_TRACE(TRACE_PROTO, "HandleSync: Sync message received from self\n");
 				issueFollowup(time,rtOpts,ptpClock);
 				break;
 			}
@@ -924,18 +872,15 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	TimeInternal preciseOriginTimestamp;
 	TimeInternal correctionField;
 	
-	PTPD_TRACE(TRACE_PROTO, "HandleFollowup : Follow up message received \n");
 	
 	if(length < FOLLOW_UP_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Too short FollowUp message\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
 
 	if (isFromSelf)
 	{
-		PTPD_TRACE(TRACE_PROTO, "Handlefollowup : Ignore message from self \n");
 		return;
 	}
 
@@ -946,7 +891,6 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		case PTP_DISABLED:
 		case PTP_LISTENING:
 
-			PTPD_TRACE(TRACE_PROTO, "Handfollowup : disreguard \n");
 			return;
 
 		case PTP_UNCALIBRATED:
@@ -954,7 +898,6 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		  /*White Rabbit */
 		  if(ptpClock->wrNodeMode != NON_WR)
 		  {
-		    PTPD_TRACE(TRACE_PROTO, "Handleannounce WR mode: disregaurd messages other than management \n");
 		    return;
 		  }
 
@@ -973,7 +916,6 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 					msgUnpackFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.follow);
 
-					PTPD_TRACE(TRACE_PROTO, "handle FollowUP msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
 					    (unsigned      long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
 					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
 					    (unsigned long long)ptpClock->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
@@ -998,22 +940,14 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 						break;
 				}
-				else PTPD_TRACE(TRACE_PROTO, "handle FollowUp msg, SequenceID doesn't match with last Sync message \n");
-				//else PTPD_TRACE(TRACE_PROTO, "SequenceID doesn't match with last Sync message \n");
 
 			}
-			else PTPD_TRACE(TRACE_PROTO, "handle FollowUp msg, Slave was not waiting a follow up message \n");
-			//else PTPD_TRACE(TRACE_PROTO, "Slave was not waiting a follow up message \n");
 		}
-		else PTPD_TRACE(TRACE_PROTO, "handle FollowUp msg, Follow up message is not from current parent \n");
-		//else PTPD_TRACE(TRACE_PROTO, "Follow up message is not from current parent \n");
 
 		case PTP_MASTER:
-			PTPD_TRACE(TRACE_PROTO, "Follow up message received from another master \n");
 			break;
 
 		default:
-		PTPD_TRACE(TRACE_PROTO, "do unrecognized state\n");
 		break;
 	}//Switch on (port_state)
 
@@ -1029,15 +963,12 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 {
 	if (!rtOpts->E2E_mode)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Delay messages are disreguard in Peer to Peer mode \n");
 		return;
 	}
 
-	PTPD_TRACE(TRACE_PROTO, "delayReq message received : \n");
 
 	if(length < DELAY_REQ_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"short DelayReq message\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
@@ -1049,7 +980,6 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 	case PTP_DISABLED:
 	case PTP_UNCALIBRATED:
 	case PTP_LISTENING:
-		PTPD_TRACE(TRACE_PROTO, "HandledelayReq : disreguard \n");
 		return;
 
 	case PTP_SLAVE:
@@ -1072,7 +1002,6 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 	case PTP_MASTER:
 
-		PTPD_TRACE(TRACE_PROTO, "handle DelayReq msg, succedded\n");
 		msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->delayReqHeader);
 				
 		/* FIXME: do this, but properly */
@@ -1083,7 +1012,6 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO, "do unrecognized state\n");
 		break;
 	}
 }
@@ -1099,11 +1027,9 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 	if (!rtOpts->E2E_mode)
 		return;
 	
-	PTPD_TRACE(TRACE_PROTO, "delayResp message received : \n");
 
 	if(length < DELAY_RESP_LENGTH)
 	{
-		PTPD_TRACE(TRACE_ERROR,"Too short DelayResp message\n");
 		toState(PTP_FAULTY, rtOpts, ptpClock);
 		return;
 	}
@@ -1117,7 +1043,6 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 	case PTP_LISTENING:
 
 		
-		PTPD_TRACE(TRACE_PROTO, "HandledelayResp : disregard \n");
 		return;
 
 	case PTP_SLAVE:
@@ -1125,7 +1050,6 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 
 		msgUnpackDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.resp);
 
-		PTPD_TRACE(TRACE_PROTO, "handle DelayResp msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
 		    (unsigned      long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.msb, \
 		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
 		    (unsigned long long)ptpClock->msgTmp.resp.receiveTimestamp.nanosecondsField);
@@ -1169,11 +1093,9 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
   if (!rtOpts->E2E_mode)
    {
 
-	PTPD_TRACE(TRACE_PROTO, "PdelayReq message received : \n");
 
 	 if(length < PDELAY_REQ_LENGTH)
 	 {
-	PTPD_TRACE(TRACE_ERROR,"short PDelayReq message\n");
 	toState(PTP_FAULTY, rtOpts, ptpClock);
 	return;
 	 }
@@ -1185,7 +1107,6 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 		case PTP_DISABLED:
 		case PTP_UNCALIBRATED:
 		case PTP_LISTENING:
-			PTPD_TRACE(TRACE_PROTO, "HandlePdelayReq : disreguard \n");
 			return;
 
 		case PTP_SLAVE:
@@ -1204,21 +1125,18 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 		}
 		else
 		{
-			PTPD_TRACE(TRACE_PROTO, "handle PDelayReq msg, succedded\n");
 			msgUnpackHeader(ptpClock->msgIbuf,&ptpClock->PdelayReqHeader);
 			issuePDelayResp(time,header,rtOpts,ptpClock);
 			break;
 		}
 
 		default:
-		PTPD_TRACE(TRACE_PROTO, "do unrecognized state\n");
 		break;
 	}
    }
 
   else //(End to End mode..)
   {
-	  PTPD_TRACE(TRACE_ERROR,"Peer Delay messages are disreguard in End to End mode \n");
   }
 }
 
@@ -1231,11 +1149,9 @@ if (!rtOpts->E2E_mode)
 	TimeInternal requestReceiptTimestamp;
 	TimeInternal correctionField;
 
-	PTPD_TRACE(TRACE_PROTO, "PdelayResp message received : \n");
 
 	 if(length < PDELAY_RESP_LENGTH)
 	 {
-	PTPD_TRACE(TRACE_ERROR,"short PDelayResp message\n");
 	toState(PTP_FAULTY, rtOpts, ptpClock);
 	return;
 	 }
@@ -1248,7 +1164,6 @@ if (!rtOpts->E2E_mode)
 		case PTP_UNCALIBRATED:
 		case PTP_LISTENING:
 
-			PTPD_TRACE(TRACE_PROTO, "HandlePdelayResp : disreguard \n");
 			return;
 
 		case PTP_SLAVE:
@@ -1262,7 +1177,6 @@ if (!rtOpts->E2E_mode)
 
 			msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
 
-			PTPD_TRACE(TRACE_PROTO, "handle PDelayResp msg, succedded [SLAVE]: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
@@ -1281,8 +1195,6 @@ if (!rtOpts->E2E_mode)
 					ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 //
-					PTPD_TRACE(TRACE_PROTO, "\n\n\ntime[two steps]: ptpClock->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					PTPD_TRACE(TRACE_PROTO, "\n\n\ntime[two steps]: ptpClock->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
 
 					/*store t2 (Fig 35)*/
 					toInternalTime(&requestReceiptTimestamp,&ptpClock->msgTmp.presp.requestReceiptTimestamp);
@@ -1302,8 +1214,6 @@ if (!rtOpts->E2E_mode)
 					ptpClock->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpClock->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					PTPD_TRACE(TRACE_PROTO, "\n\n\ntime[one step]: ptpClock->pdelay_resp_receive_time.seconds     = %ld\n",time->seconds);
-					PTPD_TRACE(TRACE_PROTO, "\n\n\ntime[one step]: ptpClock->pdelay_resp_receive_time.nanoseconds = %ld\n\n\n",time->nanoseconds);
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
@@ -1317,7 +1227,6 @@ if (!rtOpts->E2E_mode)
 			}
 			else
 			{
-				PTPD_TRACE(TRACE_PROTO, "HandlePdelayResp : Pdelayresp doesn't match with the PdelayReq. \n");
 				break;
 			}
 
@@ -1335,7 +1244,6 @@ if (!rtOpts->E2E_mode)
 
 				msgUnpackPDelayResp(ptpClock->msgIbuf,&ptpClock->msgTmp.presp);
 
-				PTPD_TRACE(TRACE_PROTO, "handle PDelayResp msg, succedded [MASTER: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 				(unsigned      long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 				(unsigned long long)ptpClock->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
@@ -1384,14 +1292,12 @@ if (!rtOpts->E2E_mode)
 
 				}
 		default:
-		PTPD_TRACE(TRACE_PROTO, "do unrecognized state\n");
 		break;
 		}
  }
 
 else //(End to End mode..)
  {
-	PTPD_TRACE(TRACE_ERROR,"Peer Delay messages are disreguard in End to End mode \n");
  }
 
 }
@@ -1403,11 +1309,9 @@ if (!rtOpts->E2E_mode)
 	TimeInternal responseOriginTimestamp;
 	TimeInternal correctionField;
 
-	PTPD_TRACE(TRACE_PROTO, "PdelayRespfollowup message received : \n");
 
 	 if(length < PDELAY_RESP_FOLLOW_UP_LENGTH)
 	 {
-	PTPD_TRACE(TRACE_ERROR,"short PDelayRespfollowup message\n");
 	toState(PTP_FAULTY, rtOpts, ptpClock);
 	return;
 	 }
@@ -1418,7 +1322,6 @@ if (!rtOpts->E2E_mode)
 		case PTP_FAULTY:
 		case PTP_DISABLED:
 		case PTP_UNCALIBRATED:
-			PTPD_TRACE(TRACE_PROTO, "HandlePdelayResp : disreguard \n");
 			return;
 
 		case PTP_SLAVE:
@@ -1427,7 +1330,6 @@ if (!rtOpts->E2E_mode)
 		{
 			msgUnpackPDelayRespFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.prespfollow);
 
-			PTPD_TRACE(TRACE_PROTO, "handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
 			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
@@ -1439,11 +1341,9 @@ if (!rtOpts->E2E_mode)
 		    integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
 			addTime(&correctionField,&correctionField,&ptpClock->lastPdelayRespCorrectionField);
 
-			PTPD_TRACE(TRACE_PROTO, "\n\n ------------ calculate after receiving handlePDelayRespFollowUp msg --------\n");
 
 			//			updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,TRUE);
 
-			PTPD_TRACE(TRACE_PROTO, "\n -------------------------------finish calculation ------------------------\n\n");
 
 			break;
 		}
@@ -1454,7 +1354,6 @@ if (!rtOpts->E2E_mode)
 		{
 			msgUnpackPDelayRespFollowUp(ptpClock->msgIbuf,&ptpClock->msgTmp.prespfollow);
 
-			PTPD_TRACE(TRACE_PROTO, "handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
 			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpClock->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
@@ -1466,23 +1365,19 @@ if (!rtOpts->E2E_mode)
 		    integer64_to_internalTime(ptpClock->msgTmpHeader.correctionfield,&correctionField);
 			addTime(&correctionField,&correctionField,&ptpClock->lastPdelayRespCorrectionField);
 
-			PTPD_TRACE(TRACE_PROTO, "\n\n ------------ calculate after receiving handlePDelayRespFollowUp msg --------\n");
 
 			updatePeerDelay (&ptpClock->owd_filt,rtOpts,ptpClock,&correctionField,TRUE);
 
-			PTPD_TRACE(TRACE_PROTO, "\n -------------------------------finish calculation ------------------------\n\n");
 			break;
 		}
 
 		default:
-			PTPD_TRACE(TRACE_PROTO, "Disregard PdelayRespFollowUp message  \n");
 	}
 
 }
 
 else //(End to End mode..)
  {
-	PTPD_TRACE(TRACE_ERROR,"Peer Delay messages are disreguard in End to End mode \n");
  }
 
 }
@@ -1508,7 +1403,6 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 	case CALIBRATE:
 
-		PTPD_TRACE(TRACE_PROTO, "WR Management msg [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
 	\n\tcalibrationPeriod     = %32lld us		\
 	\n\tcalibrationPattern    = %s			\
@@ -1521,7 +1415,6 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 
 	case CALIBRATED:
 
-		PTPD_TRACE(TRACE_PROTO, "WR Management msg [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
 		    ((unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->grandmasterDeltaTx.scaledPicoseconds.lsb, \
@@ -1529,25 +1422,20 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 		break;
 
 	case SLAVE_PRESENT:
-		PTPD_TRACE(TRACE_PROTO, "\n\nhandle WR Management msg [SLAVE_PRESENT], succedded \n\n\n");
 		break;
 	      
 	case LOCK:
-		PTPD_TRACE(TRACE_PROTO, "\n\nhandle WR Management msg [LOCK], succedded \n\n");
 		break;
 
 	case LOCKED:
 
-		PTPD_TRACE(TRACE_PROTO, "\n\nhandle WR Management msg [LOCKED], succedded \n\n");
 		break;
 
 	case WR_MODE_ON:
 
-		PTPD_TRACE(TRACE_PROTO, "\n\nhandle WR Management msg [WR_LINK_ON], succedded \n\n");
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO, "\n\nhandle WR Management msg [UNKNOWN], failed \n\n");
 		break;
 	}
 
@@ -1582,13 +1470,9 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	if (!netSendGeneral(ptpClock->msgObuf,announce_len,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "Announce message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: Announce Msg, failed \n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: Announce Msg, succedded \n");
-		PTPD_TRACE(TRACE_PROTO, "Announce MSG sent ! \n");
 		ptpClock->sentAnnounceSequenceId++;
 	}
 }
@@ -1609,12 +1493,9 @@ void issueSync(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		ptpClock->pending_Synch_tx_ts = FALSE;
-		PTPD_TRACE(TRACE_PROTO, "Sync message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: Sync Msg, failed");
 	}
 	else
 	{
-/*		PTPD_TRACE(TRACE_PROTO, "issue: Sync Msg, succedded  \n \t\t synch timestamp: %s\n", \
 		format_wr_timestamp(ptpClock->synch_tx_ts));*/
 		ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_Synch_tx_ts = TRUE;
@@ -1640,12 +1521,9 @@ void issueFollowup(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	if (!netSendGeneral(ptpClock->msgObuf,FOLLOW_UP_LENGTH,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "FollowUp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: FollowUp Msg, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: FollowUp Msg, succedded [sending time of sync tx]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n",\
 		(unsigned long long)ptpClock->synch_tx_ts.utc,\
 		(unsigned long long)ptpClock->synch_tx_ts.nsec);
 
@@ -1667,12 +1545,9 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		// ptpClock->new_tx_tag_read = FALSE;
 		// ptpClock->pending_DelayReq_tx_ts = FALSE;
-		PTPD_TRACE(TRACE_PROTO, "delayReq message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: DelayReq Msg, failed\n");
 	}
 	else
 	{
-/*		PTPD_TRACE(TRACE_PROTO, "issue: DelayReq Msg, succedded \n \t\t timestamp: %s\n",format_wr_timestamp(ptpClock->delayReq_tx_ts));*/
 		ptpClock->sentDelayReqSequenceId++;
 		// ptpClock->pending_tx_ts = TRUE;
 		// ptpClock->pending_DelayReq_tx_ts = TRUE;
@@ -1694,13 +1569,9 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 // ptpClock->pending_PDelayReq_tx_ts = FALSE;
-		PTPD_TRACE(TRACE_PROTO, "PdelayReq message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayReq Msg, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayReq Msg, succedded \n");
-		PTPD_TRACE(TRACE_PROTO, "PDelayReq MSG sent ! \n");
 		/*	ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_PDelayReq_tx_ts = TRUE; */
 		ptpClock->sentPDelayReqSequenceId++;
@@ -1719,14 +1590,11 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
 		/*	ptpClock->pending_PDelayResp_tx_ts = FALSE; */
-		PTPD_TRACE(TRACE_PROTO, "PdelayResp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayResp Msg, failed\n");
 	}
 	else
 	{
 		/* ptpClock->pending_tx_ts = TRUE;
 		ptpClock->pending_PDelayResp_tx_ts = TRUE; */
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayResp Msg, succedded [sending PDelayReq receive time]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n",\
 		(unsigned long long)ptpClock->pdelay_req_receive_time.seconds,\
 		(unsigned long long)ptpClock->pdelay_req_receive_time.nanoseconds);
 	}
@@ -1743,12 +1611,9 @@ void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpClock *ptpClock)
 	if (!netSendGeneral(ptpClock->msgObuf,PDELAY_RESP_LENGTH,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "delayResp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: DelayResp Msg, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: DelayResp Msg, succedded [sending DelayReq receive time]: \n\t\t sec = %lld \n\t\t nanosec = %lld\n", \
 		    (unsigned long long)ptpClock->delay_req_receive_time.seconds, \
 		    (unsigned long long)ptpClock->delay_req_receive_time.nanoseconds);
 	}
@@ -1768,12 +1633,9 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	if (!netSendPeerGeneral(ptpClock->msgObuf,PDELAY_RESP_FOLLOW_UP_LENGTH,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "PdelayRespFollowUp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayFollowUp Msg, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: PDelayRespFollowUp Msg, succedded [sending time of pDelayResp tx]: \n\t\t sec = %ld \n\t\t  nanosec = %lld\n",\
 		(unsigned long long)ptpClock->pDelayResp_tx_ts.utc,\
 		(unsigned long long)ptpClock->pDelayResp_tx_ts.nsec);
 	}
@@ -1785,17 +1647,12 @@ void issueManagement(MsgHeader *Header, MsgManagement *manage,RunTimeOpts *rtOpt
 {
 	msgPackWRManagement(ptpClock->msgObuf,ptpClock, SLAVE_PRESENT);
 
-	PTPD_TRACE(TRACE_PROTO, "Issuing management NON-WR msg, managementId = 0x%x\n",SLAVE_PRESENT);
 	if (!netSendGeneral(ptpClock->msgObuf,WR_MANAGEMENT_LENGTH,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "Management message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: Management Msg, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO, "issue: Management Msg, succedded\n");
-		PTPD_TRACE(TRACE_PROTO, "FOllowUp MSG sent ! \n");
 	}
 }
 
@@ -1809,15 +1666,12 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 	if (!netSendGeneral(ptpClock->msgObuf,len,&ptpClock->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpClock);
-		PTPD_TRACE(TRACE_PROTO, "Management message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO, "issue: WR Management Msg, failed \n");
 	}
 	else
 	{
 		switch(wr_managementId)
 		{
 		case CALIBRATE:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalibrationPeriod      = %32lld us		\
 		  \n\t\tcalibrationPattern     = %s			\
@@ -1830,24 +1684,18 @@ void issueWRManagement(Enumeration16 wr_managementId,RunTimeOpts *rtOpts,PtpCloc
 			break;
 
 		case CALIBRATED:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n\n", \
 			    ((unsigned long long)ptpClock->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaTx.scaledPicoseconds.lsb, \
 			    ((unsigned long long)ptpClock->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpClock->deltaRx.scaledPicoseconds.lsb);
 			break;
 		case SLAVE_PRESENT:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [SLAVE_PRESENT], succedded \n\n");
 			break;
 		case LOCK:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [LOCK], succedded \n\n");
 			break;
 		case LOCKED:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [LOCKED], succedded \n\n");
 			break;
 		case WR_MODE_ON:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [WR_MODE_ON], succedded \n\n");
 			break;
 		default:
-			PTPD_TRACE(TRACE_PROTO, "\n\nissue WR Management msg [UNKNOWN], failed \n\n");
 			break;
 		}
 	}
@@ -1869,12 +1717,10 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 			/*Foreign Master is already in Foreignmaster data set*/
 			ptpClock->foreign[j].foreignMasterAnnounceMessages++;
 			found = TRUE;
-			PTPD_TRACE(TRACE_PROTO, "addForeign : AnnounceMessage incremented \n");
 
 			msgUnpackHeader(buf,&ptpClock->foreign[j].header);
 			msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
 			if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
-				PTPD_TRACE(TRACE_PROTO, "handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
@@ -1899,9 +1745,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpClock *ptpClock)
 		msgUnpackHeader(buf,&ptpClock->foreign[j].header);
 		msgUnpackAnnounce(buf,&ptpClock->foreign[j].announce,&ptpClock->foreign[j].header);
 		if(ptpClock->foreign[j].announce.wr_flags != NON_WR)
-			PTPD_TRACE(TRACE_PROTO, "handle Announce msg, message from another White Rabbit node [wr_flag != NON_WR]\n");
 
-		PTPD_TRACE(TRACE_PROTO, "New foreign Master added \n");
 
 		ptpClock->foreign_record_i = (ptpClock->foreign_record_i+1) % ptpClock->max_foreign_records;
 

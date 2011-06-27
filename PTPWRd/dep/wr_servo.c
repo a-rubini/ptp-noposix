@@ -150,7 +150,6 @@ int wr_servo_init(PtpClock *clock)
 	hexp_port_state_t pstate;
 	wr_servo_state_t *s = &clock->wr_servo;
 
-	PTPD_TRACE(TRACE_SERVO, "Initializing clock servo\n");
 
 	/* Determine the alpha coefficient */
 	halexp_get_port_state(&pstate, clock->netPath.ifaceName);
@@ -173,7 +172,6 @@ int wr_servo_init(PtpClock *clock)
 	cur_servo_state.delta_tx_s = (int64_t)s->delta_tx_s;
 	cur_servo_state.delta_rx_s = (int64_t)s->delta_rx_s;
 	
-	PTPD_TRACE(TRACE_SERVO, "Deltas [ps]: TxM = %d RxM = %d TxS = %d RxS = %d\n", 
 	       s->delta_tx_m,
 	       s->delta_rx_m,
 	       s->delta_tx_s,
@@ -216,7 +214,6 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 	s->t1 = timeint_to_wr(t1);
 	s->t2 = timeint_to_wr(t2);
 
-/*	PTPD_TRACE(TRACE_SERVO, "got_sync\m");
 		dump_timestamp("sync->t1", s->t1);
 		dump_timestamp("sync->t2", s->t2);*/
 
@@ -269,8 +266,6 @@ int wr_servo_update(PtpClock *clock)
 		+ ((ts_to_picos(s->mu) - big_delta_fix) >> 1) 
 		+ s->delta_tx_m + s->delta_rx_s + ph_adjust;
 
-	PTPD_TRACE(TRACE_SERVO, "delay_ms [ps] = %d\n", (int32_t) delay_ms_fix);
-	PTPD_TRACE(TRACE_SERVO, "mu = %d mu - deltas  = %d\n", (int32_t) ts_to_picos(s->mu), (int32_t)ts_to_picos(s->mu) - (int32_t)big_delta_fix);
 
 	ts_offset = ts_add(ts_sub(s->t1, s->t2), picos_to_ts(delay_ms_fix));
 	ts_offset_hw = ts_hardwarize(ts_offset);
@@ -278,7 +273,6 @@ int wr_servo_update(PtpClock *clock)
 	cur_servo_state.mu = (uint64_t)ts_to_picos(s->mu);
 	cur_servo_state.cur_offset = ts_to_picos(ts_offset);
 
-	PTPD_TRACE(TRACE_SERVO, "offset [ps] = %lld\n", cur_servo_state.cur_offset);
 
 	cur_servo_state.delay_ms = delay_ms_fix;
 	cur_servo_state.total_asymmetry =
@@ -312,7 +306,6 @@ int wr_servo_update(PtpClock *clock)
 			strcpy(adjust.port_name, s->if_name);
 			adjust.adjust_utc = ts_offset_hw.utc;
 
-			PTPD_TRACE(TRACE_SERVO, "Adjusting UTC counter: %d seconds", (int32_t) ts_offset_hw.utc);
 
 			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &adjust);
 			s->next_state = WR_SYNC_NSEC;
@@ -332,7 +325,6 @@ int wr_servo_update(PtpClock *clock)
 			strcpy(adjust.port_name, s->if_name);
 			adjust.adjust_nsec = ts_offset_hw.nsec;
 
-			PTPD_TRACE(TRACE_SERVO, "Adjusting NSEC counter: %d nanoseconds", (int32_t) ts_offset_hw.nsec);
 			
 			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &adjust);
 			s->next_state = WR_SYNC_PHASE;
@@ -346,7 +338,6 @@ int wr_servo_update(PtpClock *clock)
 		strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
 		s->cur_setpoint = ts_offset_hw.phase + ts_offset_hw.nsec * 1000;
 
-		PTPD_TRACE(TRACE_SERVO, "Adjusting clock phase: %d picoseconds", (int32_t) ts_offset_hw.phase);
 
 		strcpy(adjust.port_name, s->if_name);
 		adjust.adjust_phase_shift = s->cur_setpoint;

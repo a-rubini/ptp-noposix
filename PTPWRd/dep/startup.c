@@ -33,7 +33,6 @@ void catch_close(int sig)
     s = "?";
   }
 
-  PTPD_TRACE(TRACE_SYS, "shutdown on %s signal\n", s);
 
   exit(0);
 }
@@ -217,7 +216,6 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     case 'q':
 
       rtOpts->overrideClockIdentity  = strtol(optarg, 0, 0);
-      PTPD_TRACE(TRACE_PROTO, "WR, port clockIdentity overwritten !!\n");
 
 
       break;
@@ -281,7 +279,6 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
   if(!ptpClock)
   {
-    PTPD_TRACE(TRACE_ERROR, "failed to allocate memory for protocol engine data");
     *ret = 2;
     return 0;
   }
@@ -329,7 +326,6 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
       *ret = 3;
       return 0;
     }
-    PTPD_TRACE(TRACE_SYS, "running as daemon\n");
   }
 #endif
 

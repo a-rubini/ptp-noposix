@@ -27,7 +27,6 @@ Boolean netShutdown(NetPath *netPath)
 /*Test if network layer is OK for PTP*/
 UInteger8 lookupCommunicationTechnology(UInteger8 communicationTechnology)
 {
-  PTPD_TRACE(TRACE_ERROR, "WR: not implemented: %s\n", __FUNCTION__ );
   return PTP_DEFAULT;
 }
 
@@ -51,7 +50,6 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   // Create a PTP socket:
   wr_sockaddr_t bindaddr;
 
-  PTPD_TRACE(TRACE_NET, "NetInit : %s\n",netPath->ifaceName);
 
 #if 0
   if(rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1][0] != '\0')
@@ -59,7 +57,6 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     /*interface specified at PTPd start*/
     strcpy(bindaddr.if_name, rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]);		// TODO: network intarface
 
-    PTPD_TRACE(TRACE_NET, "Network interface : %s\n",rtOpts->ifaceName[ptpClock->portIdentity.portNumber - 1]  );
   }
   else
   #endif
@@ -70,15 +67,12 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
     if(  ptpd_netif_get_ifName(bindaddr.if_name,ptpClock->portIdentity.portNumber ) == PTPD_NETIF_ERROR )
     {
       strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
-      PTPD_TRACE(TRACE_NET, "Network interface forced to be wru1, but none of the WR ports seems to be up \n");
     }
     else
-      PTPD_TRACE(TRACE_NET, "Network interface retrieved automatically by ptpd_netif: %s\n",bindaddr.if_name);
   }
 
   strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
 
-  PTPD_TRACE(TRACE_NET, "Network interface : %s\n",netPath->ifaceName);
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type
   bindaddr.ethertype = 0x88f7; 	        // PTPv2
@@ -89,7 +83,6 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   if(netPath->wrSock ==  NULL)
   {
-    PTPD_TRACE(TRACE_ERROR, "failed to initalize sockets");
     return FALSE;
   }
 
@@ -113,7 +106,6 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   /* copy mac part to uuid */
   memcpy(ptpClock->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
 
-  PTPD_TRACE(TRACE_NET, "[%s] mac: %x:%x:%x:%x:%x:%x\n",__func__,\
     ptpClock->port_uuid_field[0],\
     ptpClock->port_uuid_field[1],\
     ptpClock->port_uuid_field[2],\
@@ -126,25 +118,21 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
   halexp_get_port_state(&pstate, netPath->ifaceName);
 
 
-  PTPD_TRACE(TRACE_NET, " netif_WR_mode = %d\n", pstate.mode);
    if(rtOpts->wrNodeMode == NON_WR)
    {
      switch(pstate.mode)
      {
 	case HEXP_PORT_MODE_WR_MASTER:
-	   PTPD_TRACE(TRACE_NET, "wrNodeMode(auto config) ....... MASTER\n");
 	   ptpClock->wrNodeMode = WR_MASTER;
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_WR_SLAVE:
-	   PTPD_TRACE(TRACE_NET, "wrNodeMode(auto config) ........ SLAVE\n");
 	   ptpClock->wrNodeMode = WR_SLAVE;
 	   ptpd_init_exports();
 	   //tmp solution
 	   break;
 	case HEXP_PORT_MODE_NON_WR:
 	default:
-	   PTPD_TRACE(TRACE_NET, "wrNodeMode(auto config) ........ NON_WR\n");
 	   ptpClock->wrNodeMode = NON_WR;
 	   //tmp solution
 	   break;
@@ -152,11 +140,9 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpClock *ptpClock)
    }else
    {
      ptpClock->wrNodeMode = rtOpts->wrNodeMode;
-     PTPD_TRACE(TRACE_NET, "wrNodeMode (............ FORCE ON STARTUP\n");
    }
 
 
-  PTPD_TRACE(TRACE_NET, "netInit: exiting OK\n");
 
   return TRUE;
 
@@ -194,7 +180,6 @@ ssize_t netRecvMsg(Octet *buf, NetPath *netPath, wr_timestamp_t *current_rx_ts)
 
   if((ret = ptpd_netif_recvfrom(netPath->wrSock, &from_addr, buf, 1518, current_rx_ts)) > 0)
   {
-    //PTPD_TRACE(TRACE_NET, "RX timestamp %s [ret=%d]\n", format_wr_timestamp(*current_rx_ts), ret);
   }
   return (ssize_t)ret;
 
@@ -210,7 +195,6 @@ ssize_t netSendEvent(Octet *buf, UInteger16 length, NetPath *netPath, wr_timesta
   ret = ptpd_netif_sendto(netPath->wrSock, &netPath->multicastAddr, buf, length, current_tx_ts);
 
   if(ret <= 0)
-    PTPD_TRACE(TRACE_ERROR, "error sending multi-cast event message\n");
 
   return (ssize_t)ret;
 
@@ -226,7 +210,6 @@ ssize_t netSendGeneral(Octet *buf, UInteger16 length, NetPath *netPath)
 
 
   if(ret <= 0)
-    PTPD_TRACE(TRACE_ERROR, "error sending multi-cast event message\n");
 
   return (ssize_t)ret;
 
@@ -242,7 +225,6 @@ ssize_t netSendPeerGeneral(Octet *buf,UInteger16 length,NetPath *netPath)
   ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, NULL);
 
   if(ret <= 0)
-    PTPD_TRACE(TRACE_ERROR, "error sending multi-cast general message\n");
 
   return (ssize_t)ret;
 
@@ -257,7 +239,6 @@ ssize_t netSendPeerEvent(Octet *buf,UInteger16 length,NetPath *netPath,wr_timest
   // ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, current_tx_ts);
 
   if(ret <= 0)
-    PTPD_TRACE(TRACE_ERROR, "error sending multi-cast event message\n");
 
   return (ssize_t)ret;
 
