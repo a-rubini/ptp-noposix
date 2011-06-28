@@ -57,11 +57,16 @@ int main(int argc, char **argv)
      return ret;
 
     /* White rabbit debugging info*/
-    //merge problem: if(rtOpts.E2E_mode)
-    //merge problem: else
-    //merge problem: for(i = 0; i < rtOpts.portNumber; i++)
+    DBG("------------- INFO ----------------------\n\n");
+    if(rtOpts.E2E_mode)
+      DBG("E2E_mode ........................ TRUE\n");
+    else
+      DBG("P2P_mode ........................ TRUE\n");
 
-
+    DBG("portNumber  ..................... %d\n",rtOpts.portNumber);
+    for(i = 0; i < rtOpts.portNumber; i++)
+      DBG("net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i]);
+    
     for(i = 0; i < rtOpts.portNumber; i++)
     {
 
@@ -78,9 +83,12 @@ int main(int argc, char **argv)
       else
 	DBG("wrConfig  [port = %d] ............ ERROR\n",i+1);
     }
-    //merge problem: if(rtOpts.portNumber == 1)
-    //merge problem: else
-
+    
+    if(rtOpts.portNumber == 1)
+       DBG("running as ...................... single port node\n");
+    else
+       DBG("running as ....................... multi port node [%d]\n",rtOpts.portNumber );
+    
     DBG("----------- now the fun ------------\n\n");
 
 

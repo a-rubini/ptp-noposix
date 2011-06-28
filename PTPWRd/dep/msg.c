@@ -62,7 +62,17 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	header->sequenceId                      = get_be16(buf+30);
 	header->controlField                    = (*(UInteger8*)(buf+32));
 	header->logMessageInterval              = (*(Integer8*)(buf+33));
-	
+	DBGM("------------ msgUnpackHeader ------\n");
+	DBGM(" transportSpecific............. %u\n", header->transportSpecific);
+	DBGM(" messageType................... %u\n", header->messageType);
+	DBGM(" versionPTP.................... %u\n", header->versionPTP);
+	DBGM(" messageLength................. %u\n", header->messageLength);
+	DBGM(" domainNumber.................. %u\n", header->domainNumber);
+	DBGM(" flagField..................... %02hhx %02hhx\n",
+	    header->flagField[0],
+	    header->flagField[1]
+	    );
+
 	DBGM(" correctionfield.msb........... %d\n", header->correctionfield.msb);
 	DBGM(" correctionfield.lsb........... %d\n", (unsigned int)header->correctionfield.lsb);
 	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
@@ -71,6 +81,12 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
 	    header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]
 	    );
+	DBGM(" portNumber.................... %d\n", header->sourcePortIdentity.portNumber);
+	DBGM(" sequenceId.................... %d\n", header->sequenceId);
+	DBGM(" control....................... %d\n", header->controlField);
+	DBGM(" logMessageInterval............ %d\n", header->logMessageInterval);
+	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+  
 
 }
 /*Pack header message into OUT buffer of ptpPortDS*/
@@ -152,8 +168,11 @@ void msgUnpackSync(void *buf,MsgSync *sync)
 	sync->originTimestamp.secondsField.msb = get_be16(buf+34);
 	sync->originTimestamp.secondsField.lsb = get_be32(buf+36);
 	sync->originTimestamp.nanosecondsField = get_be32(buf+40);
-
-
+        DBGM("------------ msgUnpackSync ----------\n");
+	DBGM(" originTimestamp.secs.msb...... %d\n", sync->originTimestamp.secondsField.msb);
+	DBGM(" originTimestamp.secs.lsb...... %d\n", sync->originTimestamp.secondsField.lsb);
+	DBGM(" originTimestamp.nsecs......... %d\n", sync->originTimestamp.nanosecondsField);
+	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
 
@@ -413,8 +432,11 @@ void msgUnpackFollowUp(void *buf,MsgFollowUp *follow)
 	follow->preciseOriginTimestamp.secondsField.msb = get_be16(buf+34);
 	follow->preciseOriginTimestamp.secondsField.lsb = get_be32(buf+36);
 	follow->preciseOriginTimestamp.nanosecondsField = get_be32(buf+40);
-
-
+	DBGM("------------ msgUnpackFollowUp-------\n");
+	DBGM(" preciseOriginTimestamp.secs.hi.%d\n", follow->preciseOriginTimestamp.secondsField.msb);
+	DBGM(" preciseOriginTimestamp.secs.lo %d\n", follow->preciseOriginTimestamp.secondsField.lsb);
+	DBGM(" preciseOriginTimestamp.nsecs.. %d\n", follow->preciseOriginTimestamp.nanosecondsField);
+	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
 
@@ -548,8 +570,12 @@ void msgUnpackDelayReq(void *buf,MsgDelayReq *delayreq)
 	delayreq->originTimestamp.secondsField.msb = get_be16(buf+34);
 	delayreq->originTimestamp.secondsField.lsb = get_be32(buf+36);
 	delayreq->originTimestamp.nanosecondsField = get_be32(buf+40);
-
-
+	DBGM("------------ msgUnpackDelayReq-------\n");
+	DBGM(" preciseOriginTimestamp.secs.hi.%d\n", delayreq->originTimestamp.secondsField.msb);
+	DBGM(" preciseOriginTimestamp.secs.lo %d\n", delayreq->originTimestamp.secondsField.lsb);
+	DBGM(" preciseOriginTimestamp.nsecs.. %d\n", delayreq->originTimestamp.nanosecondsField);
+	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+  
 }
 
 

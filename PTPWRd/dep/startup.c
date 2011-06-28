@@ -125,6 +125,18 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
       nondaemon = 1;
       break;
 
+    case 'f':
+      if((fd = creat(optarg, 0400)) != -1)
+      {
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        noclose = 1;
+      }
+      else
+        PERROR("could not open output file");
+      break;
+
+      
     case 'd':
 #ifndef PTPD_DBG
       rtOpts->displayStats = TRUE;

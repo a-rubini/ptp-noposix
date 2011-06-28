@@ -18,16 +18,16 @@
  /** \name System messages*/
  /**\{*/
 
-/*#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
+#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
 #define PERROR(x, ...) fprintf(stderr, "(ptpd error) " x ": %m\n", ##__VA_ARGS__)
-#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)*/
+#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)
 /** \}*/
 
 /** \name Debug messages*/
  /**\{*/
 
 
-/*#ifdef PTPD_DBGV
+#ifdef PTPD_DBGV
 #define PTPD_DBG
 #define DBGV(x, ...) fprintf(stderr, "(DBG [%s()]) " x,__func__, ##__VA_ARGS__)
 #else
@@ -41,7 +41,7 @@
 #define DBGNPI(x, ...)  fprintf(stderr, "(ptpd debug) " x, ##__VA_ARGS__)
 #else
 #define DBGNPI(x, ...)
-#endif*/
+#endif
 
 
 /** \}*/
@@ -232,7 +232,5 @@ Boolean timerExpired(IntervalTimer *itimer);
 #define DBGWRFSM(x, ...)
 #endif
 
-#define ERROR(x, ...) fprintf(stderr, "(PTPWRd  ERROR) " x, ##__VA_ARGS__)
-#define PERROR(x, ...) fprintf(stderr, "(PTPWRd  PERROR) " x, ##__VA_ARGS__)
 
 #endif /*PTPD_DEP_H_*/

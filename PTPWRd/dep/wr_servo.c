@@ -250,6 +250,21 @@ int wr_servo_update(PtpPortDS *clock)
 		dump_timestamp("->t4", s->t4);
 		dump_timestamp("->mdelay", s->mu);
 	}
+#if 0
+//merge problem: do we need it??
+
+     alpha = 1.4682e-04*1.76; // EXPERIMENTALLY DERIVED. VALID.
+
+      big_delta = (double) s->delta_tx_m + (double) s->delta_tx_s
+               + (double) s->delta_rx_m + (double) s->delta_rx_s;
+
+
+       // fiber part (first line) + PHY/routing part (second line)
+       delay_ms = ((double)ts_to_picos(s->mu) - big_delta) * ((1.0 + alpha) / (2.0 + alpha))
+               + (double)s->delta_tx_m + (double) s->delta_rx_s + ph_adjust;
+
+       printf("delay_ms [float] = %.0f ps\n", delay_ms);
+#endif
 
 	s->mu = ts_sub(ts_sub(s->t4, s->t1), ts_sub(s->t3, s->t2));
 

@@ -64,13 +64,16 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     if(  ptpd_netif_get_ifName(bindaddr.if_name,ptpPortDS->portIdentity.portNumber ) == PTPD_NETIF_ERROR )
     {
       strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
+      DBG("Network interface forced to be wru1, but none of the WR ports seems to be up \n");
     }
     else
-      strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
+     DBG("Network interface retrieved automatically by ptpd_netif: %s\n",bindaddr.if_name);
+
   }
 
-  
+  strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
 
+  DBG("Network interface : %s\n",netPath->ifaceName);
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type
   bindaddr.ethertype = 0x88f7; 	        // PTPv2
@@ -225,7 +228,7 @@ ssize_t netSendEvent(Octet *buf, UInteger16 length, NetPath *netPath, wr_timesta
   ret = ptpd_netif_sendto(netPath->wrSock, &netPath->multicastAddr, buf, length, current_tx_ts);
 
   if(ret <= 0)
-
+      DBGNPI("error sending multi-cast event message\n");
   return (ssize_t)ret;
 
 }
@@ -244,6 +247,7 @@ ssize_t netSendGeneral(Octet *buf, UInteger16 length, NetPath *netPath)
 
 
   if(ret <= 0)
+      DBGNPI("error sending multi-cast general message\n");
 
   return (ssize_t)ret;
 
@@ -263,7 +267,8 @@ ssize_t netSendPeerGeneral(Octet *buf,UInteger16 length,NetPath *netPath)
   ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, NULL);
 
   if(ret <= 0)
-
+    DBGNPI("error sending multi-cast peer general message\n");
+  
   return (ssize_t)ret;
 
 }
@@ -281,7 +286,7 @@ ssize_t netSendPeerEvent(Octet *buf,UInteger16 length,NetPath *netPath,wr_timest
   ret = ptpd_netif_sendto(netPath->wrSock, &(netPath->multicastAddr), buf, length, current_tx_ts);
 
   if(ret <= 0)
-
+      DBGNPI("error sending multi-cast peer event message\n");
   return (ssize_t)ret;
 
 }
