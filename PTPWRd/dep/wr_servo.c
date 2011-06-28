@@ -145,7 +145,7 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
 
 static int got_sync = 0;
 
-int wr_servo_init(PtpClock *clock)
+int wr_servo_init(PtpPortDS *clock)
 {
 	hexp_port_state_t pstate;
 	wr_servo_state_t *s = &clock->wr_servo;
@@ -161,8 +161,8 @@ int wr_servo_init(PtpClock *clock)
 	s->fiber_fix_alpha = pstate.fiber_fix_alpha;
 
 	// fixme: full precision
-	s->delta_tx_m = ((int32_t)clock->grandmasterDeltaTx.scaledPicoseconds.lsb) >> 16;
-	s->delta_rx_m = ((int32_t)clock->grandmasterDeltaRx.scaledPicoseconds.lsb) >> 16;
+	s->delta_tx_m = ((int32_t)clock->otherNodeDeltaTx.scaledPicoseconds.lsb) >> 16;
+	s->delta_rx_m = ((int32_t)clock->otherNodeDeltaRx.scaledPicoseconds.lsb) >> 16;
 	s->delta_tx_s = ((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
 	s->delta_rx_s = ((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
 
@@ -171,12 +171,6 @@ int wr_servo_init(PtpClock *clock)
 	cur_servo_state.delta_rx_m = (int64_t)s->delta_rx_m;
 	cur_servo_state.delta_tx_s = (int64_t)s->delta_tx_s;
 	cur_servo_state.delta_rx_s = (int64_t)s->delta_rx_s;
-	
-	       s->delta_tx_m,
-	       s->delta_rx_m,
-	       s->delta_tx_s,
-	       s->delta_rx_s);
-
 
 	strncpy(cur_servo_state.sync_source,
 			  clock->netPath.ifaceName, 16);//fixme
@@ -206,8 +200,7 @@ int wr_servo_man_adjust_phase(int phase)
 	return phase;
 }
 
-
-int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
+int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 
@@ -222,7 +215,7 @@ int wr_servo_got_sync(PtpClock *clock, TimeInternal t1, TimeInternal t2)
 	return 0;
 }
 
-int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
+int wr_servo_got_delay(PtpPortDS *clock, Integer32 cf)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 
@@ -233,7 +226,7 @@ int wr_servo_got_delay(PtpClock *clock, Integer32 cf)
 	return 0;
 }
 
-int wr_servo_update(PtpClock *clock)
+int wr_servo_update(PtpPortDS *clock)
 {
 	wr_servo_state_t *s = &clock->wr_servo;
 

@@ -31,24 +31,29 @@ RunTimeOpts rtOpts = {
 
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
-   .wrNodeMode 		= NON_WR,
-   .calibrationPeriod     = WR_DEFAULT_CAL_PERIOD,
-   .calibrationPattern    = WR_DEFAULT_CAL_PATTERN,
-   .calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN,
+   .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
    .E2E_mode 		= TRUE,
+   .wrConfig		= WR_MODE_AUTO, //autodetection
+   .wrStateRetry	= WR_DEFAULT_STATE_REPEAT,
+   .wrStateTimeout	= WR_DEFAULT_STATE_TIMEOUT_MS,
+   .deltasKnown		= WR_DEFAULT_DELTAS_KNOWN,
+   .knownDeltaTx	= WR_DEFAULT_DELTA_TX,
+   .knownDeltaRx	= WR_DEFAULT_DELTA_RX,
+
    /********************************************************/
 };
 
 int main(int argc, char **argv)
 {
-   PtpClock *ptpClock;
+   PtpPortDS *ptpPortDS;
+   PtpClockDS ptpClockDS;
    Integer16 ret;
    int i;
 
    netStartup();
 
   /*Initialize run time options with command line arguments*/
-   if( !(ptpClock = ptpdStartup(argc, argv, &ret, &rtOpts)) )
+   if( !(ptpPortDS = ptpdStartup(argc, argv, &ret, &rtOpts, &ptpClockDS)) )
      return ret;
 
     /* White rabbit debugging info*/
@@ -61,21 +66,35 @@ int main(int argc, char **argv)
     for(i = 0; i < rtOpts.portNumber; i++)
     {
 
-      if(i == 0 && rtOpts.wrNodeMode == WR_SLAVE)
-      else if(rtOpts.wrNodeMode != NON_WR)
+      if(rtOpts.wrConfig == WR_MODE_AUTO)
+	DBG("wrConfig  [port = %d] ............ Autodetection (ptpx-implementation-specific) \n",i+1);
+      else if(rtOpts.wrConfig == WR_M_AND_S)
+	DBG("wrConfig  [port = %d] ............ Master and Slave \n",i+1);
+      else if(rtOpts.wrConfig == WR_SLAVE)
+	DBG("wrConfig  [port = %d] ............ Slave \n",i+1);
+      else if(rtOpts.wrConfig == WR_MASTER)
+	DBG("wrConfig  [port = %d] ............ Master \n",i+1);      
+      else if(rtOpts.wrConfig == NON_WR)
+	DBG("wrConfig  [port = %d] ............ NON_WR\n",i+1);
       else
+	DBG("wrConfig  [port = %d] ............ ERROR\n",i+1);
     }
     if(rtOpts.portNumber == 1)
     else
 
-    if(rtOpts.wrNodeMode == WR_SLAVE)
-    	ptpd_init_exports();
+    DBG("----------- now the fun ------------\n\n");
 
-  /* do the protocol engine */
+
+
+      ptpd_init_exports();//from Tomeks'
+      initDataClock(&rtOpts, &ptpClockDS);
+
+
+    /* do the protocol engine */
    if(rtOpts.portNumber == 1)
-     protocol(&rtOpts, ptpClock);	 //forever loop..
+     protocol(&rtOpts, ptpPortDS);		 //forever loop for single port
    else if(rtOpts.portNumber > 1)
-     multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested)
+     multiProtocol(&rtOpts, ptpPortDS); 	//forever loop when many ports
    else
 
    ptpdShutdown();

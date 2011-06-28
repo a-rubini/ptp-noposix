@@ -2,7 +2,7 @@
 
 #include "../ptpd.h"
 
-void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void displayStats(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 #ifndef WRPC_EXTRA_SLIM
   static int start = 1;
@@ -19,7 +19,7 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   memset(sbuf, ' ', SCREEN_BUFSZ);
 
-  switch(ptpClock->portState)
+  switch(ptpPortDS->portState)
   {
   case PTP_INITIALIZING:  s = "init";  break;
   case PTP_FAULTY:        s = "flt";   break;
@@ -35,22 +35,22 @@ void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock)
 
   len += sprintf(sbuf + len, "%s%s", rtOpts->csvStats ? "\n": "\rstate: ", s);
 
-  if(ptpClock->portState == PTP_SLAVE)
+  if(ptpPortDS->portState == PTP_SLAVE)
   {
     len += sprintf(sbuf + len,
       ", %s%d.%09d" ", %s%d.%09d",
       rtOpts->csvStats ? "" : "owd: ",
-      ptpClock->meanPathDelay.seconds,
-      ptpClock->meanPathDelay.nanoseconds,
-      //abs(ptpClock->meanPathDelay.nanoseconds),
+      ptpPortDS->ptpClockDS->meanPathDelay.seconds,
+      ptpPortDS->ptpClockDS->meanPathDelay.nanoseconds,
+      //abs(ptpPortDS->meanPathDelay.nanoseconds),
       rtOpts->csvStats ? "" : "ofm: ",
-      ptpClock->offsetFromMaster.seconds,
-      ptpClock->offsetFromMaster.nanoseconds);
-      //abs(ptpClock->offsetFromMaster.nanoseconds));
+      ptpPortDS->ptpClockDS->offsetFromMaster.seconds,
+      ptpPortDS->ptpClockDS->offsetFromMaster.nanoseconds);
+      //abs(ptpPortDS->offsetFromMaster.nanoseconds));
 
     len += sprintf(sbuf + len,
       ", %s%d" ,
-      rtOpts->csvStats ? "" : "drift: ", ptpClock->observed_drift);
+      rtOpts->csvStats ? "" : "drift: ", ptpPortDS->observed_drift);
   }
 
   write(1, sbuf, rtOpts->csvStats ? len : SCREEN_MAXSZ + 1);

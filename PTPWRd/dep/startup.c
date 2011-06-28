@@ -7,7 +7,7 @@
 
 #include "../ptpd.h"
 
-PtpClock *ptpClock;
+PtpPortDS *ptpPortDS;
 
 void catch_close(int sig)
 {
@@ -41,31 +41,30 @@ void ptpdShutdown()
 {
 
   int i;
-  PtpClock * currentPtpdClockData;
+  PtpPortDS * currentPtpdClockData;
 
-  currentPtpdClockData = ptpClock;
+  currentPtpdClockData = ptpPortDS;
 
   for (i=0; i < MAX_PORT_NUMBER; i++)
   {
-     netShutdown(&currentPtpdClockData->netPath);
      if (currentPtpdClockData->foreign)
      {
        free(currentPtpdClockData->foreign);
      }
-     //netShutdown(&currentPtpdClockData->netPath);
+
      currentPtpdClockData++;
   }
 
-  free(ptpClock);
+  free(ptpPortDS);
 
 }
 
-PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts)
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDMASxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDMASBNxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -108,6 +107,8 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
   "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
   "-M                WR: run PTP node as WR Master\n"
   "-S                WR: run PTP node as WR Slave\n"
+  "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
+  "-N                WR: run PTP node as NON_WR port -- only standard PTP\n"
   "-q NUMBER         WR: if you want to use one eth interface for testing ptpd (run two which communicate) define here different port numbers (need to be > 1)\n"
   "-1 NAME           WR: network interface for port 1\n"
   "-2 NAME           WR: network interface for port 2\n"
@@ -232,22 +233,32 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
 
    case 'A':
-//	   DBGNPI("WR AUTO MODE\n");
-	   rtOpts->portNumber = WR_PORT_NUMBER;
-
+	   DBGNPI("WR AUTO MODE\n");
+	   rtOpts->portNumber = 2;//WR_PORT_NUMBER; //TODO: change this nasty hardcoded value
+	   rtOpts->wrConfig = WR_MODE_AUTO;
 	   break;
 
    case 'S':
-	   rtOpts->wrNodeMode = WR_SLAVE;
+	   rtOpts->wrConfig = WR_S_ONLY;
 
 //	   DBGNPI("WR Slave\n");
 	   break;
 
    case 'M':
-	   rtOpts->wrNodeMode = WR_MASTER;
+	   rtOpts->wrConfig = WR_M_ONLY;
 
 //	   DBGNPI("WR Master\n");
 	   break;
+
+   case 'B':
+	   rtOpts->wrConfig = WR_M_AND_S;
+	   DBGNPI("WR Master and Slave\n");
+	   break;
+   case 'N':
+	   rtOpts->wrConfig = NON_WR;
+	   DBGNPI("NON_WR wrMode !! \n");
+	   break;	   
+	   
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
@@ -273,32 +284,34 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     }
   }
 
-  ptpClock = (PtpClock*)calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
+  ptpPortDS  = (PtpPortDS*)calloc(MAX_PORT_NUMBER, sizeof(PtpPortDS));
+  
+  
+  PtpPortDS * currentPtpdClockData;
 
-  PtpClock * currentPtpdClockData;
-
-  if(!ptpClock)
+  if(!ptpPortDS)
   {
     *ret = 2;
     return 0;
   }
   else
   {
-/*    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpClock)); */
+    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
-    currentPtpdClockData = ptpClock;
+    currentPtpdClockData = ptpPortDS;
     int i;
 
     for(i = 0; i < MAX_PORT_NUMBER; i++)
     {
 	currentPtpdClockData->portIdentity.portNumber = i + 1;
 	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
+	
 	if(!currentPtpdClockData->foreign)
 	{
 	 //   PERROR("failed to allocate memory for foreign master data");
 	    *ret = 2;
 	  //TODO:
-	      free(ptpClock);
+	      free(ptpPortDS);
 	    return 0;
 	}
 	else
@@ -310,6 +323,8 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 	memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
 	memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
 
+	currentPtpdClockData->ptpClockDS = ptpClockDS; // common data
+	
 	currentPtpdClockData++;
     }
   }
@@ -335,5 +350,5 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
   *ret = 0;
 
-  return ptpClock;
+  return ptpPortDS;
 }
