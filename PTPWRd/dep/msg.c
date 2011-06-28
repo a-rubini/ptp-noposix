@@ -62,10 +62,7 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	header->sequenceId                      = get_be16(buf+30);
 	header->controlField                    = (*(UInteger8*)(buf+32));
 	header->logMessageInterval              = (*(Integer8*)(buf+33));
-
-	    header->flagField[0],
-	    header->flagField[1]
-	    );
+	
 	DBGM(" correctionfield.msb........... %d\n", header->correctionfield.msb);
 	DBGM(" correctionfield.lsb........... %d\n", (unsigned int)header->correctionfield.lsb);
 	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",

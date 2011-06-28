@@ -22,7 +22,7 @@ UInteger8 lookupCommunicationTechnology(UInteger8 communicationTechnology)
    * maybe it would be good to have it for the rabbit ??
    */
 
-  PERROR("WR: not implemented: %s\n", __FUNCTION__ );
+//merge problem:  PERROR("WR: not implemented: %s\n", __FUNCTION__ );
   return PTP_DEFAULT;
 }
 
@@ -66,9 +66,10 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
     }
     else
+      strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
   }
 
-  strncpy(netPath->ifaceName,bindaddr.if_name,IFACE_NAME_LENGTH);
+  
 
 
   bindaddr.family = PTPD_SOCK_RAW_ETHERNET;	// socket type

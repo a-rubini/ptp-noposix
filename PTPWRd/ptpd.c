@@ -57,10 +57,9 @@ int main(int argc, char **argv)
      return ret;
 
     /* White rabbit debugging info*/
-    if(rtOpts.E2E_mode)
-    else
-
-    for(i = 0; i < rtOpts.portNumber; i++)
+    //merge problem: if(rtOpts.E2E_mode)
+    //merge problem: else
+    //merge problem: for(i = 0; i < rtOpts.portNumber; i++)
 
 
     for(i = 0; i < rtOpts.portNumber; i++)
@@ -79,8 +78,8 @@ int main(int argc, char **argv)
       else
 	DBG("wrConfig  [port = %d] ............ ERROR\n",i+1);
     }
-    if(rtOpts.portNumber == 1)
-    else
+    //merge problem: if(rtOpts.portNumber == 1)
+    //merge problem: else
 
     DBG("----------- now the fun ------------\n\n");
 

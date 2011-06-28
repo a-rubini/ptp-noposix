@@ -233,7 +233,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
 
    case 'A':
-	   DBGNPI("WR AUTO MODE\n");
+	  // DBGNPI("WR AUTO MODE\n");
 	   rtOpts->portNumber = 2;//WR_PORT_NUMBER; //TODO: change this nasty hardcoded value
 	   rtOpts->wrConfig = WR_MODE_AUTO;
 	   break;
@@ -252,11 +252,11 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
    case 'B':
 	   rtOpts->wrConfig = WR_M_AND_S;
-	   DBGNPI("WR Master and Slave\n");
+	   //DBGNPI("WR Master and Slave\n");
 	   break;
    case 'N':
 	   rtOpts->wrConfig = NON_WR;
-	   DBGNPI("NON_WR wrMode !! \n");
+	  // DBGNPI("NON_WR wrMode !! \n");
 	   break;	   
 	   
     case '1':
@@ -296,7 +296,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   }
   else
   {
-    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
+    //DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
     currentPtpdClockData = ptpPortDS;
     int i;

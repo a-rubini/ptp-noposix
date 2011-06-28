@@ -11,7 +11,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
 /* Default data set */
-	ptpClock->twoStepFlag = TWO_STEP_FLAG;
+//mergeProblem:	ptpClock->twoStepFlag = TWO_STEP_FLAG;
 
   DBG("initDataPort\n");
 

@@ -207,8 +207,9 @@ int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)
 	s->t1 = timeint_to_wr(t1);
 	s->t2 = timeint_to_wr(t2);
 
-		dump_timestamp("sync->t1", s->t1);
-		dump_timestamp("sync->t2", s->t2);*/
+	//merge problem:
+	dump_timestamp("sync->t1", s->t1);
+	dump_timestamp("sync->t2", s->t2);
 
 	got_sync = 1;
 

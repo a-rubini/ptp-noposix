@@ -232,6 +232,7 @@ Boolean timerExpired(IntervalTimer *itimer);
 #define DBGWRFSM(x, ...)
 #endif
 
-
+#define ERROR(x, ...) fprintf(stderr, "(PTPWRd  ERROR) " x, ##__VA_ARGS__)
+#define PERROR(x, ...) fprintf(stderr, "(PTPWRd  PERROR) " x, ##__VA_ARGS__)
 
 #endif /*PTPD_DEP_H_*/

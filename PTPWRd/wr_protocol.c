@@ -342,7 +342,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   uint64_t delta;
   UInteger8 currentState;
   
-  DBGV("DoWRState enter st: %d\n", ptpPortDS->wrPortState);
+  //DBGV("DoWRState enter st: %d\n", ptpPortDS->wrPortState);
   switch(ptpPortDS->wrPortState)
   {
 
@@ -358,7 +358,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      * message S_PRESENT sent to Master while entering state (toWRState())
      * here we wait for the answer from the Master asking us to LOCK
      */
-    DBGV("DoState WRS_PRESENT");
+    //DBGV("DoState WRS_PRESENT");
     handle(rtOpts, ptpPortDS);
 
 
@@ -370,7 +370,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
     }
 
- DBGV("DoState WRS_PRESENT done");
+ //DBGV("DoState WRS_PRESENT done");
     break;
   /**********************************  S_LOCK  ***************************************************************************/
   case WRS_S_LOCK:

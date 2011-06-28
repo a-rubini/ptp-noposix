@@ -85,7 +85,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   for (i=0; i < rtOpts->portNumber; i++)
   {
 
-     DBGV("multiPortProtocol: initializing port %d\n", (i+1));
+     //DBGV("multiPortProtocol: initializing port %d\n", (i+1));
      toState(PTP_INITIALIZING, rtOpts, currentPtpPortDSData);
      if(!doInit(rtOpts, currentPtpPortDSData))
      {
@@ -521,7 +521,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		// it is executed globally for all ports in the same for()
 		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)		  
 		{
-			DBGV("event STATE_DECISION_EVENT\n");
+			//DBGV("event STATE_DECISION_EVENT\n");
 			ptpPortDS->record_update = FALSE;
 
 			state = bmc(ptpPortDS->foreign, rtOpts, ptpPortDS);
@@ -622,7 +622,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		return;
 
 	case PTP_UNCALIBRATED:
-		DBGV("state: PTP_UNCALIBRATED\n");
+		//DBGV("state: PTP_UNCALIBRATED\n");
 
 		/* Execute WR protocol state machine */
 		
@@ -643,7 +643,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 		if(timerExpired(&ptpPortDS->timers.announceReceipt) || linkUP == FALSE)
 		{
-			DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
+			//DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
 			ptpPortDS->number_foreign_records = 0;
 			ptpPortDS->foreign_record_i = 0;
 			ptpPortDS->wrMode = NON_WR;
@@ -690,7 +690,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		if(timerExpired(&ptpPortDS->timers.sync))
 		{
 
-			DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n"); 
+			//DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n"); 
 			issueSync(rtOpts, ptpPortDS);
 			issueFollowup(rtOpts,ptpPortDS);
 		}
@@ -698,7 +698,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		if(timerExpired(&ptpPortDS->timers.announceInterval))
 		{
 
-			DBGV("event ANNOUNCE_INTERVAL_TIMEOUT_EXPIRES\n");
+			//DBGV("event ANNOUNCE_INTERVAL_TIMEOUT_EXPIRES\n");
 			issueAnnounce(rtOpts, ptpPortDS);
 		}
 
@@ -950,7 +950,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			return;
 		}
 
-		DBGV("Announce message from another foreign master");
+		//DBGV("Announce message from another foreign master");
 		addForeign(ptpPortDS->msgIbuf,header,ptpPortDS);
 		ptpPortDS->record_update = TRUE;
 		break;
@@ -983,7 +983,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 			/* White Rabbit */
 			if(ptpPortDS->wrMode != NON_WR)
 			{
-				DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
+				//DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
 				return;
 			}
 
@@ -1131,7 +1131,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		//else DBGV("Follow up message is not from current parent \n");
 
 		case PTP_MASTER:
-			DBGV("handle ..... FOLLOW_UP: Follow up message received from another master \n");
+			//DBGV("handle ..... FOLLOW_UP: Follow up message received from another master \n");
 			break;
 
 		default:
@@ -1579,6 +1579,7 @@ if (!rtOpts->E2E_mode)
 		}
 
 		default:
+		  break;
 	}
 
 }
@@ -1698,7 +1699,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,announce_len,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("Announce message can't be sent -> FAULTY state \n");
+		//DBGV("Announce message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... ANNOUNCE : Announce Msg, failed \n");
 	}
 	else
@@ -1707,7 +1708,7 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 		  DBG("issue  ..... WR ANNOUNCE : succedded \n");
 		else
 		  DBG("issue  ..... ANNOUNCE : succedded \n");
-		DBGV("Announce MSG sent ! \n");
+		//DBGV("Announce MSG sent ! \n");
 		ptpPortDS->sentAnnounceSequenceId++;
 	}
 }
@@ -1727,7 +1728,7 @@ void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,SYNC_LENGTH,&ptpPortDS->netPath,&ptpPortDS->synch_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("Sync message can't be sent -> FAULTY state \n");
+		//DBGV("Sync message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... SYNC:   failed");
 	}
 	else
@@ -1753,7 +1754,7 @@ void issueFollowup(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("FollowUp message can't be sent -> FAULTY state \n");
+		//DBGV("FollowUp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... FOLLOW_UP: failed\n");
 	}
 	else
@@ -1778,7 +1779,7 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,DELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->delayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("delayReq message can't be sent -> FAULTY state \n");
+		//DBGV("delayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... DELAY_REQ: failed\n");
 	}
 	else
@@ -1802,13 +1803,13 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("PdelayReq message can't be sent -> FAULTY state \n");
+		//DBGV("PdelayReq message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_REQ, failed\n");
 	}
 	else
 	{
 		DBG("issue  ..... PDELAY_REQ, succedded \n");
-		DBGV("PDelayReq MSG sent ! \n");
+		//DBGV("PDelayReq MSG sent ! \n");
 		ptpPortDS->sentPDelayReqSequenceId++;
 	}
 }
@@ -1824,7 +1825,7 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayResp_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("PdelayResp message can't be sent -> FAULTY state \n");
+		//DBGV("PdelayResp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_RESP, failed\n");
 	}
 	else
@@ -1846,7 +1847,7 @@ void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("delayResp message can't be sent -> FAULTY state \n");
+		//DBGV("delayResp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... DELAY_RESP, failed\n");
 	}
 	else
@@ -1871,7 +1872,7 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	if (!netSendPeerGeneral(ptpPortDS->msgObuf,PDELAY_RESP_FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("PdelayRespFollowUp message can't be sent -> FAULTY state \n");
+		//DBGV("PdelayRespFollowUp message can't be sent -> FAULTY state \n");
 		DBG("issue  ..... PDELAY_RESP_FOLLOW_UP, failed\n");
 	}
 	else
@@ -1893,7 +1894,7 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 	if (!netSendGeneral(ptpPortDS->msgObuf,len,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		DBGV("Signaling message can't be sent -> FAULTY state \n");
+		//DBGV("Signaling message can't be sent -> FAULTY state \n");
 		DBG("issue ...... WR_SIGNALING: failed \n");
 		
 	}
