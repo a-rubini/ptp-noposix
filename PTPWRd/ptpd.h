@@ -191,6 +191,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 void clearForeignMasters(PtpPortDS *ptpPortDS);
 
+UInteger16 autoPortNumberDiscovery(void);
+
 Boolean globalBestForeignMastersUpdate(PtpPortDS*);
 
 Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS);

@@ -172,6 +172,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case 'u':
@@ -246,8 +247,9 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
    case 'A':
 	  // DBGNPI("WR AUTO MODE\n");
-	   rtOpts->portNumber = 2;//WR_PORT_NUMBER; //TODO: change this nasty hardcoded value
+	   rtOpts->portNumber = WR_PORT_NUMBER; 
 	   rtOpts->wrConfig = WR_MODE_AUTO;
+	   rtOpts->autoPortDiscovery = TRUE;
 	   break;
 
    case 'S':
@@ -275,18 +277,21 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case '2':
       memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 2;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case '3':
       memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber  = 3;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
 
@@ -310,6 +315,9 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   {
     //DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
+    if(rtOpts->autoPortDiscovery == TRUE)
+      rtOpts->portNumber = autoPortNumberDiscovery();
+    
     currentPtpdClockData = ptpPortDS;
     int i;
 

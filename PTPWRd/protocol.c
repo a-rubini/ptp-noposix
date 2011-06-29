@@ -60,21 +60,21 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   int           i;
 
    PtpPortDS *    currentPtpPortDSData;
-	char dummy[16];
-
-	rtOpts->portNumber = 0;
-	for(;;)
-	{
-		
- 		if(ptpd_netif_get_ifName(dummy, rtOpts->portNumber) == PTPD_NETIF_OK)
- 		{
-// 			strcpy(rtOpts->ptpClock.netPath.ifaceName, dummy);
- 			rtOpts->portNumber++;
- 		}
- 		else
- 			break;
- 	
-	}
+// 	char dummy[16];
+// 
+// 	rtOpts->portNumber = 0;
+// 	for(;;)
+// 	{
+// 		
+//  		if(ptpd_netif_get_ifName(dummy, rtOpts->portNumber) == PTPD_NETIF_OK)
+//  		{
+// // 			strcpy(rtOpts->ptpClock.netPath.ifaceName, dummy);
+//  			rtOpts->portNumber++;
+//  		}
+//  		else
+//  			break;
+//  	
+// 	}
 		
 	
 
@@ -545,6 +545,15 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 					/* Candidate for WR Slave */
 					ptpPortDS->wrMode  = WR_SLAVE;
+					
+					/* 
+					 * If a source of reference (master) is disconnected,
+					 * it might happen that a WR Master is now to be WR Slave.
+					 * In such case, we need to disable WR (wrModeON=FALSE) so
+					 * the WR Link Setup is entered (condition when entering
+					 * UNCALIBRATED state)
+					 */
+					ptpPortDS->wrModeON = FALSE; 
 					DBG("recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
 					DBG("recommended wrMode = WR_SLAVE\n");
 					toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
@@ -2069,4 +2078,23 @@ void clearForeignMasters(PtpPortDS *ptpPortDS)
     ptpPortDS->number_foreign_records	= 0;
     ptpPortDS->foreign_record_best	= 0;
 
+}
+
+UInteger16 autoPortNumberDiscovery(void)
+{
+	char dummy[16];
+
+	int portNumber = 0;
+	for(;;)
+	{
+		
+ 		if(ptpd_netif_get_ifName(dummy, portNumber) == PTPD_NETIF_OK)
+ 		{
+ 			portNumber++;
+ 		}
+ 		else
+ 			break;
+ 	
+	}
+	return (UInteger16)portNumber;
 }

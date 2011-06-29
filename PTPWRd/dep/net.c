@@ -47,7 +47,14 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   // Create a PTP socket:
   wr_sockaddr_t bindaddr;
-
+  
+  //port numbers start with 1, but port indexing starts with 0.... a bit of mess
+  int port_index = ptpPortDS->portIdentity.portNumber-1;
+  if(port_index < 0) 
+    {
+      DBG("ERROR: port numbering problem, index returned: %d\n", port_index);
+      return FALSE;
+    }
   ////////////////// establish the network interface name //////////////////////////////
   if(rtOpts->ifaceName[ptpPortDS->portIdentity.portNumber - 1][0] != '\0')
   {
@@ -61,13 +68,13 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     /*
       get interface name (port name) for the port
      */
-    if(  ptpd_netif_get_ifName(bindaddr.if_name,ptpPortDS->portIdentity.portNumber ) == PTPD_NETIF_ERROR )
+    if(  ptpd_netif_get_ifName(bindaddr.if_name,port_index ) == PTPD_NETIF_ERROR )
     {
       strcpy(bindaddr.if_name,"wru1");		// TODO: network intarface
-      DBG("Network interface forced to be wru1, but none of the WR ports seems to be up \n");
+      DBG("Network interface (port=%d) forced to be wru1, but none of the WR ports seems to be up \n",ptpPortDS->portIdentity.portNumber);
     }
     else
-     DBG("Network interface retrieved automatically by ptpd_netif: %s\n",bindaddr.if_name);
+     DBG("Network interface (port=%d) retrieved automatically by ptpd_netif: %s\n",ptpPortDS->portIdentity.portNumber, bindaddr.if_name);
 
   }
 

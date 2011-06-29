@@ -28,6 +28,7 @@ RunTimeOpts rtOpts = {
    .ap = DEFAULT_AP,
    .ai = DEFAULT_AI,
    .max_foreign_records = DEFAULT_MAX_FOREIGN_RECORDS,
+   .autoPortDiscovery  = TRUE,
 
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
@@ -62,14 +63,25 @@ int main(int argc, char **argv)
       DBG("E2E_mode ........................ TRUE\n");
     else
       DBG("P2P_mode ........................ TRUE\n");
-
-    DBG("portNumber  ..................... %d\n",rtOpts.portNumber);
-    for(i = 0; i < rtOpts.portNumber; i++)
-      DBG("net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i]);
     
+    DBG("portNumber  ..................... %d\n",rtOpts.portNumber);
+    
+    if(rtOpts.portNumber == 1 && rtOpts.autoPortDiscovery == FALSE)
+     DBG("running as ...................... single port node (forced, no auto port number discovery)\n");
+    else if(rtOpts.portNumber == 1 && rtOpts.autoPortDiscovery == TRUE)
+     DBG("running as ...................... single port node (auto port number discovery)\n");
+    else if(rtOpts.portNumber > 1 && rtOpts.autoPortDiscovery == TRUE)
+     DBG("running as ....................... multi port node [%d] (auto port number discovery)\n",rtOpts.portNumber );
+    else if(rtOpts.portNumber > 1 && rtOpts.autoPortDiscovery == FALSE)
+     DBG("running as ....................... multi port node [%d] (forced, no auto port number discovery)\n",rtOpts.portNumber );
+    else
+     DBG("running as ....................... ERROR,should not get here\n");
+
     for(i = 0; i < rtOpts.portNumber; i++)
     {
-
+      if(rtOpts.autoPortDiscovery == FALSE) //so the interface is forced, thus in rtOpts
+      DBG("net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i]);
+      
       if(rtOpts.wrConfig == WR_MODE_AUTO)
 	DBG("wrConfig  [port = %d] ............ Autodetection (ptpx-implementation-specific) \n",i+1);
       else if(rtOpts.wrConfig == WR_M_AND_S)
@@ -82,20 +94,12 @@ int main(int argc, char **argv)
 	DBG("wrConfig  [port = %d] ............ NON_WR\n",i+1);
       else
 	DBG("wrConfig  [port = %d] ............ ERROR\n",i+1);
-    }
+    }    
     
-    if(rtOpts.portNumber == 1)
-       DBG("running as ...................... single port node\n");
-    else
-       DBG("running as ....................... multi port node [%d]\n",rtOpts.portNumber );
-    
-    DBG("----------- now the fun ------------\n\n");
-
-
-
-      ptpd_init_exports();//from Tomeks'
-      initDataClock(&rtOpts, &ptpClockDS);
-
+    DBG("----------- now the fun ------------\n\n");     
+   
+   ptpd_init_exports();//from Tomeks'
+   initDataClock(&rtOpts, &ptpClockDS);
 
     /* do the protocol engine */
    if(rtOpts.portNumber == 1)

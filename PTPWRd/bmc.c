@@ -93,10 +93,11 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 /* initialize ptpClockDS*/
 void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 {
-	fprintf(stderr, "DBG: initDataClock");
 	/* Default data set */
 	ptpClockDS->twoStepFlag = TWO_STEP_FLAG;
+	
 	ptpClockDS->numberPorts = rtOpts->portNumber;
+	
 	ptpClockDS->clockQuality.clockAccuracy = rtOpts->clockQuality.clockAccuracy;
 	ptpClockDS->clockQuality.offsetScaledLogVariance = rtOpts->clockQuality.offsetScaledLogVariance;
 	

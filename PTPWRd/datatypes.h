@@ -702,6 +702,7 @@ typedef struct {
 	Boolean 	deltasKnown;
 	UInteger32 	wrStateTimeout; 
 	UInteger8 	wrStateRetry;
+	Boolean 	autoPortDiscovery;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/
