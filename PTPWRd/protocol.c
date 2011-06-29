@@ -2070,6 +2070,5 @@ void checkClockClassValidity(PtpClockDS *ptpClockDS)
    if(extsrcLocked() != TRUE)		
       ptpClockDS->clockQuality.clockClass = 7; //table 5, ptp, p55
     
-   printf("\n\n =====>>>> checking clockClassValidity [%d]<<<<========== \n\n\n",ptpClockDS->clockQuality.clockClass);
 
 }
