@@ -28,7 +28,8 @@ RunTimeOpts rtOpts = {
    .ap = DEFAULT_AP,
    .ai = DEFAULT_AI,
    .max_foreign_records = DEFAULT_MAX_FOREIGN_RECORDS,
-   .autoPortDiscovery  = TRUE,
+   .autoPortDiscovery  	= TRUE,
+   .primarySource	= FALSE,
 
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
@@ -100,7 +101,9 @@ int main(int argc, char **argv)
    
    ptpd_init_exports();//from Tomeks'
    initDataClock(&rtOpts, &ptpClockDS);
-
+      
+   DBG("clockClass ....................... %d\n",ptpClockDS.clockQuality.clockClass);
+	
     /* do the protocol engine */
    if(rtOpts.portNumber == 1)
      protocol(&rtOpts, ptpPortDS);		 //forever loop for single port

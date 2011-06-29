@@ -24,7 +24,7 @@ ifeq ($(PTPD_FREESTANDING), y)
    TARGETS := ptpd-freestanding
 else
    SAY := $(shell echo "CPU is hosted" > /dev/tty)
-   TARGETS :=  ptpd ptpd-freestanding.o
+   TARGETS :=  ptpd #ptpd-freestanding.o
    CHECKVARS = LINUX
 endif
 

@@ -40,14 +40,6 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
 
 
 
-/* The code used pow(2, ...) but we don't want floating point here (ARub) */
-static inline unsigned long pow_2(int exp)
-{
-	return 1 << exp;
-}
-
-
-
 #ifndef WRPC_EXTRA_SLIM
 
 
@@ -59,24 +51,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   int           i;
 
-   PtpPortDS *    currentPtpPortDSData;
-// 	char dummy[16];
-// 
-// 	rtOpts->portNumber = 0;
-// 	for(;;)
-// 	{
-// 		
-//  		if(ptpd_netif_get_ifName(dummy, rtOpts->portNumber) == PTPD_NETIF_OK)
-//  		{
-// // 			strcpy(rtOpts->ptpClock.netPath.ifaceName, dummy);
-//  			rtOpts->portNumber++;
-//  		}
-//  		else
-//  			break;
-//  	
-// 	}
-		
-	
+  PtpPortDS *    currentPtpPortDSData;
 
   currentPtpPortDSData = ptpPortDS;
 
@@ -104,6 +79,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
     ptpd_handle_wripc();
     
+    
+    
     for (i=0; i < rtOpts->portNumber; i++)
     {
 
@@ -123,8 +100,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	  return;
 
       }
-      while(currentPtpPortDSData->portState == PTP_UNCALIBRATED ||
-	    currentPtpPortDSData->wrPortState != WRS_IDLE);
+      while(currentPtpPortDSData->wrPortState != WRS_IDLE); //non pre-emption of WR FSM
 
 	
       currentPtpPortDSData++;
@@ -148,7 +124,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     else
 	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;  
 
-		ptpd_handle_wripc();
+    ptpd_handle_wripc();
+    checkClockClassValidity(ptpPortDS->ptpClockDS);
 
   }
 
@@ -200,7 +177,7 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
     
 
-
+    checkClockClassValidity(ptpPortDS->ptpClockDS);
   }
 }
 
@@ -443,6 +420,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   timerInit(&ptpPortDS->timers.pdelayReq, "PDelayReq");
   timerInit(&ptpPortDS->timers.announceReceipt, "AnnReceipt");
   timerInit(&ptpPortDS->timers.announceInterval, "AnnInterval");
+  
 
   // servo initializatin
   initClock(rtOpts, ptpPortDS);
@@ -2080,21 +2058,18 @@ void clearForeignMasters(PtpPortDS *ptpPortDS)
 
 }
 
-UInteger16 autoPortNumberDiscovery(void)
+void checkClockClassValidity(PtpClockDS *ptpClockDS)
 {
-	char dummy[16];
 
-	int portNumber = 0;
-	for(;;)
-	{
-		
- 		if(ptpd_netif_get_ifName(dummy, portNumber) == PTPD_NETIF_OK)
- 		{
- 			portNumber++;
- 		}
- 		else
- 			break;
- 	
-	}
-	return (UInteger16)portNumber;
+   if(ptpClockDS->clockQuality.clockClass != 6) 
+     return;	//check only if we think we are locked to primary source
+   
+   if(!timerExpired(&ptpClockDS->clockClassValidityTimer)) //timer not expired yet
+     return;
+   
+   if(extsrcLocked() != TRUE)		
+      ptpClockDS->clockQuality.clockClass = 7; //table 5, ptp, p55
+    
+   printf("\n\n =====>>>> checking clockClassValidity [%d]<<<<========== \n\n\n",ptpClockDS->clockQuality.clockClass);
+
 }

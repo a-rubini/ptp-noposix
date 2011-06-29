@@ -71,3 +71,11 @@ int halexp_client_init()
 	else
 	  return 0;
 }
+
+
+int halexp_extsrc_cmd(int command)
+{
+	int rval;
+	wripc_call(hal_cli, "halexp_extsrc_cmd", &rval, 1, A_INT32(command));
+	return rval;
+}

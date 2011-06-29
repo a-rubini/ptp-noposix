@@ -297,3 +297,35 @@ ssize_t netSendPeerEvent(Octet *buf,UInteger16 length,NetPath *netPath,wr_timest
   return (ssize_t)ret;
 
 }
+UInteger16 autoPortNumberDiscovery(void)
+{
+	char dummy[16];
+
+	int portNumber = 0;
+	for(;;)
+	{
+		
+ 		if(ptpd_netif_get_ifName(dummy, portNumber) == PTPD_NETIF_OK)
+ 		{
+ 			portNumber++;
+ 		}
+ 		else
+ 			break;
+ 	
+	}
+	return (UInteger16)portNumber;
+}
+/* 
+ * function checks whetehr the PLL is locked to an external source (e.x. GPS).
+ * OK, it's not the best place for this function, if you find a better place, move it there
+ * 
+ * return : 	TRUE if locked
+ *		FLASE if not locked
+ */
+Boolean extsrcLocked(void)
+{
+   if(ptpd_netif_extsrc_detection() == PTPD_NETIF_OK)
+      return TRUE;
+    else
+      return FALSE;
+}

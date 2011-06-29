@@ -191,10 +191,9 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 
 void clearForeignMasters(PtpPortDS *ptpPortDS);
 
-UInteger16 autoPortNumberDiscovery(void);
+void checkClockClassValidity(PtpClockDS *ptpClockDS);
 
 Boolean globalBestForeignMastersUpdate(PtpPortDS*);
-
 Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS);
 
 int wr_servo_init(PtpPortDS *clock);
@@ -234,6 +233,12 @@ extern void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,Pt
 
 extern void wr_servo_enable_tracking(int enable);
 extern int wr_servo_man_adjust_phase(int phase);
+
+/* The code used pow(2, ...) but we don't want floating point here (ARub) */
+static inline unsigned long pow_2(int exp)
+{
+	return 1 << exp;
+}
 
 
 #endif /*PTPD_H_*/

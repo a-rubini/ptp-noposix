@@ -110,16 +110,26 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 
 	ptpClockDS->domainNumber = rtOpts->domainNumber;
 	ptpClockDS->slaveOnly = rtOpts->slaveOnly;
+
+	ptpClockDS->clockClassValidityTimeout = DEFAULT_CLOCKCLASS_VALIDATE_TIMEOUT;
+	
 	if(rtOpts->slaveOnly)
-           rtOpts->clockQuality.clockClass = 255;
-
-
-	ptpClockDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;
+          rtOpts->clockQuality.clockClass = 255;
+	else if(rtOpts->primarySource == TRUE && extsrcLocked()== TRUE)		// this is not the best solution :(
+	{
+	  timerInit(&ptpClockDS->clockClassValidityTimer, "clockClass");
+	  timerStart(&ptpClockDS->clockClassValidityTimer, 1000 * (pow_2(ptpClockDS->clockClassValidityTimeout)));
+	  rtOpts->clockQuality.clockClass = 6; 
+	  printf("Clocked to GPS, clockClass=6, timer started\n");
+	}
+	  
+	ptpClockDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;  
 	
 	//WRPTP
 	ptpClockDS->primarySlavePortNumber=0;
 	
 	ptpClockDS->Ebest = -1;
+	
 
 }
 

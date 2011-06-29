@@ -324,6 +324,9 @@ typedef struct
 	Boolean globalStateDecisionEvent;
 	ForeignMasterRecord *bestForeign;
 	ForeignMasterRecord *secondBestForeign;
+	
+	IntervalTimer clockClassValidityTimer;
+	UInteger8 clockClassValidityTimeout;
 } PtpClockDS;
 
 /**
@@ -703,6 +706,7 @@ typedef struct {
 	UInteger32 	wrStateTimeout; 
 	UInteger8 	wrStateRetry;
 	Boolean 	autoPortDiscovery;
+	Boolean		primarySource;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

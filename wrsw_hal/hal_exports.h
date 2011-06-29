@@ -47,6 +47,13 @@
 #define HEXP_FREQ 0
 #define HEXP_PHASE 1
 
+/////////////////added by ML//////////
+#define HEXP_EXTSRC_CMD_CHECK 0
+
+#define HEXP_EXTSRC_STATUS_LOCKED 0 
+#define HEXP_LOCK_STATUS_BUSY	  1
+#define HEXP_EXTSRC_STATUS_NOSRC  2
+/////////////////////////////////////
 
 typedef struct {
 
@@ -141,6 +148,7 @@ int halexp_get_port_state(hexp_port_state_t *state, const char *port_name);
 int halexp_pps_cmd(int cmd, hexp_pps_params_t *params);
 int halexp_pll_set_gain(int pll, int branch, int kp, int ki);
 
+int halexp_extsrc_cmd(int command); //added by ML
 
 #endif
 

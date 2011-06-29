@@ -64,7 +64,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDMASBNxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDMASBNPxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -104,6 +104,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "-s NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
 
+  "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked to external source (extsrc needs to be configured in wrsw_hal.conf and detected by the HW\n"
   "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
   "-M                WR: run PTP node as WR Master\n"
   "-S                WR: run PTP node as WR Slave\n"
@@ -271,6 +272,11 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
    case 'N':
 	   rtOpts->wrConfig = NON_WR;
 	  // DBGNPI("NON_WR wrMode !! \n");
+	   break;	   
+
+   case 'P':
+	   rtOpts->primarySource = TRUE;
+	  
 	   break;	   
 	   
     case '1':

@@ -1001,3 +1001,17 @@ uint64_t ptpd_netif_get_msec_tics()
 {
 	return get_tics() / 1000ULL;
 }
+
+int ptpd_netif_extsrc_detection()
+{
+    int ret;
+    ret=halexp_extsrc_cmd(HEXP_EXTSRC_CMD_CHECK);
+    printf("(ptpd_netif)  ptpd_netif_extsrc_detection() ret=%d\n",ret);
+    if(ret == HEXP_EXTSRC_STATUS_LOCKED)
+      return PTPD_NETIF_OK;
+    else if(ret == HEXP_EXTSRC_STATUS_NOSRC)
+      return PTPD_NETIF_NOT_FOUND;
+    else 
+      return PTPD_NETIF_ERROR;
+
+}

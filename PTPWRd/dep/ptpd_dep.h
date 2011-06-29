@@ -173,8 +173,8 @@ void timerInit(IntervalTimer *itimer, const char *name);
 void timerStart(IntervalTimer *itimer, int interval);
 void timerStop(IntervalTimer *itimer);
 Boolean timerExpired(IntervalTimer *itimer);
-
-
+UInteger16 autoPortNumberDiscovery(void);
+Boolean extsrcLocked(void);
 /** \}*/
 
 
