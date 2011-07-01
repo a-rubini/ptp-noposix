@@ -62,30 +62,30 @@ void msgUnpackHeader(void *buf, MsgHeader *header)
 	header->sequenceId                      = get_be16(buf+30);
 	header->controlField                    = (*(UInteger8*)(buf+32));
 	header->logMessageInterval              = (*(Integer8*)(buf+33));
-	DBGM("------------ msgUnpackHeader ------\n");
-	DBGM(" transportSpecific............. %u\n", header->transportSpecific);
-	DBGM(" messageType................... %u\n", header->messageType);
-	DBGM(" versionPTP.................... %u\n", header->versionPTP);
-	DBGM(" messageLength................. %u\n", header->messageLength);
-	DBGM(" domainNumber.................. %u\n", header->domainNumber);
-	DBGM(" flagField..................... %02hhx %02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackHeader ------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," transportSpecific............. %u\n", header->transportSpecific);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageType................... %u\n", header->messageType);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," versionPTP.................... %u\n", header->versionPTP);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n", header->messageLength);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," domainNumber.................. %u\n", header->domainNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," flagField..................... %02hhx %02hhx\n",
 	    header->flagField[0],
 	    header->flagField[1]
 	    );
 
-	DBGM(" correctionfield.msb........... %d\n", header->correctionfield.msb);
-	DBGM(" correctionfield.lsb........... %d\n", (unsigned int)header->correctionfield.lsb);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," correctionfield.msb........... %d\n", header->correctionfield.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," correctionfield.lsb........... %d\n", (unsigned int)header->correctionfield.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
 	    header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
 	    header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
 	    header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]
 	    );
-	DBGM(" portNumber.................... %d\n", header->sourcePortIdentity.portNumber);
-	DBGM(" sequenceId.................... %d\n", header->sequenceId);
-	DBGM(" control....................... %d\n", header->controlField);
-	DBGM(" logMessageInterval............ %d\n", header->logMessageInterval);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," portNumber.................... %d\n", header->sourcePortIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," sequenceId.................... %d\n", header->sequenceId);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," control....................... %d\n", header->controlField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logMessageInterval............ %d\n", header->logMessageInterval);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
   
 
 }
@@ -107,22 +107,22 @@ void msgPackHeader(void *buf, PtpPortDS *ptpPortDS)
 
 	*(UInteger8*)(buf+33)                   = 0x7F; //Default value (spec Table 24)
 
-	DBGM("------------ msgPackHeader --------\n");
-	DBGM(" transportSpecific............. %u\n", transport);
-	DBGM(" versionPTP.................... %u\n", ptpPortDS->versionNumber);
-	DBGM(" domainNumber.................. %u\n", ptpPortDS->ptpClockDS->domainNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackHeader --------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," transportSpecific............. %u\n", transport);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," versionPTP.................... %u\n", ptpPortDS->versionNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," domainNumber.................. %u\n", ptpPortDS->ptpClockDS->domainNumber);
 	if (ptpPortDS->ptpClockDS->twoStepFlag)
-	  DBGM(" flagField..................... %x\n", TWO_STEP_FLAG);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," flagField..................... %x\n", TWO_STEP_FLAG)
 	else
-	  DBGM(" flagField..................... %x\n", 0);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," flagField..................... %x\n", 0)
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
 	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
 	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
 	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
-	DBGM(" logMessageInterval............ %d\n", 0x7F);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logMessageInterval............ %d\n", 0x7F);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
 
@@ -145,20 +145,20 @@ void msgPackSync(void *buf,Timestamp *originTimestamp,PtpPortDS *ptpPortDS)
 	put_be32(buf+36, originTimestamp->secondsField.lsb);
 	put_be32(buf+40, originTimestamp->nanosecondsField);
 
-	DBGM("------------ msgPackSync ----------\n");
-	DBGM(" messageLength................. %u\n", SYNC_LENGTH);
-	DBGM(" sentSyncSequenceId............ %u\n", ptpPortDS->sentSyncSequenceId);
-	DBGM(" logSyncInterval............... %u\n", ptpPortDS->logSyncInterval);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackSync ----------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n", SYNC_LENGTH);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," sentSyncSequenceId............ %u\n", ptpPortDS->sentSyncSequenceId);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logSyncInterval............... %u\n", ptpPortDS->logSyncInterval);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
 	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
 	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
 	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
-	DBGM(" originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
-	DBGM(" originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
-	DBGM(" originTimestamp.nsecs......... %d\n",  originTimestamp->nanosecondsField);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.nsecs......... %d\n",  originTimestamp->nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
 
@@ -168,11 +168,11 @@ void msgUnpackSync(void *buf,MsgSync *sync)
 	sync->originTimestamp.secondsField.msb = get_be16(buf+34);
 	sync->originTimestamp.secondsField.lsb = get_be32(buf+36);
 	sync->originTimestamp.nanosecondsField = get_be32(buf+40);
-        DBGM("------------ msgUnpackSync ----------\n");
-	DBGM(" originTimestamp.secs.msb...... %d\n", sync->originTimestamp.secondsField.msb);
-	DBGM(" originTimestamp.secs.lsb...... %d\n", sync->originTimestamp.secondsField.lsb);
-	DBGM(" originTimestamp.nsecs......... %d\n", sync->originTimestamp.nanosecondsField);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+        PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackSync ----------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.msb...... %d\n", sync->originTimestamp.secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.lsb...... %d\n", sync->originTimestamp.secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.nsecs......... %d\n", sync->originTimestamp.nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
 
@@ -237,61 +237,61 @@ void msgPackAnnounce(void *buf,PtpPortDS *ptpPortDS)
 	  *(UInteger16*)(buf+76) = flip16(wr_flags);
 	}
 
-	DBGM("------------ msgPackAnnounce ----------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackAnnounce ----------\n");
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
-	  DBGM(" messageLength................. %u\n", WR_ANNOUNCE_LENGTH);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n", WR_ANNOUNCE_LENGTH)
 	else
-	  DBGM(" messageLength................. %u\n", ANNOUNCE_LENGTH);
-	DBGM(" sentSyncSequenceId............ %u\n", ptpPortDS->sentAnnounceSequenceId);
-	DBGM(" logSyncInterval............... %u\n", ptpPortDS->logAnnounceInterval);
-	DBGM(" clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n", ANNOUNCE_LENGTH)
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," sentSyncSequenceId............ %u\n", ptpPortDS->sentAnnounceSequenceId);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logSyncInterval............... %u\n", ptpPortDS->logAnnounceInterval);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockIdentity................. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->portIdentity.clockIdentity[0], ptpPortDS->portIdentity.clockIdentity[1],
 	    ptpPortDS->portIdentity.clockIdentity[2], ptpPortDS->portIdentity.clockIdentity[3],
 	    ptpPortDS->portIdentity.clockIdentity[4], ptpPortDS->portIdentity.clockIdentity[5],
 	    ptpPortDS->portIdentity.clockIdentity[6], ptpPortDS->portIdentity.clockIdentity[7]);
-	DBGM(" portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
-	DBGM(" currentUtcOffset.............. %d\n", ptpPortDS->ptpClockDS->currentUtcOffset);
-	DBGM(" grandmasterPriority1.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority1);
-	DBGM(" clockClass.................... %d\n", ptpPortDS->ptpClockDS->clockQuality.clockClass);
-	DBGM(" clockAccuracy................. %d\n", ptpPortDS->ptpClockDS->clockQuality.clockAccuracy);
-	DBGM(" offsetScaledLogVariance....... %d\n", ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance);
-	DBGM(" grandmasterPriority2.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority2);
-	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," portNumber.................... %d\n", ptpPortDS->portIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," currentUtcOffset.............. %d\n", ptpPortDS->ptpClockDS->currentUtcOffset);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterPriority1.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority1);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockClass.................... %d\n", ptpPortDS->ptpClockDS->clockQuality.clockClass);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockAccuracy................. %d\n", ptpPortDS->ptpClockDS->clockQuality.clockAccuracy);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," offsetScaledLogVariance....... %d\n", ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterPriority2.......... %d\n", ptpPortDS->ptpClockDS->grandmasterPriority2);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[0], ptpPortDS->ptpClockDS->grandmasterIdentity[1],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[6], ptpPortDS->ptpClockDS->grandmasterIdentity[7]);
-	DBGM(" stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
-	DBGM(" timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," stepsRemoved.................. %d\n", ptpPortDS->ptpClockDS->stepsRemoved);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," timeSource.................... %d\n", ptpPortDS->ptpClockDS->timeSource);
 	if (ptpPortDS->wrConfig != NON_WR && ptpPortDS->wrConfig != WR_S_ONLY)
 	{
 
-	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
-	  DBGM(" [WR suffix] tlv_length........ %d\n",   WR_ANNOUNCE_TLV_LENGTH);
-	  DBGM(" [WR suffix] tlv_organizID .....0x%x\n", WR_TLV_ORGANIZATION_ID);
-	  DBGM(" [WR suffix] tlv_magicNumber... 0x%x\n", WR_TLV_MAGIC_NUMBER);
-	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
-	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", ANN_SUFIX);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_type.......... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_length........ %d\n",   WR_ANNOUNCE_TLV_LENGTH);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_organizID .....0x%x\n", WR_TLV_ORGANIZATION_ID);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_magicNumber... 0x%x\n", WR_TLV_MAGIC_NUMBER);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_versionNumber. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_wrMessageID... 0x%x\n", ANN_SUFIX);
 	  if((wr_flags & WR_NODE_MODE) == NON_WR)
-	    DBGM(" [WR suffix] wr_flags.......... NON_WR\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... NON_WR\n")
 	  else if((wr_flags & WR_NODE_MODE) == WR_S_ONLY)
-	    DBGM(" [WR suffix] wr_flags.......... WR_S_ONLY\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_S_ONLY\n")
 	  else if((wr_flags & WR_NODE_MODE) == WR_M_ONLY)
-	    DBGM(" [WR suffix] wr_flags.......... WR_M_ONLY\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_M_ONLY\n")
 	  else if((wr_flags & WR_NODE_MODE) == WR_M_AND_S)
-	    DBGM(" [WR suffix] wr_flags.......... WR_M_AND_S\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_M_AND_S\n")
 	  else
-	    DBGM(" [WR suffix] wr_flags.......... UNKNOWN !!!(this is error)\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... UNKNOWN !!!(this is error)\n")
 	  
 	  if((wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE)
-	    DBGM(" [WR suffix] wr_flags.......... WR MODE ON\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR MODE ON\n")
 	  else
-	    DBGM(" [WR suffix] wr_flags.......... WR MODE OFF\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR MODE OFF\n")
 	  
           if((wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED)
-	    DBGM(" [WR suffix] wr_flags.......... CALIBRATED\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... CALIBRATED\n")
 	  else 
-	    DBGM(" [WR suffix] wr_flags.......... unCALIBRATED\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... unCALIBRATED\n")
 	}
 
 
@@ -345,50 +345,50 @@ void msgUnpackAnnounce(void *buf,MsgAnnounce *announce,  MsgHeader *header)
 
 	}
 
-	DBGM("------------ msgUnpackAnnounce ----------\n");
-	DBGM(" messageLength................. %u\n", messageLen);
-	DBGM(" currentUtcOffset.............. %d\n", announce->currentUtcOffset);
-	DBGM(" grandmasterPriority1.......... %d\n", announce->grandmasterPriority1);
-	DBGM(" clockClass.................... %d\n", announce->grandmasterClockQuality.clockClass);
-	DBGM(" clockAccuracy................. %d\n", announce->grandmasterClockQuality.clockAccuracy);
-	DBGM(" offsetScaledLogVariance....... %d\n", announce->grandmasterClockQuality.offsetScaledLogVariance);
-	DBGM(" grandmasterPriority2.......... %d\n", announce->grandmasterPriority2);
-	DBGM(" grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackAnnounce ----------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n", messageLen);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," currentUtcOffset.............. %d\n", announce->currentUtcOffset);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterPriority1.......... %d\n", announce->grandmasterPriority1);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockClass.................... %d\n", announce->grandmasterClockQuality.clockClass);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," clockAccuracy................. %d\n", announce->grandmasterClockQuality.clockAccuracy);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," offsetScaledLogVariance....... %d\n", announce->grandmasterClockQuality.offsetScaledLogVariance);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterPriority2.......... %d\n", announce->grandmasterPriority2);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," grandmasterIdentity........... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    announce->grandmasterIdentity[0], announce->grandmasterIdentity[1],
 	    announce->grandmasterIdentity[2], announce->grandmasterIdentity[3],
 	    announce->grandmasterIdentity[4], announce->grandmasterIdentity[5],
 	    announce->grandmasterIdentity[6], announce->grandmasterIdentity[7]);
-	DBGM(" stepsRemoved.................. %d\n", announce->stepsRemoved);
-	DBGM(" timeSource.................... %d\n", announce->timeSource);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," stepsRemoved.................. %d\n", announce->stepsRemoved);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," timeSource.................... %d\n", announce->timeSource);
 	if (messageLen > ANNOUNCE_LENGTH)
 	{
-	  DBGM(" [WR suffix] tlv_type.......... 0x%x\n", tlv_type);
-	  DBGM(" [WR suffix] tlv_length........ %d\n", (UInteger16)get_be16(buf+66));
-	  DBGM(" [WR suffix] tlv_organizID .....0x%x\n", tlv_organizationID);
-	  DBGM(" [WR suffix] tlv_magicNumber... 0x%x\n", tlv_magicNumber);
-	  DBGM(" [WR suffix] tlv_versionNumber. 0x%x\n", tlv_versionNumber);
-	  DBGM(" [WR suffix] tlv_wrMessageID... 0x%x\n", tlv_wrMessageID);
-	  DBGM(" [WR suffix] wr_flags.......... 0x%x\n", announce->wr_flags);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_type.......... 0x%x\n", tlv_type);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_length........ %d\n", (UInteger16)get_be16(buf+66));
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_organizID .....0x%x\n", tlv_organizationID);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_magicNumber... 0x%x\n", tlv_magicNumber);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_versionNumber. 0x%x\n", tlv_versionNumber);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] tlv_wrMessageID... 0x%x\n", tlv_wrMessageID);
+	  PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... 0x%x\n", announce->wr_flags);
 	  if((announce->wr_flags & WR_NODE_MODE) == NON_WR)
-	    DBGM(" [WR suffix] wr_flags.......... NON_WR\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... NON_WR\n")
 	  else if((announce->wr_flags & WR_NODE_MODE) == WR_S_ONLY)
-	    DBGM(" [WR suffix] wr_flags.......... WR_S_ONLY\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_S_ONLY\n")
 	  else if((announce->wr_flags & WR_NODE_MODE) == WR_M_ONLY)
-	    DBGM(" [WR suffix] wr_flags.......... WR_M_ONLY\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_M_ONLY\n")
 	  else if((announce->wr_flags & WR_NODE_MODE) == WR_M_AND_S)
-	    DBGM(" [WR suffix] wr_flags.......... WR_M_AND_S\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR_M_AND_S\n")
 	  else
-	    DBGM(" [WR suffix] wr_flags.......... UNKNOWN !!!(this is error)\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... UNKNOWN !!!(this is error)\n")
 	  
 	  if((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE)
-	    DBGM(" [WR suffix] wr_flags.......... WR MODE ON\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR MODE ON\n")
 	  else
-	    DBGM(" [WR suffix] wr_flags.......... WR MODE OFF\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... WR MODE OFF\n")
 	  
           if((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED)
-	    DBGM(" [WR suffix] wr_flags.......... CALIBRATED\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... CALIBRATED\n")
 	  else 
-	    DBGM(" [WR suffix] wr_flags.......... unCALIBRATED\n");
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," [WR suffix] wr_flags.......... unCALIBRATED\n")
 	}
 
 }
@@ -416,13 +416,13 @@ void msgPackFollowUp(void *buf,PtpPortDS *ptpPortDS)
 	 * it's just not implemented here
 	 */
 
-	DBGM("------------ msgPackFollowUp-------\n");
-	DBGM(" syncSequenceId ............... %u\n", ptpPortDS->sentSyncSequenceId-1);
-	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logSyncInterval);
-	DBGM(" syncTransTimestamp.secs.hi.... %d\n", (int)(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32)));
-	DBGM(" syncTransTimestamp.secs.lo.... %d\n", (int)(0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc));
-	DBGM(" syncTransTimestamp.nsecs...... %d\n", ptpPortDS->synch_tx_ts.nsec);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackFollowUp-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," syncSequenceId ............... %u\n", ptpPortDS->sentSyncSequenceId-1);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logMinDelayReqInterval ....... %u\n", ptpPortDS->logSyncInterval);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," syncTransTimestamp.secs.hi.... %d\n", (int)(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32)));
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," syncTransTimestamp.secs.lo.... %d\n", (int)(0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc));
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," syncTransTimestamp.nsecs...... %d\n", ptpPortDS->synch_tx_ts.nsec);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
 
@@ -432,11 +432,11 @@ void msgUnpackFollowUp(void *buf,MsgFollowUp *follow)
 	follow->preciseOriginTimestamp.secondsField.msb = get_be16(buf+34);
 	follow->preciseOriginTimestamp.secondsField.lsb = get_be32(buf+36);
 	follow->preciseOriginTimestamp.nanosecondsField = get_be32(buf+40);
-	DBGM("------------ msgUnpackFollowUp-------\n");
-	DBGM(" preciseOriginTimestamp.secs.hi.%d\n", follow->preciseOriginTimestamp.secondsField.msb);
-	DBGM(" preciseOriginTimestamp.secs.lo %d\n", follow->preciseOriginTimestamp.secondsField.lsb);
-	DBGM(" preciseOriginTimestamp.nsecs.. %d\n", follow->preciseOriginTimestamp.nanosecondsField);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackFollowUp-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.secs.hi.%d\n", follow->preciseOriginTimestamp.secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.secs.lo %d\n", follow->preciseOriginTimestamp.secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.nsecs.. %d\n", follow->preciseOriginTimestamp.nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 }
 
 
@@ -478,12 +478,12 @@ void msgPackDelayReq(void *buf,Timestamp *originTimestamp,PtpPortDS *ptpPortDS)
 	put_be32(buf+36, originTimestamp->secondsField.lsb);
 	put_be32(buf+40, originTimestamp->nanosecondsField);
 
-	DBGM("------------ msgPackDelayReq-------\n");
-	DBGM(" delayReqSequenceId ........... %u\n", ptpPortDS->sentDelayReqSequenceId);
-	DBGM(" originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
-	DBGM(" originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
-	DBGM(" originTimestamp.nsecs......... %d\n", originTimestamp->nanosecondsField);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackDelayReq-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," delayReqSequenceId ........... %u\n", ptpPortDS->sentDelayReqSequenceId);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.msb...... %d\n", originTimestamp->secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.secs.lsb...... %d\n", originTimestamp->secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," originTimestamp.nsecs......... %d\n", originTimestamp->nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 
 }
@@ -517,15 +517,15 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	put_be16(buf + 52, header->sourcePortIdentity.portNumber);
 
 
-	DBGM("------------ msgPackDelayResp-------\n");
-	DBGM(" correctionfield.msb .......... %d\n", header->correctionfield.msb);
-	DBGM(" correctionfield.lsb........... %d\n", header->correctionfield.lsb);
-	DBGM(" sequenceId ................... %u\n", header->sequenceId);
-	DBGM(" logMinDelayReqInterval ....... %u\n", ptpPortDS->logMinDelayReqInterval);
-	DBGM(" delayReceiptTimestamp.secs.hi. %d\n", (int)(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32)));
-	DBGM(" delayReceiptTimestamp.secs.lo. %d\n", (int)(0xFFFFFFFF & ptpPortDS->current_rx_ts.utc));
-	DBGM(" delayReceiptTimestamp.nsecs... %d\n", ptpPortDS->current_rx_ts.nsec);
-	DBGM(" requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackDelayResp-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," correctionfield.msb .......... %d\n", header->correctionfield.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," correctionfield.lsb........... %d\n", header->correctionfield.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," sequenceId ................... %u\n", header->sequenceId);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," logMinDelayReqInterval ....... %u\n", ptpPortDS->logMinDelayReqInterval);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," delayReceiptTimestamp.secs.hi. %d\n", (int)(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32)));
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," delayReceiptTimestamp.secs.lo. %d\n", (int)(0xFFFFFFFF & ptpPortDS->current_rx_ts.utc));
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," delayReceiptTimestamp.nsecs... %d\n", ptpPortDS->current_rx_ts.nsec);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0],
 	    header->sourcePortIdentity.clockIdentity[1],
 	    header->sourcePortIdentity.clockIdentity[2],
@@ -570,11 +570,11 @@ void msgUnpackDelayReq(void *buf,MsgDelayReq *delayreq)
 	delayreq->originTimestamp.secondsField.msb = get_be16(buf+34);
 	delayreq->originTimestamp.secondsField.lsb = get_be32(buf+36);
 	delayreq->originTimestamp.nanosecondsField = get_be32(buf+40);
-	DBGM("------------ msgUnpackDelayReq-------\n");
-	DBGM(" preciseOriginTimestamp.secs.hi.%d\n", delayreq->originTimestamp.secondsField.msb);
-	DBGM(" preciseOriginTimestamp.secs.lo %d\n", delayreq->originTimestamp.secondsField.lsb);
-	DBGM(" preciseOriginTimestamp.nsecs.. %d\n", delayreq->originTimestamp.nanosecondsField);
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackDelayReq-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.secs.hi.%d\n", delayreq->originTimestamp.secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.secs.lo %d\n", delayreq->originTimestamp.secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," preciseOriginTimestamp.nsecs.. %d\n", delayreq->originTimestamp.nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
   
 }
 
@@ -597,11 +597,11 @@ void msgUnpackDelayResp(void *buf,MsgDelayResp *resp)
 	memcpy(resp->requestingPortIdentity.clockIdentity,(buf+44),CLOCK_IDENTITY_LENGTH);
 	resp->requestingPortIdentity.portNumber = (UInteger16)get_be16(buf+52);
 
-	DBGM("------------ msgUnpackDelayResp-------\n");
-	DBGM(" receiveTimestamp.secs.msb......%d\n", resp->receiveTimestamp.secondsField.msb);
-	DBGM(" receiveTimestamp.secs.lsb..... %d\n", resp->receiveTimestamp.secondsField.lsb);
-	DBGM(" receiveTimestamp.nsecs........ %d\n", resp->receiveTimestamp.nanosecondsField);
-	DBGM(" requestingPortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackDelayResp-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," receiveTimestamp.secs.msb......%d\n", resp->receiveTimestamp.secondsField.msb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," receiveTimestamp.secs.lsb..... %d\n", resp->receiveTimestamp.secondsField.lsb);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," receiveTimestamp.nsecs........ %d\n", resp->receiveTimestamp.nanosecondsField);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," requestingPortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    resp->requestingPortIdentity.clockIdentity[0],
 	    resp->requestingPortIdentity.clockIdentity[1],
 	    resp->requestingPortIdentity.clockIdentity[2],
@@ -692,8 +692,8 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	//wrMessageId
 	*(UInteger16*)(buf+54) = flip16(wrMessageID);
 	
-	DBGM("------------ msgPackWRSignalingMSG-------\n");
-	DBGM(" recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgPackWRSignalingMSG-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," recipient's PortUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0],
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2],
@@ -703,13 +703,13 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6],
 	    ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
-	DBGM(" tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
-	//DBGM(" tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
-	DBGM(" tlv_organizID ................ 0x%x\n", WR_TLV_ORGANIZATION_ID);
-	DBGM(" tlv_magicNumber............... 0x%x\n", WR_TLV_MAGIC_NUMBER);
-	DBGM(" tlv_versionNumber............. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
-	DBGM(" tlv_wrMessageID............... 0x%x\n", wrMessageID);	
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," recipient's PortId............ %u\n", ptpPortDS->ptpClockDS->parentPortIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_type...................... 0x%x\n", TLV_TYPE_ORG_EXTENSION);
+	//PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_length.................... %d\n",   WR_ANNOUNCE_TLV_LENGTH);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_organizID ................ 0x%x\n", WR_TLV_ORGANIZATION_ID);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_magicNumber............... 0x%x\n", WR_TLV_MAGIC_NUMBER);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_versionNumber............. 0x%x\n", WR_TLV_WR_VERSION_NUMBER);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_wrMessageID............... 0x%x\n", wrMessageID);	
 
  	UInteger16 len = 0;
  	switch(wrMessageID)
@@ -719,18 +719,18 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    if(ptpPortDS->calibrated)
 	    {
 	      put_be16(buf+56, 0x0000);
-	      DBGM(" calibrationSendPattern........ FALSE \n");
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calibrationSendPattern........ FALSE \n");
 	    }
 	    else
 	    {
 	      put_be16(buf+56, 0x0001);
-	      DBGM(" calibrationSendPattern........ TRUE \n");
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calibrationSendPattern........ TRUE \n");
 	    }
 	    put_be32(buf+58, ptpPortDS->calPeriod);
 	    len = 20;
 
 
-	    DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calPeriod..................... %u [us]\n", ptpPortDS->calPeriod);
 
 
 	    break;
@@ -746,11 +746,11 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	    put_be32(buf+64, ptpPortDS->deltaRx.scaledPicoseconds.msb);
 	    put_be32(buf+68, ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.msb);
-	    DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.lsb);
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 
-	    DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
-	    DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	    PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
 	    len = 24;
 
@@ -769,8 +769,8 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 	//TLV len
 	*(Integer16*)(buf+46) = flip16(len);
 
-	DBGM(" messageLength................. %u\n",  WR_SIGNALING_MSG_BASE_LENGTH + len);
-	DBGM(" WR TLV len.................... %u\n", len);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," messageLength................. %u\n",  WR_SIGNALING_MSG_BASE_LENGTH + len);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," WR TLV len.................... %u\n", len);
 
 
 
@@ -825,8 +825,8 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 
 
-	DBGM("------------ msgUnpackWRSignalingMsg-------\n");
-	DBGM(" target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"------------ msgUnpackWRSignalingMsg-------\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," target PortUuid............... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    signalingMsg->targetPortIdentity.clockIdentity[0],
 	    signalingMsg->targetPortIdentity.clockIdentity[1],
 	    signalingMsg->targetPortIdentity.clockIdentity[2],
@@ -836,13 +836,13 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	    signalingMsg->targetPortIdentity.clockIdentity[6],
 	    signalingMsg->targetPortIdentity.clockIdentity[7]
 	    );
-	DBGM(" target PortId................. %u\n", signalingMsg->targetPortIdentity.portNumber);
-	DBGM(" tlv_type...................... 0x%x\n", tlv_type);
-	DBGM(" tlv_length.................... %d\n",   len);
-	DBGM(" tlv_organizID ................ 0x%x\n", tlv_organizationID);
-	DBGM(" tlv_magicNumber............... 0x%x\n", tlv_magicNumber);
-	DBGM(" tlv_versionNumber............. 0x%x\n", tlv_versionNumber);
-	DBGM(" tlv_wrMessageID............... 0x%x\n", *wrMessageID);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," target PortId................. %u\n", signalingMsg->targetPortIdentity.portNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_type...................... 0x%x\n", tlv_type);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_length.................... %d\n",   len);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_organizID ................ 0x%x\n", tlv_organizationID);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_magicNumber............... 0x%x\n", tlv_magicNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_versionNumber............. 0x%x\n", tlv_versionNumber);
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG," tlv_wrMessageID............... 0x%x\n", *wrMessageID);
 
 	/*This is not nice way of doing it, need to be changed later !!!!!*/
 	if(*wrMessageID == CALIBRATE || *wrMessageID == CALIBRATED)
@@ -855,12 +855,12 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+56);
 	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+58);
 	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
-		DBGM(" calibrationSendPattern........ TRUE \n");
+		PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calibrationSendPattern........ TRUE \n")
 	      else
-		DBGM(" calibrationSendPattern........ FALSE \n");
+		PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calibrationSendPattern........ FALSE \n")
 
 
-	      DBGM(" calPeriod..................... %u [us]\n", ptpPortDS->otherNodeCalPeriod);
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," calPeriod..................... %u [us]\n", ptpPortDS->otherNodeCalPeriod);
 	      break;
 
 	    case CALIBRATED:
@@ -872,11 +872,11 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb = get_be32(buf+64);
 	      ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb = get_be32(buf+68);
 
-	      DBGM(" deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb);
-	      DBGM(" deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb);
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaTx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb);
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaTx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb);
 
-	      DBGM(" deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb);
-	      DBGM(" deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaRx.scaledPicoseconds.msb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb);
+	      PTPD_TRACE_NOPTPDATADS(TRACE_MSG," deltaRx.scaledPicoseconds.lsb. %d\n", (unsigned int)ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb);
 
 	      break;
 
@@ -885,7 +885,7 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 	      break;
 	  }
 	}
-	DBGM("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+	PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
 }
 
