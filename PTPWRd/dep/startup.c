@@ -254,13 +254,18 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	   break;
 
    case 'S':
+     	   // this needs to be changed, since it should target single port
 	   rtOpts->wrConfig = WR_S_ONLY;
 
 //	   DBGNPI("WR Slave\n");
 	   break;
 
    case 'M':
-	   rtOpts->wrConfig = WR_M_ONLY;
+	   rtOpts->masterOnly = TRUE;
+	   rtOpts->wrConfig = WR_M_ONLY; //only for ordinary clock
+	   
+	   // this needs to be changed, since it should target single port
+	   //rtOpts->wrConfig = WR_M_ONLY;
 
 //	   DBGNPI("WR Master\n");
 	   break;
@@ -353,6 +358,13 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	
 	currentPtpdClockData++;
     }
+    
+    if(rtOpts->portNumber >1 && rtOpts->masterOnly == TRUE)
+    {
+      printf("ERROR: boundary clock cannot be masterOnly\n");
+      return 0;
+    }
+    
   }
 
 

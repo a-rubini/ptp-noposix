@@ -115,14 +115,25 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	
 	if(rtOpts->slaveOnly)
           rtOpts->clockQuality.clockClass = 255;
-	else if(rtOpts->primarySource == TRUE && extsrcLocked()== TRUE)		// this is not the best solution :(
+	else if((rtOpts->masterOnly == TRUE || rtOpts->primarySource == TRUE || rtOpts->clockQuality.clockClass == 6) )
 	{
-	  timerInit(&ptpClockDS->clockClassValidityTimer, "clockClass");
-	  timerStart(&ptpClockDS->clockClassValidityTimer, 1000 * (pow_2(ptpClockDS->clockClassValidityTimeout)));
-	  rtOpts->clockQuality.clockClass = 6; 
-	  printf("Clocked to GPS, clockClass=6, timer started\n");
+	  if(extsrcLocked()== TRUE)
+	  {
+	    timerInit(&ptpClockDS->clockClassValidityTimer, "clockClass");
+	    timerStart(&ptpClockDS->clockClassValidityTimer, 1000 * (pow_2(ptpClockDS->clockClassValidityTimeout)));
+	    rtOpts->clockQuality.clockClass = 6; 
+	    printf("Clocked to GPS, clockClass=6, timer started\n");
+	  }
+	  else
+	  {
+	    printf("\n\n\n ERROR: you want to be a primary source of time but you are not connected"\
+		   " locked to external source of time, setting clockClass =13,"\
+		   " but please do investigate the issue !!! \n\n\n");
+	    rtOpts->clockQuality.clockClass = 13; /*table 5, p55, PTP spec*/
+	  }
+	    
 	}
-	  
+
 	ptpClockDS->clockQuality.clockClass = rtOpts->clockQuality.clockClass;  
 	
 	//WRPTP
@@ -166,11 +177,19 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->timeSource = INTERNAL_OSCILLATOR;
 		
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
+	
+	ptpPortDS->ptpClockDS->primarySlavePortNumber=0; //TODO: test
 }
 void m3(PtpPortDS *ptpPortDS)
 {
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
 }
+
+void p1(PtpPortDS *ptpPortDS)
+{
+	ptpPortDS->wrSlaveRole = NON_SLAVE;
+}
+
 
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
 void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
@@ -610,10 +629,12 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		}
 		else if (comp>0) //better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => s2(): =>> PTP_SLAVE [modifiedBMC][8]\n");
+			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => p1(): =>> PTP_PASSIVE[8]\n");
 			
-			s2(header,announce,ptpPortDS); //(8)
-			return PTP_SLAVE;
+			//s2(header,announce,ptpPortDS); //(8)
+			p1(ptpPortDS);
+			
+			return PTP_PASSIVE;
 		}
 		else
 		{

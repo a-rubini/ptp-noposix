@@ -338,6 +338,10 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     else
     {// one of the ports on the link is not WR-enabled
       ptpPortDS->wrMode = NON_WR;
+      /*
+       * you are Master_ONLY? go to master state ?
+       * this is not allowed transtion
+       */
     }
     
 
@@ -414,6 +418,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   else
     DBG("wrConfig .............. FORCED configuration\n")  ;
 
+  
   /* Create the timers (standard PTP only, the WR ones are created in another function: initWrData) */
   timerInit(&ptpPortDS->timers.sync, "Sync");
   timerInit(&ptpPortDS->timers.delayReq, "DelayReq");
@@ -468,8 +473,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
 		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
 
-		if(ptpPortDS->wrMode == WR_MASTER)
-		   ptpPortDS->wrMode = NON_WR;
+		//if(ptpPortDS->wrMode == WR_MASTER) //TODO: test
+		  ptpPortDS->wrMode = NON_WR;
 		
 	}
 	
@@ -516,6 +521,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				   ptpPortDS->portState == PTP_PASSIVE      ||
 				   ptpPortDS->portState == PTP_UNCALIBRATED ))
 				{
+					//TODO: force here master state if port: WR_M_ONLY
+				  
 					/* implementation of PTP_UNCALIBRATED state
 					* as transcient state between sth and SLAVE
 					* as specified in PTP state machine: Figure 23, 78p
@@ -545,6 +552,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 			}else
 			{
+				 //TODO: force here master state if port: WR_M_ONLY
+				  
 				 /***** SYNCHRONIZATION_FAULT detection ****
 				  * here we have a mechanims to enforce WR LINK SETUP (so-colled WR 
 				  * calibration).
@@ -557,8 +566,9 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		 		  * WR Slave: the need for re-synch, indicated by wrModeON==FALSE,  
 		 		  *           will be evaluated here
 		 		  */
-		 
-				  if(ptpPortDS->portState	    == PTP_SLAVE && \
+				  /*makes sense only if link is up*///TODO: test
+				  if(ptpPortDS->linkUP		     == TRUE &&      \
+				     ptpPortDS->portState	     == PTP_SLAVE && \
 				     ptpPortDS->wrMode               == WR_SLAVE  && \
 		   		    (ptpPortDS->parentWrModeON       == FALSE     || \
 		   		     ptpPortDS->wrModeON             == FALSE     ))
@@ -575,21 +585,21 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				   }
-				   /* new test staff (candidate to wrspec */
-				   else if(ptpPortDS->portState	   	 == PTP_SLAVE && \
-					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
-					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
-					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
-					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \
-				            ptpPortDS->wrMode            != WR_SLAVE )
-				   {
-				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
-				      DBG("re-synchronization -  two WR links which could be speaking "\
-					  "White Rabbit are not doing this. try to synch \n");
-				      ptpPortDS->wrMode = WR_SLAVE;
-				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);				    
-				     
-				   }
+// 				   /* new test staff (candidate to wrspec */
+// 				   else if(ptpPortDS->portState	   	 == PTP_SLAVE && \
+// 					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
+// 					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
+// 					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
+// 					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \
+// 				            ptpPortDS->wrMode            != WR_SLAVE )
+// 				   {
+// 				      DBG("event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+// 				      DBG("re-synchronization -  two WR links which could be speaking "\
+// 					  "White Rabbit are not doing this. try to synch \n");
+// 				      ptpPortDS->wrMode = WR_SLAVE;
+// 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);				    
+// 				     
+// 				   }
 			}
 			
 		}
@@ -628,7 +638,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 		handle(rtOpts, ptpPortDS);
 
-		if(timerExpired(&ptpPortDS->timers.announceReceipt) || linkUP == FALSE)
+		if(timerExpired(&ptpPortDS->timers.announceReceipt) /*|| linkUP == FALSE*/)//TODO: test
 		{
 			//DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
 			ptpPortDS->number_foreign_records = 0;

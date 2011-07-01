@@ -30,7 +30,7 @@ RunTimeOpts rtOpts = {
    .max_foreign_records = DEFAULT_MAX_FOREIGN_RECORDS,
    .autoPortDiscovery  	= TRUE,
    .primarySource	= FALSE,
-
+   
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
    .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
@@ -41,7 +41,7 @@ RunTimeOpts rtOpts = {
    .deltasKnown		= WR_DEFAULT_DELTAS_KNOWN,
    .knownDeltaTx	= WR_DEFAULT_DELTA_TX,
    .knownDeltaRx	= WR_DEFAULT_DELTA_RX,
-
+   .masterOnly		= FALSE,
    /********************************************************/
 };
 

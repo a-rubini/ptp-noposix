@@ -707,6 +707,7 @@ typedef struct {
 	UInteger8 	wrStateRetry;
 	Boolean 	autoPortDiscovery;
 	Boolean		primarySource;
+	Boolean		masterOnly;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

@@ -37,6 +37,7 @@
 #define DEFAULT_CLOCKCLASS_VALIDATE_TIMEOUT	5		//new staff
 
 #define DEFAULT_CLOCK_CLASS			187
+
 #define DEFAULT_PRIORITY1			128
 #define DEFAULT_PRIORITY2			128
 #define DEFAULT_CLOCK_VARIANCE			-4000 //To be determined in 802.1AS...so same value of ptpdv1 is used
@@ -122,6 +123,8 @@
 
 #define WR_SLAVE_CLOCK_CLASS		248
 #define WR_MASTER_CLOCK_CLASS		5
+
+#define WR_MASTER_ONLY_CLOCK_CLASS	70
 
 ///// new staff for WRPTPv2
 

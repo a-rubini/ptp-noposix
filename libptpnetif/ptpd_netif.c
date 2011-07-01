@@ -1006,12 +1006,27 @@ int ptpd_netif_extsrc_detection()
 {
     int ret;
     ret=halexp_extsrc_cmd(HEXP_EXTSRC_CMD_CHECK);
-    printf("(ptpd_netif)  ptpd_netif_extsrc_detection() ret=%d\n",ret);
-    if(ret == HEXP_EXTSRC_STATUS_LOCKED)
+/* halexp_extsrc_cmd() retunrs: 
+  #define HEXP_EXTSRC_STATUS_LOCKED 	0 
+  #define HEXP_LOCK_STATUS_BUSY	  	1
+  #define HEXP_EXTSRC_STATUS_NOSRC  	2
+*/ 
+    
+    if(ret == HEXP_EXTSRC_STATUS_LOCKED) //0
+    {
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_OK [ret=%d]\n",ret);
       return PTPD_NETIF_OK;
-    else if(ret == HEXP_EXTSRC_STATUS_NOSRC)
+    }
+    else if(ret == HEXP_EXTSRC_STATUS_NOSRC) //2
+    {
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_NOT_FOUND [ret=%d]\n",ret);
       return PTPD_NETIF_NOT_FOUND;
+    }
     else 
+    { 
+      //probably ret == HEXP_LOCK_STATUS_BUSY (1)
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_ERROR [ret=%d]\n",ret);
       return PTPD_NETIF_ERROR;
+    }
 
 }

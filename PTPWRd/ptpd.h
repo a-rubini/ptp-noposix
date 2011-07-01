@@ -114,6 +114,11 @@ void m1(PtpPortDS*);
 void m3(PtpPortDS*);
 
 /**
+ * \brief When recommended state is Passive, behave as defined in PTP standard
+ */
+void p1(PtpPortDS*);
+
+/**
  * \brief When recommended state is Slave, copy dataset of master into parent and grandmaster dataset
  */
 void s1(MsgHeader*,MsgAnnounce*,PtpPortDS*);

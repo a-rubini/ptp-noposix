@@ -1134,9 +1134,9 @@ void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
   {
     ptpPortDS->wrTimeouts[i] = ptpPortDS->wrStateTimeout;
   }
-    ptpPortDS->wrTimeouts[WRS_PRESENT] = 1000;
-    ptpPortDS->wrTimeouts[WRS_S_LOCK]  = 10000;
-    ptpPortDS->wrTimeouts[WRS_M_LOCK]  = 10000;
+     ptpPortDS->wrTimeouts[WRS_PRESENT] = 1000;
+     ptpPortDS->wrTimeouts[WRS_S_LOCK]  = 10000;
+     ptpPortDS->wrTimeouts[WRS_M_LOCK]  = 10000;
   
   // Fixme/TODO (7): do it nicer 
   if(mode == INIT)
