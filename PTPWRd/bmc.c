@@ -13,7 +13,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 /* Default data set */
 //mergeProblem:	ptpClock->twoStepFlag = TWO_STEP_FLAG;
 
-  DBG("initDataPort\n");
+  PTPD_TRACE(TRACE_BMC,"initDataPort\n");
 
 
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
@@ -122,7 +122,7 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	    timerInit(&ptpClockDS->clockClassValidityTimer, "clockClass");
 	    timerStart(&ptpClockDS->clockClassValidityTimer, 1000 * (pow_2(ptpClockDS->clockClassValidityTimeout)));
 	    rtOpts->clockQuality.clockClass = 6; 
-	    printf("Clocked to GPS, clockClass=6, timer started\n");
+	    //printf("Clocked to GPS, clockClass=6, timer started\n");
 	  }
 	  else
 	  {
@@ -194,7 +194,7 @@ void p1(PtpPortDS *ptpPortDS)
 /*Local clock is synchronized to Ebest Table 16 (9.3.5) of the spec*/
 void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 {
-	DBG("[%s]\n",__func__);
+	PTPD_TRACE(TRACE_BMC,"[%s]\n",__func__);
 	/*Current DS*/
 	ptpPortDS->ptpClockDS->stepsRemoved = announce->stepsRemoved + 1;
 
@@ -213,24 +213,24 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	ptpPortDS->parentIsWRnode    	 = ((announce->wr_flags & WR_NODE_MODE) != NON_WR);
 	ptpPortDS->parentWrModeON     	  = ((announce->wr_flags & WR_IS_WR_MODE) == WR_IS_WR_MODE);
 	ptpPortDS->parentCalibrated = ((announce->wr_flags & WR_IS_CALIBRATED) == WR_IS_CALIBRATED);
-	DBGBMC(" S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
-	DBGBMC(" S1: parentIsWRnode............ 0x%x\n", ptpPortDS->parentIsWRnode);
-	DBGBMC(" S1: parentWrModeON............ 0x%x\n", ptpPortDS->parentWrModeON);
-	DBGBMC(" S1: parentCalibrated.......... 0x%x\n", ptpPortDS->parentCalibrated);	
+	PTPD_TRACE(TRACE_BMC," S1: copying wr_flags.......... 0x%x\n", announce->wr_flags);
+	PTPD_TRACE(TRACE_BMC," S1: parentIsWRnode............ 0x%x\n", ptpPortDS->parentIsWRnode);
+	PTPD_TRACE(TRACE_BMC," S1: parentWrModeON............ 0x%x\n", ptpPortDS->parentWrModeON);
+	PTPD_TRACE(TRACE_BMC," S1: parentCalibrated.......... 0x%x\n", ptpPortDS->parentCalibrated);	
 
 	ptpPortDS->parentWrConfig      =   announce->wr_flags & WR_NODE_MODE;
-	DBGBMC(" S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
+	PTPD_TRACE(TRACE_BMC," S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber	= ptpPortDS->portIdentity.portNumber;
 	
 	
-	DBGBMC(" S1: g-masterIdentity[announce]. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE(TRACE_BMC," S1: g-masterIdentity[announce]. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    announce->grandmasterIdentity[0], announce->grandmasterIdentity[1],
 	    announce->grandmasterIdentity[2], announce->grandmasterIdentity[3],
 	    announce->grandmasterIdentity[4], announce->grandmasterIdentity[5],
 	    announce->grandmasterIdentity[6], announce->grandmasterIdentity[7]);	
 
-	DBGBMC(" S1: g-masterIdentity[clockDS].. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+	PTPD_TRACE(TRACE_BMC," S1: g-masterIdentity[clockDS].. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[0], ptpPortDS->ptpClockDS->grandmasterIdentity[1],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[2], ptpPortDS->ptpClockDS->grandmasterIdentity[3],
 	    ptpPortDS->ptpClockDS->grandmasterIdentity[4], ptpPortDS->ptpClockDS->grandmasterIdentity[5],
@@ -265,7 +265,7 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.header);
 	msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->secondaryForeignMaster.announce,&ptpPortDS->secondaryForeignMaster.header);
 
-	DBG("Secondary foreign Master added/updated \n");
+	PTPD_TRACE(TRACE_BMC,"Secondary foreign Master added/updated \n");
 
 	ptpPortDS->secondaryForeignMaster.receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
 	
@@ -274,7 +274,7 @@ void s2(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 /*Copy local data set into header and announce message. 9.3.4 table 12*/
 void copyD0(MsgHeader *header, MsgAnnounce *announce, PtpPortDS *ptpPortDS)
 {
-	DBG("[%s]\n",__func__);
+	PTPD_TRACE(TRACE_BMC,"[%s]\n",__func__);
   	announce->grandmasterPriority1 = ptpPortDS->ptpClockDS->priority1;
 	memcpy(announce->grandmasterIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	announce->grandmasterClockQuality.clockClass = ptpPortDS->ptpClockDS->clockQuality.clockClass;
@@ -316,67 +316,67 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	 *
 	 */
 	
-	DBGBMC("DCA: Data set comparison \n");
+	PTPD_TRACE(TRACE_BMC,"DCA: Data set comparison \n");
 	
 	short comp = 0;
 
 	if(receptionPortNumberA == 0) // the indexing of ports starts from 1, 0 indicates no port
 	{
-	  DBG("A better B because B is empty !!!\n");
+	  PTPD_TRACE(TRACE_BMC,"A better B because B is empty !!!\n");
 	  return A_better_then_B;
 	}
 	else if(receptionPortNumberB == 0)
 	{
-	  DBG("B better A because B is empty !!!\n");
+	  PTPD_TRACE(TRACE_BMC,"B better A because B is empty !!!\n");
 	  return B_better_then_A;
 	}
 
 	/*Identity comparison*/
 	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH)) // (1)
 	{
-		DBGBMC("DCA: Grandmasters are identical\n");
+		PTPD_TRACE(TRACE_BMC,"DCA: Grandmasters are identical\n");
 		//Algorithm part2 Fig 28
 		// compare steps removed of A and B
 		if (announceA->stepsRemoved > announceB->stepsRemoved+1) //(2)
 		{
-		    DBGBMC("DCA: .. B better than A \n");
+		    PTPD_TRACE(TRACE_BMC,"DCA: .. B better than A \n");
 		    return B_better_then_A;
 		}
 		else if (announceB->stepsRemoved > announceA->stepsRemoved+1) //(2)
 		{
-		    DBGBMC("DCA: .. A better than B \n");
+		    PTPD_TRACE(TRACE_BMC,"DCA: .. A better than B \n");
 		    return A_better_then_B;
 		}
 		else //A within 1 of B
 		{
-			DBGBMC("DCA: .. A within 1 of B \n");
+			PTPD_TRACE(TRACE_BMC,"DCA: .. A within 1 of B \n");
 			// Compare Steps Removed of A and B
 			if (announceA->stepsRemoved > announceB->stepsRemoved) // (3)
 			{
-				DBGBMC("DCA: .. .. A > B\n");
+				PTPD_TRACE(TRACE_BMC,"DCA: .. .. A > B\n");
 				
 				/* Compare Identities of Receiver of A and Sender of A */
 				
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(4)
 				{
-				    DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
+				    PTPD_TRACE(TRACE_BMC,"DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
 				    return A_equals_B;
 				}
 				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)//(4)
 				{
 				  
-				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
+				    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
 				    return B_better_then_A;
 				}
 				else if(memcmp(headerA->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)//(4)
 				{
 				  
-				    DBGBMC("DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
+				    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. B better by topology than A (Comparing Identities of A: Receiver > Sender)\n");
 				    return B_better_by_topology_then_A;
 				}
 				else 
 				{
-				   DBGBMC("Impossible to get here \n");
+				   PTPD_TRACE(TRACE_BMC,"Impossible to get here \n");
 				   return DSC_error;
 				}
 
@@ -385,57 +385,57 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 			{
 				if (!memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))  //(5)
 				{
-				  	DBGBMC("DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
+				  	PTPD_TRACE(TRACE_BMC,"DCA: .. .. Comparing Identities of A: Sender=Receiver : Error -1");
 					return A_equals_B;
 				}
 				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) > 0)//(5)
 				{
 				  
-				    DBGBMC("DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
+				    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. B better than A (Comparing Identities of A: Receiver < Sender)\n");
 				    return A_better_then_B;
 				}
 				else if(memcmp(headerB->sourcePortIdentity.clockIdentity,ptpPortDS->portIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH) < 0)//(5)
 				{
 				  
-				    DBGBMC("DCA: .. .. .. A better by topology than B (Comparing Identities of A: Receiver > Sender)\n");
+				    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. A better by topology than B (Comparing Identities of A: Receiver > Sender)\n");
 				    return A_better_by_topology_then_B;
 				}
 				else 
 				{
-				   DBGBMC("Impossible to get here \n");
+				   PTPD_TRACE(TRACE_BMC,"Impossible to get here \n");
 				   return DSC_error;
 				}
 			}
 			else // steps removed A = steps removed B
 			{
-				DBGBMC("DCA: .. steps removed A = steps removed B \n");
+				PTPD_TRACE(TRACE_BMC,"DCA: .. steps removed A = steps removed B \n");
 				// compare Identities of Senders of A and B
 				if (!memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)) //(6)
 				{				
 					if(receptionPortNumberA < receptionPortNumberB) //(7)
 					{
-					    DBGBMC("DCA: .. .. .. .. A better by topology than B (Compare Port Numbers of Receivers of A and B : A < B)\n");
+					    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. A better by topology than B (Compare Port Numbers of Receivers of A and B : A < B)\n");
 					    return A_better_by_topology_then_B;
 					}
 					else if(receptionPortNumberA > receptionPortNumberB) //(7)
 					{
-					    DBGBMC("DCA: .. .. .. .. B better by topology than A (Compare Port Numbers of Receivers of A and B : A > B)\n");
+					    PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. B better by topology than A (Compare Port Numbers of Receivers of A and B : A > B)\n");
 					    return B_better_by_topology_then_A;
 					}
 					else // receptionPortNumberA == receptionPortNumberB //(7)
 					{
-					    DBG("DCA: .. Sender=Receiver : Error -2");
+					    PTPD_TRACE(TRACE_BMC,"DCA: .. Sender=Receiver : Error -2");
 					    return A_equals_B;
 					}
 					
 				}
 				else if ((memcmp(headerA->sourcePortIdentity.clockIdentity,headerB->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH))<0)
 				{
-					DBGBMC("DCA: .. .. A better by topology than B \n");
+					PTPD_TRACE(TRACE_BMC,"DCA: .. .. A better by topology than B \n");
 					return A_better_by_topology_then_B;
 				}
 				else
-				{	DBGBMC("DCA: .. .. B better by topologythan A \n");
+				{	PTPD_TRACE(TRACE_BMC,"DCA: .. .. B better by topologythan A \n");
 					return B_better_by_topology_then_A;
 				}
 			}
@@ -444,36 +444,36 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	}
 	else //GrandMaster are not identical
 	{
-		DBGBMC("DCA: GrandMaster are not identical\n");
+		PTPD_TRACE(TRACE_BMC,"DCA: GrandMaster are not identical\n");
 		if(announceA->grandmasterPriority1 == announceB->grandmasterPriority1)
 		{
-			DBGBMC("DCA: .. A->Priority1 == B->Priority1 == %d\n",announceB->grandmasterPriority1);
+			PTPD_TRACE(TRACE_BMC,"DCA: .. A->Priority1 == B->Priority1 == %d\n",announceB->grandmasterPriority1);
 			if (announceA->grandmasterClockQuality.clockClass == announceB->grandmasterClockQuality.clockClass)
 			{
-				DBGBMC("DCA: .. .. A->clockClass == B->clockClass == %d\n",announceB->grandmasterClockQuality.clockClass);
+				PTPD_TRACE(TRACE_BMC,"DCA: .. .. A->clockClass == B->clockClass == %d\n",announceB->grandmasterClockQuality.clockClass);
 				if (announceA->grandmasterClockQuality.clockAccuracy == announceB->grandmasterClockQuality.clockAccuracy)
 				{
-					DBGBMC("DCA: .. .. .. A->clockAccuracy == B->clockAccuracy == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
+					PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. A->clockAccuracy == B->clockAccuracy == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
 					if (announceA->grandmasterClockQuality.offsetScaledLogVariance == announceB->grandmasterClockQuality.offsetScaledLogVariance)
 					{
-						DBGBMC("DCA: .. .. .. .. A->offsetScaledLogVariance == B->offsetScaledLogVariance == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
+						PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. A->offsetScaledLogVariance == B->offsetScaledLogVariance == %d\n",announceB->grandmasterClockQuality.offsetScaledLogVariance);
 						if (announceA->grandmasterPriority2 == announceB->grandmasterPriority2)
 						{
-							DBGBMC("DCA: .. .. .. .. .. A->Priority2 == B->Priority2 == %d\n",announceB->grandmasterPriority2);
+							PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. A->Priority2 == B->Priority2 == %d\n",announceB->grandmasterPriority2);
 							comp = memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH);
 							if (comp < 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. A better than B by GrandMaster ID\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. .. A better than B by GrandMaster ID\n");
 								return A_better_then_B;
 							}
 							else if (comp > 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. B better than A GrandMaster ID\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. .. B better than A GrandMaster ID\n");
 								return B_better_then_A;
 							}
 							else
 							{
-								DBGBMC("DCA: .. .. .. .. .. .. not good: GrandMaster ID [should not get here]\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. .. not good: GrandMaster ID [should not get here]\n");
 								return DSC_error;
 							}
 						}
@@ -482,17 +482,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 							comp =memcmp(&announceA->grandmasterPriority2,&announceB->grandmasterPriority2,1);
 							if (comp < 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. A better than B by Priority2\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. A better than B by Priority2\n");
 								return A_better_then_B;
 							}
 							else if (comp > 0)
 							{
-								DBGBMC("DCA: .. .. .. .. .. B better than A by Priority2\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. B better than A by Priority2\n");
 								return B_better_then_A;
 							}
 							else
 							{
-								DBGBMC("DCA: .. .. .. .. .. not good: Priority2\n");
+								PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. .. not good: Priority2\n");
 								return DSC_error;
 							}
 						}
@@ -503,16 +503,16 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 						comp= memcmp(&announceA->grandmasterClockQuality.offsetScaledLogVariance,&announceB->grandmasterClockQuality.offsetScaledLogVariance,1);
 						if (comp < 0)
 						{
-							DBGBMC("DCA: .. .. .. .. A better than B by offsetScaledLogVariance\n");
+							PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. A better than B by offsetScaledLogVariance\n");
 							return A_better_then_B;
 						}
 						else if (comp > 0)
 						{
-							DBGBMC("DCA: .. .. .. .. B better than A by offsetScaledLogVariance\n");
+							PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. B better than A by offsetScaledLogVariance\n");
 							return B_better_then_A;
 						}
 						else
-						{	DBGBMC("DCA: .. .. .. .. not good: offsetScaledLogVariance\n");
+						{	PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. .. not good: offsetScaledLogVariance\n");
 							return DSC_error;
 						}
 					}
@@ -524,17 +524,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 					comp = memcmp(&announceA->grandmasterClockQuality.clockAccuracy,&announceB->grandmasterClockQuality.clockAccuracy,1);
 					if (comp < 0)
 					{
-						DBGBMC("DCA: .. .. .. A better than B by clockAccuracy\n");
+						PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. A better than B by clockAccuracy\n");
 						return A_better_then_B;
 					}
 					else if (comp > 0)
 					{
-						DBGBMC("DCA: .. .. .. B better than A by clockAccuracy\n");
+						PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. B better than A by clockAccuracy\n");
 						return B_better_then_A;
 					}
 					else
 					{	
-						DBGBMC("DCA: .. .. .. not good: clockAccuracy\n");
+						PTPD_TRACE(TRACE_BMC,"DCA: .. .. .. not good: clockAccuracy\n");
 						return DSC_error;
 					}
 				}
@@ -546,17 +546,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 				comp =  memcmp(&announceA->grandmasterClockQuality.clockClass,&announceB->grandmasterClockQuality.clockClass,1);
 				if (comp < 0)
 				{
-					DBGBMC("DCA: .. .. A better than B by clockClass\n");
+					PTPD_TRACE(TRACE_BMC,"DCA: .. .. A better than B by clockClass\n");
 					return A_better_then_B;
 				}
 				else if (comp > 0)
 				{
-					DBGBMC("DCA: .. .. B better than A by clockClass\n");
+					PTPD_TRACE(TRACE_BMC,"DCA: .. .. B better than A by clockClass\n");
 					return B_better_then_A;
 				}
 				else
 				{
-					DBGBMC("DCA: .. .. not good:  clockClass\n");
+					PTPD_TRACE(TRACE_BMC,"DCA: .. .. not good:  clockClass\n");
 					return DSC_error;
 				}
 			}
@@ -567,17 +567,17 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 			comp =  memcmp(&announceA->grandmasterPriority1,&announceB->grandmasterPriority1,1);
 			if (comp < 0)
 			{
-				DBGBMC("DCA: .. A better than B by Priority1\n");
+				PTPD_TRACE(TRACE_BMC,"DCA: .. A better than B by Priority1\n");
 				return A_better_then_B;
 			}
 			else if (comp > 0)
 			{
-				DBGBMC("DCA: .. B better than A by Priority1\n");
+				PTPD_TRACE(TRACE_BMC,"DCA: .. B better than A by Priority1\n");
 				return B_better_then_A;
 			}
 			else
 			{
-				DBGBMC("DCA: .. not good: Priority1\n");
+				PTPD_TRACE(TRACE_BMC,"DCA: .. not good: Priority1\n");
 				return DSC_error;
 			}
 		}
@@ -595,10 +595,10 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 {
 	Integer8 comp;
 	
-	DBGBMC("SDA: State Decision Algorith,\n");
+	PTPD_TRACE(TRACE_BMC,"SDA: State Decision Algorith,\n");
 	if (rtOpts->slaveOnly)
 	{
-		DBGBMC("SDA: .. Slave Only Mode: PTP_SLAVE\n");
+		PTPD_TRACE(TRACE_BMC,"SDA: .. Slave Only Mode: PTP_SLAVE\n");
 		s1(header,announce,ptpPortDS);
 
 		  return PTP_SLAVE;
@@ -606,7 +606,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 
 	if ((!ptpPortDS->number_foreign_records) && (ptpPortDS->portState == PTP_LISTENING)) //(2)
 	{
-		DBGBMC("SDA: .. No foreing nasters : PTP_LISTENING [3]\n");
+		PTPD_TRACE(TRACE_BMC,"SDA: .. No foreing nasters : PTP_LISTENING [3]\n");
 		return PTP_LISTENING;
 	}
 	
@@ -614,7 +614,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 
 	if (ptpPortDS->ptpClockDS->clockQuality.clockClass < 128) // (4)
 	{
-		DBGBMC("SDA: .. clockClass < 128\n");
+		PTPD_TRACE(TRACE_BMC,"SDA: .. clockClass < 128\n");
 		
 		comp =  bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
 					     &ptpPortDS->msgTmp.announce,
@@ -623,13 +623,13 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		
 		if (comp < 0) // (5): better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [7]\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [7]\n");
 			m1(ptpPortDS); //(7)
 			return PTP_MASTER;
 		}
 		else if (comp>0) //better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO => p1(): =>> PTP_PASSIVE[8]\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. D0 Better or better by topology then Ebest: NO => p1(): =>> PTP_PASSIVE[8]\n");
 			
 			//s2(header,announce,ptpPortDS); //(8)
 			p1(ptpPortDS);
@@ -638,7 +638,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		}
 		else
 		{
-			DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. Error in bmcDataSetComparison..\n");
 		}
 	}
 
@@ -651,7 +651,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		 * condition: "Erbest same as Ebest" defaults to YES
 		 *
 		 */
-		DBGBMC("SDA: .. clockClass > 128\n");
+		PTPD_TRACE(TRACE_BMC,"SDA: .. clockClass > 128\n");
 		/* compare  D0 with Ebest */
 		
 		comp =  bmcDataSetComparison(&ptpPortDS->msgTmpHeader,
@@ -664,23 +664,23 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		
 		if ((comp < 0))	// (6) better or better by to topology	
 		{		
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [9]\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. D0 Better or better by topology then Ebest: YES => m1(): PTP_MASTER [9]\n");
 			m1(ptpPortDS);//(9) actually, m2(), but it's the same as m1()
 			return PTP_MASTER;
 		}
 		else if (comp>0) //better or better by to topology
 		{
-			DBGBMC("SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. D0 Better or better by topology then Ebest: NO\n");
 			if(ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber == ptpPortDS->portIdentity.portNumber) //(10)
 			{
 				
-				DBGBMC("SDA: .. .. .. Ebest received on port r (=%d): YES => s1(): PTP_SLAVE [11]\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
+				PTPD_TRACE(TRACE_BMC,"SDA: .. .. .. Ebest received on port r (=%d): YES => s1(): PTP_SLAVE [11]\n",ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber);
 				s1(header,announce,ptpPortDS); //(11)
 				return PTP_SLAVE;
 			}
 			else
 			{
-				DBGBMC("SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO \n", \
+				PTPD_TRACE(TRACE_BMC,"SDA: .. .. .. Ebest received on port r (foreign_receivd_on=%d,current_port=%d ): NO \n", \
 				ptpPortDS->ptpClockDS->bestForeign->receptionPortNumber, ptpPortDS->portIdentity.portNumber);
 				
 				comp = bmcDataSetComparison(&ptpPortDS->ptpClockDS->bestForeign->header,
@@ -690,26 +690,26 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 				
 				if (comp == A_better_by_topology_then_B)	//(12): better by topology
 				{		
-					DBGBMC("SDA: .. .. .. .. Ebest better by topology (ONLY !!!) then Erbest: YES => s2()  PTP_SLAVE [modifiedBMC][13]\n");
+					PTPD_TRACE(TRACE_BMC,"SDA: .. .. .. .. Ebest better by topology (ONLY !!!) then Erbest: YES => s2()  PTP_SLAVE [modifiedBMC][13]\n");
 					s2(header,announce,ptpPortDS); // (13)
 					return PTP_SLAVE;
 				}
 				else if (comp != A_better_by_topology_then_B)	//better by topology
 				{
-					DBGBMC("SDA: .. .. .. .. Ebest better by topology (ONLY !!) then Erbest: NO (it means it can be better) => m3() PTP_MASTER [14] \n");
+					PTPD_TRACE(TRACE_BMC,"SDA: .. .. .. .. Ebest better by topology (ONLY !!) then Erbest: NO (it means it can be better) => m3() PTP_MASTER [14] \n");
 					m3(ptpPortDS); // (14)
 					return PTP_MASTER;			
 				}
 				else
 				{
-					DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
+					PTPD_TRACE(TRACE_BMC,"SDA: .. .. Error in bmcDataSetComparison..\n");
 				}				  
 			}
 
 		}
 		else
 		{
-			DBGBMC("SDA: .. .. Error in bmcDataSetComparison..\n");
+			PTPD_TRACE(TRACE_BMC,"SDA: .. .. Error in bmcDataSetComparison..\n");
 		}
 
 	}
@@ -723,16 +723,16 @@ return: recommended state
 */
 UInteger8 bmc(ForeignMasterRecord *foreignMaster,RunTimeOpts *rtOpts ,PtpPortDS *ptpPortDS )
 {
-	DBG("BMC: Best Master Clock Algorithm @ working\n");
+	PTPD_TRACE(TRACE_BMC,"BMC: Best Master Clock Algorithm @ working\n");
 	Integer16 best;
 
 	//TODO (3): check what happens when all/Ebest is removed, maybe needs some extra cleaning
 	if (ptpPortDS->ptpClockDS->Ebest < 0) // no foreignMasters in entire ptpClock (all ports)
 	{
-		DBGBMC("BMC: .. no foreign masters\n");
+		PTPD_TRACE(TRACE_BMC,"BMC: .. no foreign masters\n");
 		if (ptpPortDS->portState == PTP_MASTER)
 		{
-			DBGBMC("BMC: .. .. m1(): PTP_MASTER\n");
+			PTPD_TRACE(TRACE_BMC,"BMC: .. .. m1(): PTP_MASTER\n");
 			m1(ptpPortDS);
 			return ptpPortDS->portState;
 		}
@@ -753,7 +753,7 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 {
 	Integer16 i,best;
 	
-	DBGBMC("ErBest - looking for the best ForeignMaster for a port=%d\n",ptpPortDS->portIdentity.portNumber);
+	PTPD_TRACE(TRACE_BMC,"ErBest - looking for the best ForeignMaster for a port=%d\n",ptpPortDS->portIdentity.portNumber);
 	
 	if (!ptpPortDS->number_foreign_records)
 	{
@@ -765,7 +765,7 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 	//go through all foreign masters and compare, find the best one
 	for (i=1,best = 0; i<ptpPortDS->number_foreign_records;i++)
 	{
-		DBGBMC("BMC: .. looking at %d foreign master\n",i);
+		PTPD_TRACE(TRACE_BMC,"BMC: .. looking at %d foreign master\n",i);
 		if ((bmcDataSetComparison(&foreignMaster[i].header,
 					  &foreignMaster[i].announce,
 					   foreignMaster[i].receptionPortNumber,
@@ -774,12 +774,12 @@ UInteger8 ErBest(ForeignMasterRecord *foreignMaster,PtpPortDS *ptpPortDS )
 					   foreignMaster[best].receptionPortNumber,
 					  ptpPortDS)) < 0)
 		{
-			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
+			PTPD_TRACE(TRACE_BMC,"BMC: .. .. update currently best (%d) to new best = %d\n",best, i);
 			best = i;
 		}
 	}
 
- 	DBGBMC("ErBest: the best foreign master for port = %d is indexed = %d received on port = %d\n",\
+ 	PTPD_TRACE(TRACE_BMC,"ErBest: the best foreign master for port = %d is indexed = %d received on port = %d\n",\
  		 ptpPortDS->portIdentity.portNumber, best, foreignMaster[best].receptionPortNumber);
 		
 	ptpPortDS->foreign_record_best = best;
@@ -803,7 +803,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 	Integer16 ERbest_i;
 	Integer16 ERbest_b;	
   
-	DBGBMC("EBest - looking for the best ForeignMaster for all ports\n");
+	PTPD_TRACE(TRACE_BMC,"EBest - looking for the best ForeignMaster for all ports\n");
 	
 	//look for the first port with non-empty foreign master records
 	for (Ebest=0; Ebest < ptpPortDS->ptpClockDS->numberPorts; Ebest++)
@@ -822,7 +822,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 		ERbest_i 	= ptpPortDS[i].foreign_record_best;
 		ERbest_b	= ptpPortDS[Ebest].foreign_record_best;
 		
-		DBGBMC("BMC: .. looking at %d foreign master\n",i);
+		PTPD_TRACE(TRACE_BMC,"BMC: .. looking at %d foreign master\n",i);
 		if ((bmcDataSetComparison(&ptpPortDS[i].foreign[ERbest_i].header,   	\
 					  &ptpPortDS[i].foreign[ERbest_i].announce, 	\
 					   ptpPortDS[i].foreign[ERbest_i].receptionPortNumber, 	\
@@ -831,7 +831,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 					   ptpPortDS[Ebest].foreign[ERbest_b].receptionPortNumber, 	\
 					   ptpPortDS)) < 0)
 		{
-			DBGBMC("BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);
+			PTPD_TRACE(TRACE_BMC,"BMC: .. .. update currently best (%d) to new best = %d\n",Ebest, i);
 			Ebest = i;
 		}
 	}
@@ -843,7 +843,7 @@ UInteger8 EBest(PtpPortDS *ptpPortDS )
 	//remember the pointer to Ebest globally
 	ptpPortDS->ptpClockDS->bestForeign = &ptpPortDS[Ebest].foreign[ERbest_b];
 	
-	DBGBMC("Ebest: the port with the best foreign master number=%d, the foreign master record number=%d\n",\
+	PTPD_TRACE(TRACE_BMC,"Ebest: the port with the best foreign master number=%d, the foreign master record number=%d\n",\
 		ptpPortDS[Ebest].foreign[ERbest_b].receptionPortNumber ,Ebest);
 
 	return Ebest;

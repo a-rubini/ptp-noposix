@@ -16,7 +16,7 @@
 
 #define TRACE_ALL 0xffff
 
-#define PTPD_TRACE_PTPDATADS (TRACE_WR_PROTO | TRACE_PROTO)
+#define PTPD_TRACE_PTPDATADS (TRACE_WR_PROTO | TRACE_PROTO | TRACE_BMC)
 
 #define PTPD_TRACE(subsys, x, ...) \
   {\
