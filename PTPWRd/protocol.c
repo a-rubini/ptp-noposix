@@ -39,12 +39,11 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
 #endif
 
 
-
-#ifndef WRPC_EXTRA_SLIM
-
-
 /*
- * 
+ * loop forever. doState() has a switch for the actions and events to be
+ * checked for 'port_state'. the actions and events may or may not change
+ * 'port_state' by calling toState(), but once they are done we loop around
+ * again and perform the actions required for the new 'port_state'.
  */
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  {
@@ -57,6 +56,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   ptpd_handle_wripc();
   
+  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"multiport mode\n");
+  
   for (i=0; i < rtOpts->portNumber; i++)
   {
 
@@ -65,9 +66,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      if(!doInit(rtOpts, currentPtpPortDSData))
      {
        // doInit Failed!  Exit
-       PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n--------------------------------------------------\n"\
-           "---------------- port %d failed to doInit()-----------------------------\n"\
-           "--------------------------------\n",(i+1));
+       PTPD_TRACE(TRACE_ERROR, ptpPortDS,"------ port %d failed to doInit()-----------\n",(i+1));
        //return;
      }
      currentPtpPortDSData++;
@@ -129,12 +128,10 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   }
 
+}
 
 
- }
-
-#endif
-
+//////////// this function is obsoleted (we use multiProtocol for single and multiport) //////////
 /* 
  * loop forever. doState() has a switch for the actions and events to be
  * checked for 'port_state'. the actions and events may or may not change
@@ -465,26 +462,21 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
 	{
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK DOWN  <<---------\n");
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		ptpPortDS->wrModeON = FALSE;
-		ptpPortDS->calibrated = FALSE;
+		
+		ptpPortDS->wrModeON 	= FALSE;
+		ptpPortDS->calibrated 	= FALSE;
 		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
 		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
-
-		//if(ptpPortDS->wrMode == WR_MASTER) //TODO: test
-		  ptpPortDS->wrMode = NON_WR;
+		ptpPortDS->wrMode 	= NON_WR;
 		
 	}
 	
 	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
 	{
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK UP  <<---------\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 	}
 	/*
@@ -586,23 +578,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				   }
-				   /* new test staff (candidate to wrspec */
-				   /*
-				   else if(ptpPortDS->portState	   	 == PTP_SLAVE && \
-					   (ptpPortDS->wrConfig          == WR_S_ONLY  || \
-					    ptpPortDS->wrConfig          == WR_M_AND_S)&& \
-					   (ptpPortDS->parentWrConfig    == WR_M_ONLY  || \
-					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \
-				            ptpPortDS->wrMode            != WR_SLAVE )
-				   {
-				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
-				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"re-synchronization -  two WR links which could be speaking "\
-					  "White Rabbit are not doing this. try to synch \n");
-				      ptpPortDS->wrMode = WR_SLAVE;
-				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);				    
-				     
-				   }
-*/
 			}
 			
 		}
@@ -641,7 +616,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 		handle(rtOpts, ptpPortDS);
 
-		if(timerExpired(&ptpPortDS->timers.announceReceipt) /*|| linkUP == FALSE*/)//TODO: test
+		if(timerExpired(&ptpPortDS->timers.announceReceipt) )
 		{
 			
 			ptpPortDS->number_foreign_records = 0;

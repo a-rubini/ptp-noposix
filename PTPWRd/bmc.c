@@ -178,7 +178,7 @@ void m1(PtpPortDS *ptpPortDS)
 		
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
 	
-	ptpPortDS->ptpClockDS->primarySlavePortNumber=0; //TODO: test
+	ptpPortDS->ptpClockDS->primarySlavePortNumber=0; 
 }
 void m3(PtpPortDS *ptpPortDS)
 {

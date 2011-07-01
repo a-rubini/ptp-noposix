@@ -166,6 +166,7 @@ void displayForeignMaster (PtpPortDS*);
 void displayOthers (PtpPortDS*);
 void displayBuffer (PtpPortDS*);
 void displayPtpPortDS (PtpPortDS*);
+void displayConfigINFO(RunTimeOpts*);
 void timeInternal_display(TimeInternal*);
 void clockIdentity_display(ClockIdentity);
 void netPath_display(NetPath*);

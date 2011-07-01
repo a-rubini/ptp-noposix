@@ -106,8 +106,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
   "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked to external source (extsrc needs to be configured in wrsw_hal.conf and detected by the HW\n"
   "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
-  "-M                WR: run PTP node as WR Master\n"
-  "-S                WR: run PTP node as WR Slave\n"
+  "-M                WR: run PTP node as Master-only (ordinary clock only ! Defaults to 1 port)\n"
   "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
   "-N                WR: run PTP node as NON_WR port -- only standard PTP\n"
   "-q NUMBER         WR: if you want to use one eth interface for testing ptpd (run two which communicate) define here different port numbers (need to be > 1)\n"
@@ -248,40 +247,32 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
    case 'A':
 	   PTPD_TRACE(TRACE_STARTUP, NULL, "WR AUTO MODE\n");
-	   rtOpts->portNumber = WR_PORT_NUMBER; 
-	   rtOpts->wrConfig = WR_MODE_AUTO;
-	   rtOpts->autoPortDiscovery = TRUE;
-	   break;
-
-   case 'S':
-     	   // this needs to be changed, since it should target single port
-	   rtOpts->wrConfig = WR_S_ONLY;
-
-	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Slave\n");
+	   rtOpts->portNumber 		= WR_PORT_NUMBER; 
+	   rtOpts->wrConfig 		= WR_MODE_AUTO;
+	   rtOpts->autoPortDiscovery 	= TRUE;
 	   break;
 
    case 'M':
-	   rtOpts->masterOnly = TRUE;
-	   rtOpts->wrConfig = WR_M_ONLY; //only for ordinary clock
-	   
-	   // this needs to be changed, since it should target single port
-	   //rtOpts->wrConfig = WR_M_ONLY;
-
-	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only\n");
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->masterOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_M_ONLY; //only for ordinary clock
 	   break;
 
    case 'B':
-	   rtOpts->wrConfig = WR_M_AND_S;
 	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master and Slave\n");
+	   rtOpts->wrConfig = WR_M_AND_S;
 	   break;
+	   
    case 'N':
-	   rtOpts->wrConfig = NON_WR;
 	   PTPD_TRACE(TRACE_STARTUP, NULL,"NON_WR wrMode !! \n");
+	   rtOpts->wrConfig = NON_WR;
 	   break;	   
 
    case 'P':
-	   rtOpts->primarySource = TRUE;
-	  
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"Primary Source of time (Timing Master) \n");
+	   rtOpts->primarySource = TRUE;	  
 	   break;	   
 	   
     case '1':
