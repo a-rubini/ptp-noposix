@@ -22,13 +22,23 @@
   {\
     if(PTPD_TRACE_MASK & subsys) \
     {\
-      if(subsys & PTPD_TRACE_PTPDATADS) \
+      if(PTPD_TRACE_PTPDATADS & subsys) \
+      {\
 	fprintf(stderr, "([p=%d] wrMode: %s%s%s) " x ,ptpPortDS->portIdentity.portNumber,\
 						    (ptpPortDS->wrModeON== TRUE ? "ON->" : "OFF "),\
 						    (ptpPortDS->wrMode== WR_MASTER ? "MASTER" : ""),\
 						    (ptpPortDS->wrMode== WR_SLAVE ? "SLAVE" : ""), \
 						      ##__VA_ARGS__); \
-      else \
+      }\
+    }\
+  }
+
+
+#define PTPD_TRACE_NOPTPDATADS(subsys, x, ...) \
+  {\
+    if(PTPD_TRACE_MASK & subsys) \
+    {\
+      if(~PTPD_TRACE_PTPDATADS & subsys) \
       {\
 	fprintf(stderr, x,## __VA_ARGS__); \
       }\
@@ -36,4 +46,3 @@
   }
 
 #endif
-
