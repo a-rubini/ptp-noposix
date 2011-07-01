@@ -104,12 +104,17 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "-s NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
 
-  "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked to external source (extsrc needs to be configured in wrsw_hal.conf and detected by the HW\n"
-  "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
+  "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked"
+		    " to external source (extsrc needs to be configured in wrsw_hal.conf and "
+		    "detected by the HW\n"
+  "-A                WR: hands free - multiport mode, autodetection of ports and interfaces ,"
+		    "[default startup configuration], HAVE FUN !!!!\n"
   "-M                WR: run PTP node as Master-only (ordinary clock only ! Defaults to 1 port)\n"
   "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
   "-N                WR: run PTP node as NON_WR port -- only standard PTP\n"
-  "-q NUMBER         WR: if you want to use one eth interface for testing ptpd (run two which communicate) define here different port numbers (need to be > 1)\n"
+  "-q NUMBER         WR: override clock identity -- if you want to run two ptpd on the same machine"
+			  " and they are supposed to cummunicate, this enables you to differentiated "
+			  " their clock ID, so the ptpds think they are on different machiens\n"
   "-1 NAME           WR: network interface for port 1\n"
   "-2 NAME           WR: network interface for port 2\n"
   "-3 NAME           WR: network interface for port 3\n"
@@ -338,7 +343,9 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	}
 	else
 	{
-	    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
+	    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",
+		      (int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),
+		       currentPtpdClockData->portIdentity.portNumber);
 	    /*Init to 0 net buffer*/
 
 	}
@@ -357,9 +364,6 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
     }
     
   }
-
-
-
 
 #ifndef PTPD_NO_DAEMON
   if(!nondaemon)

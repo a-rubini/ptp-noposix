@@ -17,6 +17,7 @@
 #define TRACE_STARTUP (1<<9)
 #define TRACE_ARITH (1<<10)
 #define TRACE_PTPD_MAIN (1<<11)
+#define TRACE_SPECIAL_DBG (1<<12)
 
 #define TRACE_ALL 0xffff
 
@@ -28,7 +29,8 @@
     {\
       if(p) \
       {\
-	fprintf(stderr, "([p=%d] wrMode: %s%s%s) " x ,port->portIdentity.portNumber,\
+	fprintf(stderr, "([p=%d] %s WR->%s%s%s) " x ,port->portIdentity.portNumber,\
+	(port->portState==PTP_SLAVE ? "ptp[S]" : (port->portState==PTP_MASTER ? "ptp[M]" : "ptp[-]")),\
 						    (port->wrModeON== TRUE ? "ON->" : "OFF "),\
 						    (port->wrMode== WR_MASTER ? "MASTER" : ""),\
 						    (port->wrMode== WR_SLAVE ? "SLAVE" : ""), \

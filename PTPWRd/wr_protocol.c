@@ -202,6 +202,8 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 	ptpPortDS->wrModeON = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpPortDS);
 
+	PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
+	
 	if(wrMode == WR_MASTER)
 	  toState(PTP_MASTER, rtOpts, ptpPortDS);
 	else
@@ -693,6 +695,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	     * is calibrated, set grandmaster to wrModeON and calibrated, see (toWRState())
 	     */
 	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
+	    PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 	    if(ptpPortDS->wrMode == WR_SLAVE)
 	      /* 
 	       * this is MASTER_CLOCK_SELECTED event defined in PTP in 9.2.6.13

@@ -540,6 +540,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				else
 				{
 					/* */
+					PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 					toState(state, rtOpts, ptpPortDS);
 				}
 
@@ -619,13 +620,17 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		if(timerExpired(&ptpPortDS->timers.announceReceipt) )
 		{
 			
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"ANNOUNCE_RECEIPT_INTERVAL_TIMEOUT_EXPIRED- "
+			"in effect exiting PTP_SLAVE state\n");
 			ptpPortDS->number_foreign_records = 0;
 			ptpPortDS->foreign_record_i = 0;
-			ptpPortDS->wrMode = NON_WR;
+			//ptpPortDS->wrMode = NON_WR;
+			ptpPortDS->wrModeON = FALSE;
 
 			if(!ptpPortDS->ptpClockDS->slaveOnly && ptpPortDS->ptpClockDS->clockQuality.clockClass != 255  )
 			{
 				m1(ptpPortDS);
+				PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 				toState(PTP_MASTER, rtOpts, ptpPortDS);
 			}
 			else if (ptpPortDS->portState != PTP_LISTENING) //???
@@ -865,10 +870,10 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		/* White Rabbit Extension */
 		//TODO: maybe change to wrConfig
-		if(ptpPortDS->wrMode != NON_WR)
-		{
-			return;
-		}
+// 		if(ptpPortDS->wrMode != NON_WR)
+// 		{
+// 			return;
+// 		}
 
 		/* notice the missing break here - that's how it should be - TW */
 
