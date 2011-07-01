@@ -40,7 +40,7 @@ void wr_servo_enable_tracking(int enable)
 static void dump_timestamp(char *what, wr_timestamp_t ts)
 {
 	//fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
-	PTPD_TRACE_NOPTPDATADS(TRACE_SERVO, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
+	PTPD_TRACE(TRACE_SERVO, NULL, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
 }
 
 static int64_t ts_to_picos(wr_timestamp_t ts)

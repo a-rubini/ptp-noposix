@@ -134,7 +134,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
         noclose = 1;
       }
       else
-        PERROR("could not open output file");
+        PTPD_TRACE(TRACE_ERROR, NULL,"could not open output file");
       break;
 
       
@@ -247,7 +247,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
 
    case 'A':
-	  // DBGNPI("WR AUTO MODE\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL, "WR AUTO MODE\n");
 	   rtOpts->portNumber = WR_PORT_NUMBER; 
 	   rtOpts->wrConfig = WR_MODE_AUTO;
 	   rtOpts->autoPortDiscovery = TRUE;
@@ -257,7 +257,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
      	   // this needs to be changed, since it should target single port
 	   rtOpts->wrConfig = WR_S_ONLY;
 
-//	   DBGNPI("WR Slave\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Slave\n");
 	   break;
 
    case 'M':
@@ -267,16 +267,16 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	   // this needs to be changed, since it should target single port
 	   //rtOpts->wrConfig = WR_M_ONLY;
 
-//	   DBGNPI("WR Master\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master\n");
 	   break;
 
    case 'B':
 	   rtOpts->wrConfig = WR_M_AND_S;
-	   //DBGNPI("WR Master and Slave\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master and Slave\n");
 	   break;
    case 'N':
 	   rtOpts->wrConfig = NON_WR;
-	  // DBGNPI("NON_WR wrMode !! \n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"NON_WR wrMode !! \n");
 	   break;	   
 
    case 'P':
@@ -324,7 +324,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   }
   else
   {
-    //DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
+    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
     if(rtOpts->autoPortDiscovery == TRUE)
       rtOpts->portNumber = autoPortNumberDiscovery();
@@ -339,7 +339,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	
 	if(!currentPtpdClockData->foreign)
 	{
-	 //   PERROR("failed to allocate memory for foreign master data");
+	    PTPD_TRACE(TRACE_ERROR, NULL,"failed to allocate memory for foreign master data");
 	    *ret = 2;
 	  //TODO:
 	      free(ptpPortDS);
@@ -347,7 +347,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	}
 	else
 	{
-//	    DBGNPI("allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
+	    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
 	    /*Init to 0 net buffer*/
 
 	}
@@ -361,7 +361,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
     
     if(rtOpts->portNumber >1 && rtOpts->masterOnly == TRUE)
     {
-      printf("ERROR: boundary clock cannot be masterOnly\n");
+      PTPD_TRACE(TRACE_ERROR, NULL,"ERROR: boundary clock cannot be masterOnly\n");
       return 0;
     }
     
@@ -375,7 +375,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   {
     if(daemon(0, noclose) == -1)
     {
-  //    PERROR("failed to start as daemon");
+      PTPD_TRACE(TRACE_ERROR, NULL,"failed to start as daemon");
       *ret = 3;
       return 0;
     }

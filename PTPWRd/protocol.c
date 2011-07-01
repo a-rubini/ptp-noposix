@@ -60,12 +60,12 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   for (i=0; i < rtOpts->portNumber; i++)
   {
 
-     //DBGV("multiPortProtocol: initializing port %d\n", (i+1));
+     
      toState(PTP_INITIALIZING, rtOpts, currentPtpPortDSData);
      if(!doInit(rtOpts, currentPtpPortDSData))
      {
        // doInit Failed!  Exit
-       PTPD_TRACE(TRACE_PROTO,"\n--------------------------------------------------\n"\
+       PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n--------------------------------------------------\n"\
            "---------------- port %d failed to doInit()-----------------------------\n"\
            "--------------------------------\n",(i+1));
        //return;
@@ -108,17 +108,17 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
     if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
     {
-	PTPD_TRACE(TRACE_PROTO,"update secondary slaves\n");
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
 	/* Do after State Decision Even in all the ports */
 	if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
-	  PTPD_TRACE(TRACE_PROTO,"no secondary slaves\n");
+	  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
 	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
     }
       
     /* Handle Best Master Clock Algorithm globally */
     if(globalBestForeignMastersUpdate(ptpPortDS))
     {
-	PTPD_TRACE(TRACE_PROTO,"Initiate global State Decision Event\n");
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
 	ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
     }
     else
@@ -143,7 +143,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  */
 void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
-  PTPD_TRACE(TRACE_PROTO,"event POWERUP\n");
+  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event POWERUP\n");
   
   ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
   
@@ -160,17 +160,17 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
     if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
     {
-      PTPD_TRACE(TRACE_PROTO,"update secondary slaves\n");
+      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
       /* Do after State Decision Even in all the ports */
       if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
-	PTPD_TRACE(TRACE_PROTO,"no secondary slaves\n");
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
       ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
     }
     
     /* Handle Best Master Clock Algorithm globally */
     if(globalBestForeignMastersUpdate(ptpPortDS))
     {
-      PTPD_TRACE(TRACE_PROTO,"Initiate global State Decision Event\n");
+      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
       ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
     }
     else
@@ -204,7 +204,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   switch(ptpPortDS->portState)
   {
   case PTP_MASTER:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... exiting PTP_MASTER\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... exiting PTP_MASTER\n");
     
     timerStop(&ptpPortDS->timers.sync);
     timerStop(&ptpPortDS->timers.announceInterval);
@@ -213,7 +213,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
 
   case PTP_SLAVE:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... exiting PTP_SLAVE\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... exiting PTP_SLAVE\n");
     timerStop(&ptpPortDS->timers.announceReceipt);
 
     if (rtOpts->E2E_mode)
@@ -225,13 +225,13 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
 
    case PTP_PASSIVE:
-     PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... exiting PTP_PASSIVE\n");
+     PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... exiting PTP_PASSIVE\n");
      timerStop(&ptpPortDS->timers.pdelayReq);
      timerStop(&ptpPortDS->timers.announceReceipt);
      break;
       
   case PTP_LISTENING:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... exiting PTP_LISTENING\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... exiting PTP_LISTENING\n");
     timerStop(&ptpPortDS->timers.announceReceipt);
       
     break;
@@ -256,22 +256,22 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   switch(state)
   {
   case PTP_INITIALIZING:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering PTP_INITIALIZING\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_INITIALIZING\n");
     ptpPortDS->portState = PTP_INITIALIZING;
     break;
 
   case PTP_FAULTY:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering PTP_FAULTY\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_FAULTY\n");
     ptpPortDS->portState = PTP_FAULTY;
     break;
 
   case PTP_DISABLED:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  PTP_DISABLED\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  PTP_DISABLED\n");
     ptpPortDS->portState = PTP_DISABLED;
     break;
 
   case PTP_LISTENING:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  PTP_LISTENING\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  PTP_LISTENING\n");
 
     timerStart(&ptpPortDS->timers.announceReceipt, 
 	       ptpPortDS->announceReceiptTimeout * 1000 * (pow_2(ptpPortDS->logAnnounceInterval)));
@@ -279,7 +279,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
 
    case PTP_MASTER:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  PTP_MASTER\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  PTP_MASTER\n");
 
     timerStart(&ptpPortDS->timers.sync, 
 	       1000 * pow_2(ptpPortDS->logSyncInterval));
@@ -293,7 +293,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
   case PTP_PASSIVE:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  PTP_PASSIVE\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  PTP_PASSIVE\n");
 
     timerStart(&ptpPortDS->timers.pdelayReq, 
 	      1000 * pow_2(ptpPortDS->logMinPdelayReqInterval));
@@ -305,7 +305,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
 
   case PTP_UNCALIBRATED:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  PTP_UNCALIBRATED\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  PTP_UNCALIBRATED\n");
 
     /*********** White Rabbit SLAVE*************
      *
@@ -331,7 +331,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	toWRState(WRS_PRESENT, rtOpts, ptpPortDS);
 	ptpPortDS->portState = PTP_UNCALIBRATED;
-	PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering PTP_UNCALIBRATED ( WR_SLAVE )\n");
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_UNCALIBRATED ( WR_SLAVE )\n");
 	break;
       }
     }
@@ -346,14 +346,14 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     
 
     /* Standard PTP, go straight to SLAVE */
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
     ptpPortDS->portState  = PTP_SLAVE;
    
     break;
 
 
   case PTP_SLAVE:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering PTP_SLAVE\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_SLAVE\n");
     wr_servo_init(ptpPortDS);
 
     ptpPortDS->waitingForFollow = FALSE;
@@ -381,7 +381,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     break;
 
   default:
-    PTPD_TRACE(TRACE_PROTO,"PTP_FSM .... entering  unrecognized state\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering  unrecognized state\n");
     break;
   }
 
@@ -402,7 +402,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   /* network init */
   if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
   {
-    ERROR("failed to initialize network\n");
+    PTPD_TRACE(TRACE_ERROR, NULL,"failed to initialize network\n");
     toState(PTP_FAULTY, rtOpts, ptpPortDS);
     return FALSE;
   }
@@ -416,7 +416,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   if(ptpPortDS->wrConfig == WR_MODE_AUTO)
     autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO (12): handle error
   else
-    PTPD_TRACE(TRACE_PROTO,"wrConfig .............. FORCED configuration\n")  ;
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"wrConfig .............. FORCED configuration\n")  ;
 
   
   /* Create the timers (standard PTP only, the WR ones are created in another function: initWrData) */
@@ -464,11 +464,11 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
 	{
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"----->> LINK DOWN  <<---------\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK DOWN  <<---------\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 		ptpPortDS->wrModeON = FALSE;
 		ptpPortDS->calibrated = FALSE;
 		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
@@ -481,11 +481,11 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	
 	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
 	{
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"----->> LINK UP  <<---------\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
-		PTPD_TRACE(TRACE_PROTO,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK UP  <<---------\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
 	}
 	/*
 	 * remember the current state 
@@ -505,7 +505,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		// it is executed globally for all ports in the same for()
 		if(ptpPortDS->ptpClockDS->globalStateDecisionEvent == TRUE && ptpPortDS->wrPortState == WRS_IDLE)		  
 		{
-			//DBGV("event STATE_DECISION_EVENT\n");
+			
 			ptpPortDS->record_update = FALSE;
 
 			state = bmc(ptpPortDS->foreign, rtOpts, ptpPortDS);
@@ -540,8 +540,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 					 * UNCALIBRATED state)
 					 */
 					ptpPortDS->wrModeON = FALSE; 
-					PTPD_TRACE(TRACE_PROTO,"recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
-					PTPD_TRACE(TRACE_PROTO,"recommended wrMode = WR_SLAVE\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"recommended state = PTP_SLAVE, current state = PTP_MASTER\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"recommended wrMode = WR_SLAVE\n");
 					toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
 				}
@@ -574,14 +574,14 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		   		    (ptpPortDS->parentWrModeON       == FALSE     || \
 		   		     ptpPortDS->wrModeON             == FALSE     ))
 		 		  {
-				      PTPD_TRACE(TRACE_PROTO,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
 				      if(ptpPortDS->parentWrModeON  == FALSE)
-					PTPD_TRACE(TRACE_PROTO,"parent node left White Rabbit Mode- WR Master-forced\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"parent node left White Rabbit Mode- WR Master-forced\n");
 					
 				      if(ptpPortDS->wrModeON             == FALSE)
-					PTPD_TRACE(TRACE_PROTO,"this node left White Rabbit Mode - WR Slave-forced\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"this node left White Rabbit Mode - WR Slave-forced\n");
 					
-					PTPD_TRACE(TRACE_PROTO,"re-synchronization\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"re-synchronization\n");
 				      
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
@@ -595,8 +595,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 					    ptpPortDS->parentWrConfig    == WR_M_AND_S) && \
 				            ptpPortDS->wrMode            != WR_SLAVE )
 				   {
-				      PTPD_TRACE(TRACE_PROTO,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
-				      PTPD_TRACE(TRACE_PROTO,"re-synchronization -  two WR links which could be speaking "\
+				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"re-synchronization -  two WR links which could be speaking "\
 					  "White Rabbit are not doing this. try to synch \n");
 				      ptpPortDS->wrMode = WR_SLAVE;
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);				    
@@ -622,7 +622,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		return;
 
 	case PTP_UNCALIBRATED:
-		//DBGV("state: PTP_UNCALIBRATED\n");
+		
 
 		/* Execute WR protocol state machine */
 		
@@ -643,7 +643,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 		if(timerExpired(&ptpPortDS->timers.announceReceipt) /*|| linkUP == FALSE*/)//TODO: test
 		{
-			//DBGV("event ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n");
+			
 			ptpPortDS->number_foreign_records = 0;
 			ptpPortDS->foreign_record_i = 0;
 			ptpPortDS->wrMode = NON_WR;
@@ -661,7 +661,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		{
 			if(timerExpired(&ptpPortDS->timers.delayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO,"DELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"DELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
 				issueDelayReq(rtOpts,ptpPortDS);
 			}
 		}
@@ -669,7 +669,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		{
 			if(timerExpired(&ptpPortDS->timers.pdelayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO,"PDELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PDELAYREQ_INTERVAL_TIMEOUT_EXPIRED\n");
 				issuePDelayReq(rtOpts,ptpPortDS);
 			}
 		}
@@ -690,7 +690,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		if(timerExpired(&ptpPortDS->timers.sync))
 		{
 
-			//DBGV("event SYNC_INTERVAL_TIMEOUT_EXPIRES\n"); 
+			 
 			issueSync(rtOpts, ptpPortDS);
 			issueFollowup(rtOpts,ptpPortDS);
 		}
@@ -698,7 +698,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		if(timerExpired(&ptpPortDS->timers.announceInterval))
 		{
 
-			//DBGV("event ANNOUNCE_INTERVAL_TIMEOUT_EXPIRES\n");
+			
 			issueAnnounce(rtOpts, ptpPortDS);
 		}
 
@@ -706,7 +706,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		{
 			if(timerExpired(&ptpPortDS->timers.pdelayReq))
 			{
-				PTPD_TRACE(TRACE_PROTO,"event PDELAYREQ_INTERVAL_TIMEOUT_EXPIRES\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event PDELAYREQ_INTERVAL_TIMEOUT_EXPIRES\n");
 				issuePDelayReq(rtOpts,ptpPortDS);
 			}
 		}
@@ -745,8 +745,8 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	if(length < 0)
 	{
-		PERROR("Failed to receive on the event socket, len = %d\n", (int)length);
-		PTPD_TRACE(TRACE_PROTO,"Failed to receive on the event socket, len = %d\n", (int)length);
+		PTPD_TRACE(TRACE_ERROR, NULL,"Failed to receive on the event socket, len = %d\n", (int)length);
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Failed to receive on the event socket, len = %d\n", (int)length);
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -759,8 +759,8 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	if(length < HEADER_LENGTH)
 	{
-		ERROR("Message shorter than header length\n");
-		PTPD_TRACE(TRACE_PROTO,"Message shorter than header length\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"Message shorter than header length\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Message shorter than header length\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -779,13 +779,13 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	if(ptpPortDS->msgTmpHeader.versionPTP != ptpPortDS->versionNumber)
 	{
-		PTPD_TRACE(TRACE_PROTO,"Ignored version %d message\n", ptpPortDS->msgTmpHeader.versionPTP);
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Ignored version %d message\n", ptpPortDS->msgTmpHeader.versionPTP);
 		return;
 	}
 
 	if(ptpPortDS->msgTmpHeader.domainNumber != ptpPortDS->ptpClockDS->domainNumber)
 	{
-		PTPD_TRACE(TRACE_PROTO,"Ignored message from domainNumber %d\n", ptpPortDS->msgTmpHeader.domainNumber);
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Ignored message from domainNumber %d\n", ptpPortDS->msgTmpHeader.domainNumber);
 		return;
 	}
 
@@ -815,7 +815,7 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		break;
 
 	case DELAY_REQ:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... DELAY_REQ\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... DELAY_REQ\n");
 		handleDelayReq(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
@@ -825,12 +825,12 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		break;
 
 	case PDELAY_RESP:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... PDELAY_RESP\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... PDELAY_RESP\n");
 		handlePDelayResp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf,&time, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
 	case PDELAY_RESP_FOLLOW_UP:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... PDELAY_RESP_FOLLOW_UP\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... PDELAY_RESP_FOLLOW_UP\n");
 		handlePDelayRespFollowUp(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 #endif
@@ -841,7 +841,7 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
 	case MANAGEMENT:
-		PTPD_TRACE(TRACE_PROTO,"MANAGEMENT\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"MANAGEMENT\n");
 		handleManagement(&ptpPortDS->msgTmpHeader, ptpPortDS->msgIbuf, length, isFromSelf, rtOpts, ptpPortDS);
 		break;
 
@@ -869,15 +869,15 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 {
 	if(length < ANNOUNCE_LENGTH)
 	{
-		ERROR("Too short Announce message\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"Too short Announce message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
 
 	if(length > ANNOUNCE_LENGTH)
-		PTPD_TRACE(TRACE_PROTO,"handle ..... ANNOUNCE (WR ?): perhaps a message from another White Rabbit node\n")
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... ANNOUNCE (WR ?): perhaps a message from another White Rabbit node\n")
 	else
-		PTPD_TRACE(TRACE_PROTO,"handle ..... ANNOUNCE: standard PTP\n")
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... ANNOUNCE: standard PTP\n")
 
 	switch(ptpPortDS->portState )
 	{
@@ -912,7 +912,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.announce,header);
 
 			if(ptpPortDS->msgTmp.announce.wr_flags != NON_WR)
-				PTPD_TRACE(TRACE_PROTO,"handle ..... WR_ANNOUNCE:  message from another White Rabbit node [wr_flag != NON_WR]\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_ANNOUNCE:  message from another White Rabbit node [wr_flag != NON_WR]\n");
 			
 			/*******  bug fix ???? *****
 			* the problem was that we update directly the data in portDS but later
@@ -946,11 +946,11 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		if (isFromSelf)
 		{
-			PTPD_TRACE(TRACE_PROTO,"handle ..... ANNOUNCE:  Ignore message from self \n");
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... ANNOUNCE:  Ignore message from self \n");
 			return;
 		}
 
-		//DBGV("Announce message from another foreign master");
+		
 		addForeign(ptpPortDS->msgIbuf,header,ptpPortDS);
 		ptpPortDS->record_update = TRUE;
 		break;
@@ -967,7 +967,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 	if(length < SYNC_LENGTH)
 	{
-		ERROR("Too short Sync message\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"Too short Sync message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -983,7 +983,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 			/* White Rabbit */
 			if(ptpPortDS->wrMode != NON_WR)
 			{
-				//DBGV("handle ..... SYNC   : disregaurd messages other than management \n");
+				
 				return;
 			}
 
@@ -1004,7 +1004,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
-					PTPD_TRACE(TRACE_PROTO,"handle ..... SYNC    : two step clock mode\n");
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... SYNC    : two step clock mode\n");
 					ptpPortDS->waitingForFollow = TRUE;
 					ptpPortDS->recvSyncSequenceId = header->sequenceId;
 
@@ -1019,7 +1019,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				}
 				else
 				{
-					ERROR("BAD !!!!!!!! we don't use this; handle Sync msg, one step clock\n");
+					PTPD_TRACE(TRACE_ERROR, NULL,"BAD !!!!!!!! we don't use this; handle Sync msg, one step clock\n");
 					msgUnpackSync(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.sync);
 					integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
 					timeInternal_display(&correctionField);
@@ -1051,7 +1051,7 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	
 	if(length < FOLLOW_UP_LENGTH)
 	{
-		ERROR("Too short FollowUp message\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"Too short FollowUp message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -1090,15 +1090,11 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 					msgUnpackFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.follow);
 
-					PTPD_TRACE(TRACE_PROTO,"handle ..... FOLLOW_UP:  , succedded [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... FOLLOW_UP:  , succedded [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
 					    (unsigned      long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
 					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
 					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
 					
-					DBGM("handle FollowUP msg, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
-					    (unsigned      long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.msb, \
-					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.secondsField.lsb, \
-					    (unsigned long long)ptpPortDS->msgTmp.follow.preciseOriginTimestamp.nanosecondsField);
 
 					ptpPortDS->waitingForFollow = FALSE;
 						
@@ -1120,22 +1116,22 @@ void handleFollowUp(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 						break;
 				}
-				else PTPD_TRACE(TRACE_PROTO,"handle ..... FOLLOW_UP:, SequenceID doesn't match with last Sync message \n");
-				//else DBGV("SequenceID doesn't match with last Sync message \n");
+				else PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... FOLLOW_UP:, SequenceID doesn't match with last Sync message \n");
+				
 
 			}
-			else PTPD_TRACE(TRACE_PROTO,"handle ..... FOLLOW_UP:, Slave was not waiting a follow up message \n");
-			//else DBGV("Slave was not waiting a follow up message \n");
+			else PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... FOLLOW_UP:, Slave was not waiting a follow up message \n");
+			
 		}
-		else PTPD_TRACE(TRACE_PROTO,"handle ..... FOLLOW_UP:, Follow up message is not from current parent \n");
-		//else DBGV("Follow up message is not from current parent \n");
+		else PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... FOLLOW_UP:, Follow up message is not from current parent \n");
+		
 
 		case PTP_MASTER:
-			//DBGV("handle ..... FOLLOW_UP: Follow up message received from another master \n");
+			
 			break;
 
 		default:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... FOLLOW_UP: do unrecognized state\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... FOLLOW_UP: do unrecognized state\n");
 		break;
 	}//Switch on (port_state)
 
@@ -1157,7 +1153,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 	if(length < DELAY_REQ_LENGTH)
 	{
-		ERROR("short DelayReq message\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"short DelayReq message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -1182,7 +1178,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 
 	case PTP_MASTER:
 
-		PTPD_TRACE(TRACE_PROTO,"handle ..... DELAY_REQ:, succedded\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... DELAY_REQ:, succedded\n");
 		msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->delayReqHeader);
 				
 		/* FIXME: do this, but properly */
@@ -1193,7 +1189,7 @@ void handleDelayReq(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isFr
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... DELAY_REQdo unrecognized state\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... DELAY_REQdo unrecognized state\n");
 		break;
 	}
 }
@@ -1212,7 +1208,7 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 
 	if(length < DELAY_RESP_LENGTH)
 	{
-		ERROR("Too short DelayResp message\n");
+		PTPD_TRACE(TRACE_ERROR, NULL,"Too short DelayResp message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
 		return;
 	}
@@ -1233,17 +1229,11 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 
 		msgUnpackDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.resp);
 
-		PTPD_TRACE(TRACE_PROTO,"handle ..... DELAY_RESP, succedded: [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... DELAY_RESP, succedded: [sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n", \
 		    (unsigned      long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.msb, \
 		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
 		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.nanosecondsField);		
-		
-		DBGM("handle ..... DELAY_RESP, succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n", \
-		    (unsigned      long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.msb, \
-		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.secondsField.lsb, \
-		    (unsigned long long)ptpPortDS->msgTmp.resp.receiveTimestamp.nanosecondsField);
-
-		
+				
 		isFromCurrentParent = msgIsFromCurrentParent(header, ptpPortDS);
 		
 		/* what the f**k is this? */
@@ -1285,7 +1275,7 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 
 	 if(length < PDELAY_REQ_LENGTH)
 	 {
-	ERROR("short PDelayReq message\n");
+	PTPD_TRACE(TRACE_ERROR, NULL,"short PDelayReq message\n");
 	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
@@ -1315,7 +1305,7 @@ void handlePDelayReq(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInte
 		}
 		else
 		{
-			PTPD_TRACE(TRACE_PROTO,"handle PDelayReq msg, succedded\n");
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle PDelayReq msg, succedded\n");
 			msgUnpackHeader(ptpPortDS->msgIbuf,&ptpPortDS->PdelayReqHeader);
 			issuePDelayResp(time,header,rtOpts,ptpPortDS);
 			break;
@@ -1343,7 +1333,7 @@ if (!rtOpts->E2E_mode)
 
 	 if(length < PDELAY_RESP_LENGTH)
 	 {
-	ERROR("short PDelayResp message\n");
+	PTPD_TRACE(TRACE_ERROR, NULL,"short PDelayResp message\n");
 	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
@@ -1369,15 +1359,11 @@ if (!rtOpts->E2E_mode)
 
 			msgUnpackPDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.presp);
 
-			PTPD_TRACE(TRACE_PROTO,"handle PDelayResp msg, succedded [SLAVE sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle PDelayResp msg, succedded [SLAVE sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
 			(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);			
-			
-			DBGM("handle PDelayResp msg, succedded [SLAVE]: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-			(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-			(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
+
 
 			isFromCurrentParent = !memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 							  && (ptpPortDS->ptpClockDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber);
@@ -1393,8 +1379,8 @@ if (!rtOpts->E2E_mode)
 					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					PTPD_TRACE(TRACE_PROTO,"\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
-					PTPD_TRACE(TRACE_PROTO,"\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n\n\ntime[two steps]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
 
 					/*store t2 (Fig 35)*/
 					toInternalTime(&requestReceiptTimestamp,&ptpPortDS->msgTmp.presp.requestReceiptTimestamp);
@@ -1413,8 +1399,8 @@ if (!rtOpts->E2E_mode)
 					ptpPortDS->pdelay_resp_receive_time.seconds = time->seconds;
 					ptpPortDS->pdelay_resp_receive_time.nanoseconds = time->nanoseconds;
 
-					PTPD_TRACE(TRACE_PROTO,"\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
-					PTPD_TRACE(TRACE_PROTO,"\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.seconds     = %d\n",time->seconds);
+					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n\n\ntime[one step]: ptpPortDS->pdelay_resp_receive_time.nanoseconds = %d\n\n\n",time->nanoseconds);
 
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
@@ -1444,15 +1430,10 @@ if (!rtOpts->E2E_mode)
 
 				msgUnpackPDelayResp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.presp);
 
-				PTPD_TRACE(TRACE_PROTO,"handle PDelayResp msg, succedded [MASTER: sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle PDelayResp msg, succedded [MASTER: sec.msb = %ld sec.lsb = %lld nanosec = %lld]\n",\
 				(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
 				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
 				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);				
-				
-				DBGM("handle PDelayResp msg, succedded [MASTER: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
-				(unsigned      long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.msb,\
-				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.secondsField.lsb,\
-				(unsigned long long)ptpPortDS->msgTmp.presp.requestReceiptTimestamp.nanosecondsField);
 
 
 				isFromCurrentParent = !memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
@@ -1518,7 +1499,7 @@ if (!rtOpts->E2E_mode)
 
 	 if(length < PDELAY_RESP_FOLLOW_UP_LENGTH)
 	 {
-	ERROR("short PDelayRespfollowup message\n");
+	PTPD_TRACE(TRACE_ERROR, NULL,"short PDelayRespfollowup message\n");
 	toState(PTP_FAULTY, rtOpts, ptpPortDS);
 	return;
 	 }
@@ -1537,7 +1518,7 @@ if (!rtOpts->E2E_mode)
 		{
 			msgUnpackPDelayRespFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.prespfollow);
 
-			PTPD_TRACE(TRACE_PROTO,"handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
 			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
@@ -1549,7 +1530,7 @@ if (!rtOpts->E2E_mode)
 			addTime(&correctionField,&correctionField,&ptpPortDS->lastPdelayRespCorrectionField);
 
 
-			PTPD_TRACE(TRACE_PROTO,"\n -------------------------------finish calculation ------------------------\n\n");
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n -------------------------------finish calculation ------------------------\n\n");
 
 			break;
 		}
@@ -1560,7 +1541,7 @@ if (!rtOpts->E2E_mode)
 		{
 			msgUnpackPDelayRespFollowUp(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.prespfollow);
 
-			PTPD_TRACE(TRACE_PROTO,"handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle handlePDelayRespFollowUp msg [MASTER], succedded: \n\t\t sec.msb = %ld \n\t\t sec.lsb = %lld \n\t\t nanosec = %lld\n",\
 			(unsigned      long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.msb,\
 			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.secondsField.lsb,\
 			(unsigned long long)ptpPortDS->msgTmp.prespfollow.responseOriginTimestamp.nanosecondsField);
@@ -1600,7 +1581,7 @@ void handleManagement(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean
 	switch(ptpPortDS->msgTmpManagementId)
 	{
 	default:
-		PTPD_TRACE(TRACE_PROTO,"\n\nhandle Management msg : no support !!! \n\n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n\nhandle Management msg : no support !!! \n\n");
 		break;
 	}
 
@@ -1624,7 +1605,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 	case CALIBRATE:
 
-	PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING, [CALIBRATE]:	\
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING, [CALIBRATE]:	\
 	\n\tcalibrateSendPattern  = %32x			\
 	\n\tcalPeriod    	  = %32lld us\n",\
 		    ptpPortDS->otherNodeCalSendPattern,	  \
@@ -1633,7 +1614,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 
 	case CALIBRATED:
 
-	PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [CALIBRATED]: \
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [CALIBRATED]: \
 	\n\tdeltaTx = %16lld			     \
 	\n\tdeltaRx = %16lld\n", 
 		    ((unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb, \
@@ -1641,25 +1622,25 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 		break;
 
 	case SLAVE_PRESENT:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [SLAVE_PRESENT], succedded \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [SLAVE_PRESENT], succedded \n");
 		break;
 	      
 	case LOCK:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [LOCK], succedded \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [LOCK], succedded \n");
 		break;
 
 	case LOCKED:
 
-		PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [LOCKED], succedded \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [LOCKED], succedded \n");
 		break;
 
 	case WR_MODE_ON:
 
-		PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [WR_LINK_ON], succedded \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [WR_LINK_ON], succedded \n");
 		break;
 
 	default:
-		PTPD_TRACE(TRACE_PROTO,"handle ..... WR_SIGNALING [UNKNOWN], failed \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_SIGNALING [UNKNOWN], failed \n");
 		break;
 	}
 
@@ -1676,7 +1657,7 @@ void handleSignaling(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean 
 	   ptpPortDS->wrConfig      == WR_M_AND_S     ))
 	{
 	     ///////// fucken important !! /////////////
-	     DBGWRFSM("wrMode <= WR_MASTER\n");
+	     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"wrMode <= WR_MASTER\n");
 	     ptpPortDS->wrMode = WR_MASTER;
 	     ///////////////////////////////////////////
 	     toWRState(WRS_M_LOCK, rtOpts, ptpPortDS);
@@ -1699,16 +1680,16 @@ void issueAnnounce(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,announce_len,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("Announce message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... ANNOUNCE : Announce Msg, failed \n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... ANNOUNCE : Announce Msg, failed \n");
 	}
 	else
 	{
 		if (ptpPortDS->wrMode != NON_WR)
-		  PTPD_TRACE(TRACE_PROTO,"issue  ..... WR ANNOUNCE : succedded \n")
+		  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... WR ANNOUNCE : succedded \n")
 		else
-		  PTPD_TRACE(TRACE_PROTO,"issue  ..... ANNOUNCE : succedded \n")
-		//DBGV("Announce MSG sent ! \n");
+		  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... ANNOUNCE : succedded \n")
+		
 		ptpPortDS->sentAnnounceSequenceId++;
 	}
 }
@@ -1728,12 +1709,12 @@ void issueSync(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,SYNC_LENGTH,&ptpPortDS->netPath,&ptpPortDS->synch_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("Sync message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... SYNC:   failed");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... SYNC:   failed");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... SYNC: succedded [synch timestamp: %s]\n", \
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... SYNC: succedded [synch timestamp: %s]\n", \
 		format_wr_timestamp(ptpPortDS->synch_tx_ts));
 		ptpPortDS->sentSyncSequenceId++;
 	}
@@ -1754,12 +1735,12 @@ void issueFollowup(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("FollowUp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... FOLLOW_UP: failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... FOLLOW_UP: failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... FOLLOW_UP: succedded [sending time of sync tx: sec = %lld  nanosec = %lld]\n",\
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... FOLLOW_UP: succedded [sending time of sync tx: sec = %lld  nanosec = %lld]\n",\
 		(unsigned long long)ptpPortDS->synch_tx_ts.utc,\
 		(unsigned long long)ptpPortDS->synch_tx_ts.nsec);
 
@@ -1779,12 +1760,12 @@ void issueDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendEvent(ptpPortDS->msgObuf,DELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->delayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("delayReq message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... DELAY_REQ: failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... DELAY_REQ: failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpPortDS->delayReq_tx_ts));
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... DELAY_REQ: succedded [timestamp: %s]\n",format_wr_timestamp(ptpPortDS->delayReq_tx_ts));
 		ptpPortDS->sentDelayReqSequenceId++;
 	}
 }
@@ -1803,13 +1784,13 @@ void issuePDelayReq(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_REQ_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayReq_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("PdelayReq message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_REQ, failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_REQ, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_REQ, succedded \n");
-		//DBGV("PDelayReq MSG sent ! \n");
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_REQ, succedded \n");
+		
 		ptpPortDS->sentPDelayReqSequenceId++;
 	}
 }
@@ -1825,12 +1806,12 @@ void issuePDelayResp(TimeInternal *time,MsgHeader *header,RunTimeOpts *rtOpts,Pt
 	if (!netSendPeerEvent(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath,&ptpPortDS->pDelayResp_tx_ts))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("PdelayResp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_RESP, failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_RESP, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_RESP, succedded [sending PDelayReq receive time: sec = %lld nanosec = %lld]\n",\
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_RESP, succedded [sending PDelayReq receive time: sec = %lld nanosec = %lld]\n",\
 		(unsigned long long)ptpPortDS->pdelay_req_receive_time.seconds,\
 		(unsigned long long)ptpPortDS->pdelay_req_receive_time.nanoseconds);
 	}
@@ -1847,12 +1828,12 @@ void issueDelayResp(MsgHeader *header,RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	if (!netSendGeneral(ptpPortDS->msgObuf,PDELAY_RESP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("delayResp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... DELAY_RESP, failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... DELAY_RESP, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... DELAY_RESP, succedded [sending DelayReq receive time]: sec = %lld nanosec = %lld]\n", \
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... DELAY_RESP, succedded [sending DelayReq receive time]: sec = %lld nanosec = %lld]\n", \
 		    (unsigned long long)ptpPortDS->delay_req_receive_time.seconds, \
 		    (unsigned long long)ptpPortDS->delay_req_receive_time.nanoseconds);
 	}
@@ -1872,12 +1853,12 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	if (!netSendPeerGeneral(ptpPortDS->msgObuf,PDELAY_RESP_FOLLOW_UP_LENGTH,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("PdelayRespFollowUp message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_RESP_FOLLOW_UP, failed\n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_RESP_FOLLOW_UP, failed\n");
 	}
 	else
 	{
-		PTPD_TRACE(TRACE_PROTO,"issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %lld \n\t\t  nanosec = %lld\n",\
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %lld \n\t\t  nanosec = %lld\n",\
 		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.utc,\
 		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.nsec);
 	}
@@ -1894,8 +1875,8 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 	if (!netSendGeneral(ptpPortDS->msgObuf,len,&ptpPortDS->netPath))
 	{
 		toState(PTP_FAULTY,rtOpts,ptpPortDS);
-		//DBGV("Signaling message can't be sent -> FAULTY state \n");
-		PTPD_TRACE(TRACE_PROTO,"issue ...... WR_SIGNALING: failed \n");
+		
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue ...... WR_SIGNALING: failed \n");
 		
 	}
 	else
@@ -1903,7 +1884,7 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 		switch(wrMessageID)
 		{
 		case CALIBRATE:
-		  DBGWRFSM("issue ...... WR_SIGNALING [CALIBRATE], succedded, \
+		  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [CALIBRATE], succedded, \
 		  \n\t\tcalibrationSendPattern = %32x			\
 		  \n\t\tcalPeriod    	       = %32lld us\n\n",	\
 			    !ptpPortDS->calibrated,			\
@@ -1911,24 +1892,24 @@ void issueWRSignalingMsg(Enumeration16 wrMessageID,RunTimeOpts *rtOpts,PtpPortDS
 			break;
 
 		case CALIBRATED:
-			DBGWRFSM("issue ...... WR_SIGNALINGg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n", \
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALINGg [CALIBRATED], succedded, params: \n  \t\tdeltaTx= %16lld \n \t\tdeltaRx= %16lld\n", \
 			    ((unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaTx.scaledPicoseconds.lsb, \
 			    ((unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.msb)<<32 | (unsigned long long)ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 			break;
 		case SLAVE_PRESENT:
-			DBGWRFSM("issue ...... WR_SIGNALING [SLAVE_PRESENT], succedded, len = %d \n",len);
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [SLAVE_PRESENT], succedded, len = %d \n",len);
 			break;
 		case LOCK:
-			DBGWRFSM("issue ...... WR_SIGNALING [LOCK], succedded\n");
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [LOCK], succedded\n");
 			break;
 		case LOCKED:
-			DBGWRFSM("issue ...... WR_SIGNALING [LOCKED], succedded \n");
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [LOCKED], succedded \n");
 			break;
 		case WR_MODE_ON:
-			DBGWRFSM("issue ...... WR_SIGNALING [WR_MODE_ON], succedded \n");
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [WR_MODE_ON], succedded \n");
 			break;
 		default:
-			DBGWRFSM("issue ...... WR_SIGNALING [UNKNOWN], failed \n");
+			PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"issue ...... WR_SIGNALING [UNKNOWN], failed \n");
 			break;
 		}
 	}
@@ -1953,7 +1934,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 			msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
 			msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
 			if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
-				PTPD_TRACE(TRACE_PROTO,"addForeign: message from another White Rabbit node [wr_flag != NON_WR]\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign: message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
@@ -1978,12 +1959,12 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 		msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
 		msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
 		if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
-			PTPD_TRACE(TRACE_PROTO,"addForeign.. WR_ANNOUNCE message from another White Rabbit node [wr_flag != NON_WR]\n");
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign.. WR_ANNOUNCE message from another White Rabbit node [wr_flag != NON_WR]\n");
 
 
 		ptpPortDS->foreign_record_i = (ptpPortDS->foreign_record_i+1) % ptpPortDS->max_foreign_records;
 		ptpPortDS->foreign[j].receptionPortNumber =  ptpPortDS->portIdentity.portNumber;
-		PTPD_TRACE(TRACE_PROTO,"addForeign..: portIdentity.portNumber=%d\n",ptpPortDS->portIdentity.portNumber);
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign..: portIdentity.portNumber=%d\n",ptpPortDS->portIdentity.portNumber);
 		
 	}
 
@@ -2001,7 +1982,7 @@ Boolean globalBestForeignMastersUpdate(PtpPortDS *ptpPortDS)
 	      ErBest(ptpPortDS[i].foreign,ptpPortDS);
 	      //ErBest(&ptpPortDS[i].foreign,ptpPortDS); //TODO (13): check how it worked
 	      returnValue = TRUE;
-	      PTPD_TRACE(TRACE_PROTO,"GLOBAL UPDATE: updating Erbest on port=%d\n",ptpPortDS[i].portIdentity.portNumber);
+	      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"GLOBAL UPDATE: updating Erbest on port=%d\n",ptpPortDS[i].portIdentity.portNumber);
 	    }
 	}
 	if(returnValue)
@@ -2025,7 +2006,7 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	if(Ebest == ptpPortDS->ptpClockDS->numberPorts)
 	  return FALSE; //no secondary slaves
 	
-	PTPD_TRACE(TRACE_PROTO,"secondary Slave Update\n");
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"secondary Slave Update\n");
 	
 	for (i= Ebest + 1; i < ptpPortDS->ptpClockDS->numberPorts; i++)
 	{
@@ -2040,7 +2021,7 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 					   ptpPortDS[Ebest].secondaryForeignMaster.receptionPortNumber, 	\
 					   ptpPortDS)) < 0)
 		{
-			PTPD_TRACE(TRACE_PROTO,"secondary Slave Update:  update currently best (%d) to new best = %d\n",Ebest, i);
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"secondary Slave Update:  update currently best (%d) to new best = %d\n",Ebest, i);
 			Ebest = i;
 		}
 	}
@@ -2048,7 +2029,7 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 	
 	ptpPortDS->ptpClockDS->secondBestForeign = &ptpPortDS[Ebest].secondaryForeignMaster;
 	
-	DBGBMC("secondary Slave Update: the port with the best secondary master (secondary slave) is %d\n",\
+	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"secondary Slave Update: the port with the best secondary master (secondary slave) is %d\n",\
 		ptpPortDS->ptpClockDS->secondarySlavePortNumber);
 
 	return TRUE;

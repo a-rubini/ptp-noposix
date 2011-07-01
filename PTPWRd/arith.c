@@ -100,7 +100,7 @@ void fromInternalTime(TimeInternal *internal, Timestamp *external)
 
    if ((internal->seconds & ~INT_MAX) || (internal->nanoseconds & ~INT_MAX))
    {
-//	DBGNPI("Negative value canno't be converted into timestamp \n");
+	PTPD_TRACE(TRACE_ARITH, NULL,"Negative value canno't be converted into timestamp \n");
 	return;
    }
    else
@@ -124,7 +124,7 @@ void toInternalTime(TimeInternal *internal, Timestamp *external)
 
 	else
 	{
-	//	DBGNPI("Clock servo canno't be executed : seconds field is higher than signed integer (32bits) \n");
+		PTPD_TRACE(TRACE_ARITH, NULL,"Clock servo canno't be executed : seconds field is higher than signed integer (32bits) \n");
    		return;
 	}
 }

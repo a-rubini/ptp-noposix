@@ -13,36 +13,41 @@
 #define TRACE_SERVO (1<<5)
 #define TRACE_BMC (1<<6)
 #define TRACE_ERROR (1<<7)
+#define TRACE_WR_IPC (1<<8)
+#define TRACE_STARTUP (1<<9)
+#define TRACE_ARITH (1<<10)
+#define TRACE_PTPD_MAIN (1<<11)
 
 #define TRACE_ALL 0xffff
 
-#define PTPD_TRACE_PTPDATADS (TRACE_WR_PROTO | TRACE_PROTO | TRACE_BMC | TRACE_NET)
 
-#define PTPD_TRACE(subsys, x, ...) \
+#define PTPD_TRACE(subsys, p, x, ...) \
   {\
-    if(PTPD_TRACE_MASK & subsys) \
+    PtpPortDS *port = (PtpPortDS *)p;\
+    if(PTPD_TRACE_MASK & subsys)\
     {\
-      if(PTPD_TRACE_PTPDATADS & subsys) \
+      if(p) \
       {\
-	fprintf(stderr, "([p=%d] wrMode: %s%s%s) " x ,ptpPortDS->portIdentity.portNumber,\
-						    (ptpPortDS->wrModeON== TRUE ? "ON->" : "OFF "),\
-						    (ptpPortDS->wrMode== WR_MASTER ? "MASTER" : ""),\
-						    (ptpPortDS->wrMode== WR_SLAVE ? "SLAVE" : ""), \
+	fprintf(stderr, "([p=%d] wrMode: %s%s%s) " x ,port->portIdentity.portNumber,\
+						    (port->wrModeON== TRUE ? "ON->" : "OFF "),\
+						    (port->wrMode== WR_MASTER ? "MASTER" : ""),\
+						    (port->wrMode== WR_SLAVE ? "SLAVE" : ""), \
 						      ##__VA_ARGS__); \
+      } else \
+      {\
+	fprintf(stderr, x, ## __VA_ARGS__); \
       }\
     }\
-  }
+  }\
+
 
 
 #define PTPD_TRACE_NOPTPDATADS(subsys, x, ...) \
   {\
-    if(PTPD_TRACE_MASK & subsys) \
-    {\
       if(~PTPD_TRACE_PTPDATADS & subsys) \
       {\
 	fprintf(stderr, x,## __VA_ARGS__); \
       }\
-    }\
   }
 
 #endif

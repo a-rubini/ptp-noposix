@@ -191,12 +191,12 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 
       if (ptpPortDS->currentWRstateCnt < ptpPortDS->wrStateRetry )
       {
-	PTPD_TRACE(TRACE_WR_PROTO,"WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
+	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS, "WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpPortDS);
       }
       else
       {
-	PTPD_TRACE(TRACE_WR_PROTO,"WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
+	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
 	currentState,ptpPortDS->currentWRstateCnt );
 	
 	ptpPortDS->wrModeON = FALSE;
@@ -271,7 +271,7 @@ Boolean initWRcalibration(const char *ifaceName,PtpPortDS *ptpPortDS )
 
 	if(ret == PTPD_NETIF_READY)
 	  {
-	    printf("TX fixed delay = %d\n\n",(int)deltaTx);
+	    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"TX fixed delay = %d\n\n",(int)deltaTx);
 	    ptpPortDS->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (deltaTx >> 16);
 	    ptpPortDS->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (deltaTx << 16);
 	    break;
@@ -342,7 +342,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   uint64_t delta;
   UInteger8 currentState;
   
-  //DBGV("DoWRState enter st: %d\n", ptpPortDS->wrPortState);
+  
   switch(ptpPortDS->wrPortState)
   {
 
@@ -358,7 +358,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
      * message S_PRESENT sent to Master while entering state (toWRState())
      * here we wait for the answer from the Master asking us to LOCK
      */
-    //DBGV("DoState WRS_PRESENT");
+    
     handle(rtOpts, ptpPortDS);
 
 
@@ -370,7 +370,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       ptpPortDS->msgTmpWrMessageID = NULL_WR_TLV;
     }
 
- //DBGV("DoState WRS_PRESENT done");
+ 
     break;
   /**********************************  S_LOCK  ***************************************************************************/
   case WRS_S_LOCK:
@@ -383,25 +383,25 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	   decided by the modifiedBMC) */
 	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
 	{
-	   DBGWRFSM("locking primary slave\n");
+	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking primary slave\n");
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;
 	}
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
-	   DBGWRFSM("locking secondary slave\n");
+	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking secondary slave\n");
 	   //TODO: make for more secondary slaves
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	
 	}
 	else
 	{
-	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not a slave port\n");
+	    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"ERROR: Should not get here, trying to lock not a slave port\n");
 	}
 
 	//check if enabling() succeeded
 	if( ptpPortDS->wrPortState == WRS_S_LOCK_1)
-	    DBGWRFSM("LockingSuccess\n"); //if yes, no break, go ahead
+	    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"LockingSuccess\n") //if yes, no break, go ahead
 	else
 	    break; //try again
 
@@ -424,7 +424,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}  
 	else
 	{
-	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"ERROR: Should not get here, trying to lock not slave port\n");
 	    break; //try again
 	}
 	
@@ -450,7 +450,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}  
 	else
 	{
-	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"ERROR: Should not get here, trying to lock not slave port\n");
 	    break;
 	}
 	  
@@ -509,8 +509,8 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		printf("TX fixed delay = %d\n\n",(int)delta);
 		ptpPortDS->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 		ptpPortDS->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
-		DBGWRFSM("Tx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.msb);
-	        DBGWRFSM("Tx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.lsb);
+		PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"Tx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.msb);
+	        PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"Tx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.lsb);
 	
 		ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_3;
 	    }
@@ -547,11 +547,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
 	    {
-	      DBGWRFSM("RX fixed delay = %d\n",(int)delta);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"RX fixed delay = %d\n",(int)delta);
 	      ptpPortDS->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 	      ptpPortDS->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
-	      DBGWRFSM("Rx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.msb);
-	      DBGWRFSM("Rx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.lsb);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"Rx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"Rx=>>scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
 	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_7;
 	    }
@@ -589,7 +589,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    }
 	    else
 	    {
-	       PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: failed to enable calibratin\n");
+	       PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: failed to enable calibratin\n");
 	      break; //try again
 	    }
 
@@ -598,11 +598,11 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_RX, ptpPortDS->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
 	    {
-	      DBGWRFSM("PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PTPWR_S_CALIBRATE_1: delta = 0x%x\n",delta);
 	      ptpPortDS->deltaRx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 	      ptpPortDS->deltaRx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
-	      DBGWRFSM("scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.msb);
-	      DBGWRFSM("scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.lsb);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.msb);
+	      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"scaledPicoseconds.lsb = 0x%x\n",ptpPortDS->deltaRx.scaledPicoseconds.lsb);
 
 	      ptpPortDS->wrPortState = WRS_REQ_CALIBRATION_2;
 	    }
@@ -680,7 +680,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpPortDS);
 	  else
 	  {
-	    PTPD_TRACE(TRACE_WR_PROTO,"ERRRORROR!!!!!!!!!! : WRS_RESP_CALIB_REQ_3\n");
+	    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"ERRRORROR!!!!!!!!!! : WRS_RESP_CALIB_REQ_3\n");
 	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
 	   }
 
@@ -701,7 +701,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    else if(ptpPortDS->wrMode == WR_MASTER)
 	      toState(PTP_MASTER, rtOpts, ptpPortDS);
 	    else
-	      DBGWRFSM("ERROR: WRS_WR_LINK_ON !!!\n");
+	      PTPD_TRACE(TRACE_ERROR, ptpPortDS,"ERROR: WRS_WR_LINK_ON !!!\n");
 	    break;
 
 
@@ -709,7 +709,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
    /**********************************  default  ***************************************************************************/
   default:
 
-	    DBGWRFSM("(doWhiteRabbitState) do unrecognized state\n");
+	    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"(doWhiteRabbitState) do unrecognized state\n");
 	    break;
   }
 
@@ -755,62 +755,62 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 
     
     
-    DBGWRFSM("exiting WRS_IDLE\n");
-    DBGWRFSM("^^^^^^^^^^^^^^^^ starting White Rabbit State Machine^^^^^^^^^^^^^^^^^^\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_IDLE\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"^^^^^^^^^^^^^^^^ starting White Rabbit State Machine^^^^^^^^^^^^^^^^^^\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
     if(ptpPortDS->wrMode== WR_MASTER)
-    DBGWRFSM("                            W R   M A S T E R\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"                            W R   M A S T E R\n")
     else if(ptpPortDS->wrMode== WR_SLAVE)
-    DBGWRFSM("                             W R   S L A V E \n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"                             W R   S L A V E \n")
     else
-    DBGWRFSM("                        I SHOULD NOT SHOW THIS MSG !!! \n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");
-    DBGWRFSM("\n");    
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"                        I SHOULD NOT SHOW THIS MSG !!! \n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");    
     break;
 
   case WRS_PRESENT:
-    DBGWRFSM("exiting WRS_PRESENT\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_PRESENT\n");
     break;
 
   case WRS_S_LOCK:
-    DBGWRFSM("exiting WRS_S_LOCK\n");    
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_S_LOCK\n");    
   case WRS_S_LOCK_1:
   case WRS_S_LOCK_2:
     break;
 
   case WRS_M_LOCK:
-    DBGWRFSM("exiting WRS_M_LOCK\n");    
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_M_LOCK\n");    
      break;
 
   case WRS_LOCKED:
-    DBGWRFSM("exiting WRS_LOCKED\n");    
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_LOCKED\n");    
      break;
 
    case WRS_REQ_CALIBRATION:
-    DBGWRFSM("exiting WRS_REQ_CALIBRATION\n");     
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_REQ_CALIBRATION\n");     
    case WRS_REQ_CALIBRATION_1:
    case WRS_REQ_CALIBRATION_2:
           
      break;
 
    case WRS_CALIBRATED:
-     DBGWRFSM("exiting WRS_CALIBRATED\n");     
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_CALIBRATED\n");     
      break;
 
    case WRS_WR_LINK_ON:
-     DBGWRFSM("\n");
-     DBGWRFSM("exiting WRS_WR_LINK_ON\n");
-     DBGWRFSM("^^^^^^^^^^^^^^^^^^^^^^^^^ WR Link is ON ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-     DBGWRFSM("\n");
-     DBGWRFSM("\n");
-     DBGWRFSM("\n");
-     DBGWRFSM("\n");
-     DBGWRFSM("\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"exiting WRS_WR_LINK_ON\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"^^^^^^^^^^^^^^^^^^^^^^^^^ WR Link is ON ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
+     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
 
 
      break;
@@ -829,14 +829,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
   {
   case WRS_IDLE:
     /* no substates here*/
-    DBGWRFSM("entering WRS_IDLE\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering WRS_IDLE\n");
 
     ptpPortDS->wrPortState = WRS_IDLE;
     break;
 
   case WRS_PRESENT:
     /* no substates here*/
-    DBGWRFSM("entering  WRS_PRESENT\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_PRESENT\n");
     /*send message to the Master to enforce entering UNCALIBRATED state*/
     
     issueWRSignalingMsg(SLAVE_PRESENT,rtOpts, ptpPortDS);
@@ -849,14 +849,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      * 1 - locking enabled, polling
      * 2 - locked, disabling locking
      */
-    DBGWRFSM("entering  WR_LOCK (modded?)\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WR_LOCK (modded?)\n");
 
 
 	/* depending what kind of slave the port is, different locking is used ("slave's role" is 
 	   decided by the modifiedBMC) */
 	if(ptpPortDS->wrSlaveRole == PRIMARY_SLAVE)
 	{
-	   DBGWRFSM("locking primary slave\n");
+	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking primary slave\n");
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_0) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;  //go to substate 1
 	   else
@@ -864,7 +864,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	}
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
-	   DBGWRFSM("locking secondary slave\n");
+	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking secondary slave\n");
 	   //TODO: make for more secondary slaves
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	  //go to substate 1
@@ -873,14 +873,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	}
 	else
 	{
-	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"ERROR: Should not get here, trying to lock not slave port\n");
 	}
 
     break;
 
   case WRS_LOCKED:
     /* no substates here*/
-    DBGWRFSM("entering  WR_LOCKED\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WR_LOCKED\n");
 
     /* say to the Master that you are locked */
     issueWRSignalingMsg(LOCKED,rtOpts, ptpPortDS);
@@ -889,7 +889,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 
   case WRS_M_LOCK:
     /* no substates here*/
-    DBGWRFSM("entering  WRS_M_LOCK\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_M_LOCK\n");
     issueWRSignalingMsg(LOCK,rtOpts, ptpPortDS);
     ptpPortDS->wrPortState = WRS_M_LOCK;
     break;
@@ -917,7 +917,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      */
 #endif
 
-    DBGWRFSM("entering  WRS_REQ_CALIBRATION\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_REQ_CALIBRATION\n");
 
 #ifdef NewTxCal          
     //TODO: I don't really like it here !!
@@ -927,7 +927,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     if(ptpPortDS->calPeriod > 0)
     {
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->calPeriod;
-       PTPD_TRACE(TRACE_WR_PROTO,"set wrTimeout of WRS_REQ_CALIBRATION based on calPeriod:  %u [us]\n", ptpPortDS->calPeriod);
+       PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"set wrTimeout of WRS_REQ_CALIBRATION based on calPeriod:  %u [us]\n", ptpPortDS->calPeriod);
     }
     else
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->wrStateTimeout;
@@ -988,7 +988,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
 
   case WRS_CALIBRATED:
-    DBGWRFSM("entering  WRS_CALIBRATED\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_CALIBRATED\n");
 
     ptpPortDS->wrPortState = WRS_CALIBRATED;
     break;
@@ -1000,7 +1000,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      * 2 - CALIBRATED received, disabling pattern
      * 3 - Go to the next state
      */
-    DBGWRFSM("entering  WRS_RESP_CALIB_REQ\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_RESP_CALIB_REQ\n");
 
     // to send the pattern or not to send
     // here is the answer to the question.....
@@ -1014,23 +1014,23 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	if(ptpPortDS->otherNodeCalPeriod > 0)
 	{
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->otherNodeCalPeriod;
-	    PTPD_TRACE(TRACE_WR_PROTO,"set wrTimeout of WRS_RESP_CALIB_REQ based on calPeriod:  %u [us]\n", \
+	    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"set wrTimeout of WRS_RESP_CALIB_REQ based on calPeriod:  %u [us]\n", \
 	    ptpPortDS->otherNodeCalPeriod);
 	}
 	else
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->wrStateTimeout;
 	
-	PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: trying to enable calibration pattern\n");
+	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: trying to enable calibration pattern\n");
 	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
 				ptpPortDS->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
 	{
-	  PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: Succeded to enable calibration pattern\n");
+	  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: Succeded to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; 
 	}
 	else
 	{
-	  PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: failed to enable calibration pattern\n");
+	  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: failed to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ;   //try again
 	}
 
@@ -1046,7 +1046,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
 
   case WRS_WR_LINK_ON:
-    DBGWRFSM("entering  WRS_LINK_ON\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_LINK_ON\n");
 
     ptpPortDS->wrModeON 	= TRUE;
     
@@ -1073,7 +1073,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     break;
 
   default:
-    DBGWRFSM("to unrecognized state\n");
+    PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"to unrecognized state\n");
     break;
   }
 
@@ -1096,7 +1096,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
 {
   
-  PTPD_TRACE(TRACE_WR_PROTO,"White Rabbit data (re-)initialization\n");
+  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"White Rabbit data (re-)initialization\n");
   int i=0;
   //ptpPortDS->wrMode 			   = NON_WR;
   ptpPortDS->wrModeON    		   = FALSE;

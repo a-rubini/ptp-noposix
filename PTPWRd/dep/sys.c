@@ -13,7 +13,7 @@ void displayStats(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   if(start && rtOpts->csvStats)
   {
     start = 0;
-    PTPD_TRACE_NOPTPDATADS(TRACE_MSG,"state, one way delay, offset from master, drift");
+    PTPD_TRACE(TRACE_MSG, NULL, "state, one way delay, offset from master, drift");
     fflush(stdout);
   }
 

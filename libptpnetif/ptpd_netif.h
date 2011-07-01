@@ -226,4 +226,14 @@ int ptpd_netif_get_ifName(char *ifname, int number);
 uint64_t ptpd_netif_get_msec_tics();
 
 
+/*
+ * Function detects external source lock, 
+ *
+ * return:
+ * HEXP_EXTSRC_STATUS_LOCKED 	0 
+ * HEXP_LOCK_STATUS_BUSY  	1
+ * HEXP_EXTSRC_STATUS_NOSRC  	2
+ */
+int ptpd_netif_extsrc_detection();
+
 #endif
