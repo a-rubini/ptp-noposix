@@ -191,12 +191,12 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 
       if (ptpPortDS->currentWRstateCnt < ptpPortDS->wrStateRetry )
       {
-	DBG("WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
+	PTPD_TRACE(TRACE_WR_PROTO,"WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpPortDS);
       }
       else
       {
-	DBG("WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
+	PTPD_TRACE(TRACE_WR_PROTO,"WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
 	currentState,ptpPortDS->currentWRstateCnt );
 	
 	ptpPortDS->wrModeON = FALSE;
@@ -396,7 +396,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}
 	else
 	{
-	    DBG("ERROR: Should not get here, trying to lock not a slave port\n");
+	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not a slave port\n");
 	}
 
 	//check if enabling() succeeded
@@ -424,7 +424,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}  
 	else
 	{
-	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
 	    break; //try again
 	}
 	
@@ -450,7 +450,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}  
 	else
 	{
-	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
 	    break;
 	}
 	  
@@ -589,7 +589,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    }
 	    else
 	    {
-	       DBG("PROBLEM: failed to enable calibratin\n");
+	       PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: failed to enable calibratin\n");
 	      break; //try again
 	    }
 
@@ -680,7 +680,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    toWRState(WRS_REQ_CALIBRATION, rtOpts, ptpPortDS);
 	  else
 	  {
-	    DBG("ERRRORROR!!!!!!!!!! : WRS_RESP_CALIB_REQ_3\n");
+	    PTPD_TRACE(TRACE_WR_PROTO,"ERRRORROR!!!!!!!!!! : WRS_RESP_CALIB_REQ_3\n");
 	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
 	   }
 
@@ -873,7 +873,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	}
 	else
 	{
-	    DBG("ERROR: Should not get here, trying to lock not slave port\n");
+	    PTPD_TRACE(TRACE_WR_PROTO,"ERROR: Should not get here, trying to lock not slave port\n");
 	}
 
     break;
@@ -927,7 +927,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     if(ptpPortDS->calPeriod > 0)
     {
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->calPeriod;
-       DBG("set wrTimeout of WRS_REQ_CALIBRATION based on calPeriod:  %u [us]\n", ptpPortDS->calPeriod);
+       PTPD_TRACE(TRACE_WR_PROTO,"set wrTimeout of WRS_REQ_CALIBRATION based on calPeriod:  %u [us]\n", ptpPortDS->calPeriod);
     }
     else
        ptpPortDS->wrTimeouts[WRS_REQ_CALIBRATION]   = ptpPortDS->wrStateTimeout;
@@ -1014,23 +1014,23 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	if(ptpPortDS->otherNodeCalPeriod > 0)
 	{
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->otherNodeCalPeriod;
-	    DBG("set wrTimeout of WRS_RESP_CALIB_REQ based on calPeriod:  %u [us]\n", \
+	    PTPD_TRACE(TRACE_WR_PROTO,"set wrTimeout of WRS_RESP_CALIB_REQ based on calPeriod:  %u [us]\n", \
 	    ptpPortDS->otherNodeCalPeriod);
 	}
 	else
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->wrStateTimeout;
 	
-	DBG("PROBLEM: trying to enable calibration pattern\n");
+	PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: trying to enable calibration pattern\n");
 	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
 				ptpPortDS->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
 	{
-	  DBG("PROBLEM: Succeded to enable calibration pattern\n");
+	  PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: Succeded to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; 
 	}
 	else
 	{
-	  DBG("PROBLEM: failed to enable calibration pattern\n");
+	  PTPD_TRACE(TRACE_WR_PROTO,"PROBLEM: failed to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ;   //try again
 	}
 
@@ -1096,7 +1096,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
 {
   
-  DBG("White Rabbit data (re-)initialization\n");
+  PTPD_TRACE(TRACE_WR_PROTO,"White Rabbit data (re-)initialization\n");
   int i=0;
   //ptpPortDS->wrMode 			   = NON_WR;
   ptpPortDS->wrModeON    		   = FALSE;
