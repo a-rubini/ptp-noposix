@@ -232,5 +232,6 @@ Boolean extsrcLocked(void);
 #define DBGWRFSM(x, ...)
 #endif
 
+//#define PTPD_TRACE(subsys, ...) { printf(__VA_ARGS__); }
 
 #endif /*PTPD_DEP_H_*/

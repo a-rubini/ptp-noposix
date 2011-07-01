@@ -16,7 +16,24 @@
 
 #define TRACE_ALL 0xffff
 
-#define PTPD_TRACE(subsys, ...) { if(PTPD_TRACE_MASK & subsys) printf(__VA_ARGS__); }
+#define PTPD_TRACE_PTPDATADS (TRACE_WR_PROTO | TRACE_PROTO)
+
+#define PTPD_TRACE(subsys, x, ...) \
+  {\
+    if(PTPD_TRACE_MASK & subsys) \
+    {\
+      if(subsys & PTPD_TRACE_PTPDATADS) \
+	fprintf(stderr, "([p=%d] wrMode: %s%s%s) " x ,ptpPortDS->portIdentity.portNumber,\
+						    (ptpPortDS->wrModeON== TRUE ? "ON->" : "OFF "),\
+						    (ptpPortDS->wrMode== WR_MASTER ? "MASTER" : ""),\
+						    (ptpPortDS->wrMode== WR_SLAVE ? "SLAVE" : ""), \
+						      ##__VA_ARGS__); \
+      else \
+      {\
+	fprintf(stderr, x,## __VA_ARGS__); \
+      }\
+    }\
+  }
 
 #endif
 
