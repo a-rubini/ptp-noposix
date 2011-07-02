@@ -1,33 +1,27 @@
-Author: Maciej Lipinski
-email : maciej.lipinski@cern.ch
-info  : implementatin of White Rabbit extension
+Author	: Maciej Lipinski
+email 	: maciej.lipinski@cern.ch
+info  	: implementatin of White Rabbit extension
+version	: wrptpd.v2: compliant with second release of White Rabbit Specification (wrspec.v2)
 
 
 
-1)defines:
-- IRQ_LESS_TIMER
-   if this defined, WR uses new implementation of timeouts (not using interrupt)
+1)compilation flags:
+- DPTPD_NO_DAEMON  - original PTPd flag, for WR not tested yet without this
+- DPTPD_TRACE_MASK - see trace.h for different masks available, it enables to specify type of 
+		     debugging messages printed on the screen
+- DNETIF_VERBOSE   - enable debugging for ptpd_netif
+- DMACIEK_HACKs	   - hack to make up for things that are not yet implemented in HW (i.e. switchover)
 
-2)compilation flags:
-- DPTPD_NO_DAEMON - original PTPd flag, for WR not tested yet without this
-- DPTPD_DBGMSG    - debugging of messages, it prints msgPack*() and msgUnpack*() functions
-- DPTPD_DBG       - most of debugging added by ML
-- DPTPD_DBG_S_FUN  - if defined along with DPTPD_DBG, info about calling function displayed
-- DPTPD_DBGV      - original detailed debugging, to detailed to be redeable
-- DPTPD_DBGWR     - meant to be White Rabbit debugging, but not really used :( 
-
-2) compilation
-    ./build_t.sh run T=192.168.1.5   // this builds and runs ptpwrd on target, but without params, useless, kill it, ptpwrd will automaticly build for PC
-    
-3) runnig
-- WR slave with one port on interface eth2
-    ./ptpv2d -b eth2 -S
-- WR master with one port on interface wru1
-    ./ptpv2d -b wru1 -M
-- WR multi-node, with slave port on wru1, master ports on wrd0 & wrd1 
-  (when run with -S, WR slave is always port 1, the other ports are WR masters)
-    ./ptpv2d -1 wru1 -2 wrd0 -3 wrd1 -S
-
+2) most important running options
+- Hands-free-auto ptpd - detect number of interfaces, their configuration, if more then one port,
+  run as boundary clock
+    ./ptpd -A
+- Master-Only - ordinary clock which is supposed to be locked to external source
+    ./ptpd -M
+- Primary source
+    ./ptpd -P - boundary clock which is supposed to be locked to external source
+- No parameters is equal to ./ptpd -A
+    ./ptpd
 4)Files:
 
     PTPWRd

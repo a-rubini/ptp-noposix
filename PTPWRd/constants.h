@@ -84,7 +84,7 @@
   /*
    * if this defined, WR uses new implementation of timeouts (not using interrupt)
    */
-#define IRQ_LESS_TIMER
+//#define IRQ_LESS_TIMER
 
 #define WR_NODE				0x80
 #define WR_IS_CALIBRATED		0x04
