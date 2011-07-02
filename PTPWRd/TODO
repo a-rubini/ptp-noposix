@@ -1,4 +1,3 @@
-TODO High Priority
 
 TODO-ptpx:
 1) clearing of Foreign Master records on ANNOUNCE_RECEIPT_INTERVAL_TIMEOUT_EXPIRED - if performed,
@@ -6,8 +5,13 @@ TODO-ptpx:
 2) secondary slave - only single is implemnted (which is fine for switch v2) but it needs tobe
    extended to many secondary slaves...
 3) some error handling is missing
-
-
+4) add interface with HW for setting the order of secondary slaves (I will do when the 
+   HW implementation is ready)
+5) according to PTP standard clockIdentity should be stored in PtpClockDS, not in PtpPortDS.
+   so it would be good to change it...
+6) switch-over and the possibility of locking on multiple ports is not implemented in HW yet, thus
+   I've introduced a very nasty hack, which is turned on with MACIEK_HACKs, as soon as HW 
+   implementation is ready, I need to get rid of that. [this is mainly in ptpd_netif]
 
 Known bugs:
 1) When a port x is a primary slave, but then port y becomes primary slave, the port x, which

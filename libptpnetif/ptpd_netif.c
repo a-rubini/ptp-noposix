@@ -80,7 +80,9 @@ struct nasty_hack{
 	int clockedAsPrimary;
 };
 
+#ifdef MACIEK_HACKs
 struct nasty_hack locking_hack;
+#endif
 
 static uint64_t get_tics()
 {
@@ -535,7 +537,7 @@ int ret;
 	if(priority == SLAVE_PRIORITY_0)
 	{
 	 
-	  /*
+	  /* TODO(6)
 	   * this is extremely nasty hack because the hardware implementation of multiport locking
 	   * is not ready, so only one port can lock frequency and it cannot be changed.
 	   * So, we remember which port was locked as primary slave (the secondary slave is not 
@@ -543,17 +545,19 @@ int ret;
 	   * if we try to lock different lock.... it will pretend to be locked
 	   */
 	  netif_dbg("(PTPD_NETIF): start locking\n");
+#ifdef MACIEK_HACKs	  
 	  if(locking_hack.clockedAsPrimary == 0)
 	  {
 	    // remember the locked port
 	    strcpy(locking_hack.if_name, ifaceName);
 	    locking_hack.clockedAsPrimary = 1;
-	    
+#endif	    
 	    
 	    ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
 	    netif_dbg("(PTPD_NETIF): finished locking, ret=%d\n",ret);
 
 	  }
+#ifdef MACIEK_HACKs	  
 	  else
 	  {
 	    
@@ -582,12 +586,12 @@ int ret;
 	     * the locking will not take place, but the ptpx will think it has taken place
 	     */
 	  }
-	  
+#endif	  
 
 	}
 	else
 	  netif_dbg("(PTPD_NETIF): locking_enable() => implement me !!!! HOLDOVER\n");
-	//TODO: this is to work for other priorities when holdover is implemented
+	//TODO(6): this is to work for other priorities when holdover is implemented
 	  
 	return PTPD_NETIF_OK;
 #else
@@ -676,6 +680,7 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 	int ret;
 	/* check if any other port is not calibrated at the moment*/
 	
+//TODO(6)	
 #ifndef MACIEK_HACKs	
 	if( (ret = halexp_calibration_cmd(ifaceName,
 					  HEXP_CAL_CMD_CHECK_IDLE,HEXP_ON))

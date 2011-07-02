@@ -345,7 +345,7 @@ typedef struct {
 	/***** Default data set ******/
 	NetPath netPath;
 
-	ClockIdentity clockIdentity; //TODO: should be in clockDS
+	ClockIdentity clockIdentity; //TODO(5): should be in clockDS
 
 	/****** Port configuration data set ***********/
 
