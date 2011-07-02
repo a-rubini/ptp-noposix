@@ -202,8 +202,6 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 	ptpPortDS->wrModeON = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpPortDS);
 
-	PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
-	
 	if(wrMode == WR_MASTER)
 	  toState(PTP_MASTER, rtOpts, ptpPortDS);
 	else
@@ -212,7 +210,6 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
 	 * RE-INITIALIZATION OF White Rabbit Data Sets
 	 * (chapter (Re-)Initialization of wrspec
 	 */	
-	//TODO (7)
 	initWrData(ptpPortDS, INIT); //INIT mode because we don't need to remember WR port mode and port role
       }
 
@@ -392,7 +389,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
 	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking secondary slave\n");
-	   //TODO: make for more secondary slaves
+	   //TODO(2): make for more secondary slaves
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	
 	}
@@ -418,7 +415,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
-	    //TODO: more secondary slaves here
+	    //TODO(2): more secondary slaves here
 	    if(ptpd_netif_locking_poll(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_READY)
 	      ptpPortDS->wrPortState = WRS_S_LOCK_2; //next level achieved
 	    else
@@ -444,7 +441,7 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	}
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
-	    //TODO: more secondary slaves here
+	    //TODO(2): more secondary slaves here
 	    if(ptpd_netif_locking_disable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK)
 	      toWRState(WRS_LOCKED, rtOpts, ptpPortDS);
 	    else
@@ -695,7 +692,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	     * is calibrated, set grandmaster to wrModeON and calibrated, see (toWRState())
 	     */
 	    toWRState(WRS_IDLE, rtOpts, ptpPortDS);
-	    PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 	    if(ptpPortDS->wrMode == WR_SLAVE)
 	      /* 
 	       * this is MASTER_CLOCK_SELECTED event defined in PTP in 9.2.6.13
@@ -751,8 +747,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      * RE-INITIALIZATION OF White Rabbit Data Sets
      * (chapter (Re-)Initialization of wrspec
      *
-     * with a "hack" to remember the desired wrMode,
-     * Fixme/TODO (7): do it nicer
      */
     initWrData(ptpPortDS, RE_INIT);
 
@@ -826,8 +820,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 
 
   /* entering state tasks */
-  /* TODO  (8): Do we need PRE_MASTER state because we now have a boundary clock implementation ?*/
-
   switch(enteringState)
   {
   case WRS_IDLE:
@@ -868,7 +860,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	else if(ptpPortDS->wrSlaveRole == SECONDARY_SLAVE)
 	{
 	   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"locking secondary slave\n");
-	   //TODO: make for more secondary slaves
+	   //TODO(2): make for more secondary slaves
 	   if(ptpd_netif_locking_enable(ptpPortDS->wrMode, ptpPortDS->netPath.ifaceName, SLAVE_PRIORITY_1) == PTPD_NETIF_OK )
 	      ptpPortDS->wrPortState = WRS_S_LOCK_1;	  //go to substate 1
 	   else
@@ -923,7 +915,6 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_REQ_CALIBRATION\n");
 
 #ifdef NewTxCal          
-    //TODO: I don't really like it here !!
     issueWRSignalingMsg(CALIBRATE,rtOpts, ptpPortDS);
 #endif
 
@@ -1058,7 +1049,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     /*Assume that Master is calibrated and in WR mode, it will be verified with the next Annonce msg*/
     ptpPortDS->parentWrModeON     = TRUE;
     
-    /* TODO: (9)
+    /* 
      * this is nasty, we need to update the announce messaegs, because it is used by s1() in 
      * bmc() to update parentWrModeON, which is (in turn) used in the condition to 
      * to trigger SYNCHRONIZATION_FAULT.
@@ -1132,7 +1123,6 @@ void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
   ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.lsb  	= 0;
   ptpPortDS->otherNodeDeltaRx.scaledPicoseconds.msb  	= 0;
   
-  //TODO (10)
   for(i = 0; i < WR_TIMER_ARRAY_SIZE;i++)
   {
     ptpPortDS->wrTimeouts[i] = ptpPortDS->wrStateTimeout;
@@ -1141,7 +1131,6 @@ void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
      ptpPortDS->wrTimeouts[WRS_S_LOCK]  = 10000;
      ptpPortDS->wrTimeouts[WRS_M_LOCK]  = 10000;
   
-  // Fixme/TODO (7): do it nicer 
   if(mode == INIT)
   {
     ptpPortDS->wrMode 	   = NON_WR;

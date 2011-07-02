@@ -218,6 +218,10 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     else
       timerStop(&ptpPortDS->timers.pdelayReq);
 
+    //White Rabbit
+    ptpPortDS->wrMode = NON_WR;
+    ptpPortDS->wrModeON = FALSE;
+    
 //    wr_servo_init(ptpClock); // tomek's chagne
     break;
 
@@ -233,15 +237,7 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
       
     break;
   case PTP_UNCALIBRATED:
-    /*
-     * TODO:
-     * add here transition to WR_IDLE state of WR FSM
-     * this is to accommodate the fact that PTP FSM can, by itself
-     * want to leave the state (timeout, or BMC) before WR FSM finishes
-     *
-     * toWRstate(IDLE, ...);
-     *
-     */
+
   default:
     break;
   }
@@ -343,7 +339,18 @@ void toState(UInteger8 state, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     
 
     /* Standard PTP, go straight to SLAVE */
-    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_SLAVE ( failed to enter PTP_UNCALIBRATED )\n");
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"PTP_FSM .... entering PTP_SLAVE =>failed to enter PTP_UNCALIBRATED \n");
+    
+    //TODO: bug 1
+    PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"Failed to enter PTP_UNCALIBRATED because\n")
+    if( ptpPortDS->wrMode != WR_SLAVE)
+      PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"wrMode != WR_SLAVE\n")
+    if(ptpPortDS->wrConfig != WR_S_ONLY && ptpPortDS->wrConfig != WR_M_AND_S)
+      PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"wrConfig != (WR_S_ONLY || WR_M_AND_S)\n")
+    if(ptpPortDS->parentWrConfig != WR_M_ONLY && ptpPortDS->parentWrConfig != WR_M_AND_S)
+      PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"parentWrConfig != (WR_M_ONLY || WR_M_AND_S)\n")
+   
+    
     ptpPortDS->portState  = PTP_SLAVE;
    
     break;
@@ -411,7 +418,7 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
    * attempt autodetection, otherwise the configured setting is forced
    */
   if(ptpPortDS->wrConfig == WR_MODE_AUTO)
-    autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO (12): handle error
+    autoDetectPortWrConfig(&ptpPortDS->netPath, ptpPortDS); //TODO (3): handle error
   else
     PTPD_TRACE(TRACE_PROTO, ptpPortDS,"wrConfig .............. FORCED configuration\n")  ;
 
@@ -514,7 +521,6 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				   ptpPortDS->portState == PTP_PASSIVE      ||
 				   ptpPortDS->portState == PTP_UNCALIBRATED ))
 				{
-					//TODO: force here master state if port: WR_M_ONLY
 				  
 					/* implementation of PTP_UNCALIBRATED state
 					* as transcient state between sth and SLAVE
@@ -540,14 +546,12 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 				else
 				{
 					/* */
-					PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 					toState(state, rtOpts, ptpPortDS);
 				}
 
 			}else
 			{
-				 //TODO: force here master state if port: WR_M_ONLY
-				  
+			  
 				 /***** SYNCHRONIZATION_FAULT detection ****
 				  * here we have a mechanims to enforce WR LINK SETUP (so-colled WR 
 				  * calibration).
@@ -560,7 +564,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		 		  * WR Slave: the need for re-synch, indicated by wrModeON==FALSE,  
 		 		  *           will be evaluated here
 		 		  */
-				  /*makes sense only if link is up*///TODO: test
+				  /*makes sense only if link is up*/
 				  if(ptpPortDS->linkUP		     == TRUE &&      \
 				     ptpPortDS->portState	     == PTP_SLAVE && \
 				     ptpPortDS->wrMode               == WR_SLAVE  && \
@@ -624,13 +628,15 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			"in effect exiting PTP_SLAVE state\n");
 			ptpPortDS->number_foreign_records = 0;
 			ptpPortDS->foreign_record_i = 0;
-			//ptpPortDS->wrMode = NON_WR;
+			
+//			clearForeignMasters(ptpPortDS);	TODO(1): check why it's not working with this, investigate the standard
+
+			ptpPortDS->wrMode = NON_WR;
 			ptpPortDS->wrModeON = FALSE;
 
 			if(!ptpPortDS->ptpClockDS->slaveOnly && ptpPortDS->ptpClockDS->clockQuality.clockClass != 255  )
 			{
 				m1(ptpPortDS);
-				PTPD_TRACE(TRACE_SPECIAL_DBG, ptpPortDS,"TRACE_SPECIAL_DBG: 1\n");
 				toState(PTP_MASTER, rtOpts, ptpPortDS);
 			}
 			else if (ptpPortDS->portState != PTP_LISTENING) //???
@@ -867,15 +873,6 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 		return;
 
 	case PTP_UNCALIBRATED:
-
-		/* White Rabbit Extension */
-		//TODO: maybe change to wrConfig
-// 		if(ptpPortDS->wrMode != NON_WR)
-// 		{
-// 			return;
-// 		}
-
-		/* notice the missing break here - that's how it should be - TW */
 
 	case PTP_SLAVE:
 
@@ -1960,7 +1957,6 @@ Boolean globalBestForeignMastersUpdate(PtpPortDS *ptpPortDS)
 	    if(ptpPortDS[i].record_update)
 	    {
 	      ErBest(ptpPortDS[i].foreign,ptpPortDS);
-	      //ErBest(&ptpPortDS[i].foreign,ptpPortDS); //TODO (13): check how it worked
 	      returnValue = TRUE;
 	      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"GLOBAL UPDATE: updating Erbest on port=%d\n",ptpPortDS[i].portIdentity.portNumber);
 	    }

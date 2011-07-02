@@ -1,31 +1,15 @@
 TODO High Priority
 
 TODO-ptpx:
-- check for single port
-
->>>old
-- change implementation of msg handle(), to accommdate the fact 
-  that the announce MSGs should be handled in all WR states... 
-- good idea for non-WRFSM-preemption implementation
-- expire ForeignMasters - need to clear, i.e. Ebest
-- implement for more secondarySlavePorts
-- timeouts seems to be not working !!!
-
-
-TODO:
-- flipping bits in msg.c !!!!!!!
-- check that all values are passed properly (especially deltas, calibaration)
-
-
-- test with standard PTP
-- test multiport
-
-- move writing time to netRecvMsg, protocol.c 619 line
-- set calibration period as timeout in *_CALIBRATE state
-- convert HW timestamps into SW
-- test multiport
-- implement synchronization of calibratin between different ports
+1) clearing of Foreign Master records on ANNOUNCE_RECEIPT_INTERVAL_TIMEOUT_EXPIRED - if performed,
+   the exchange of roles between Master and slave does not work... need to ivestigate
+2) secondary slave - only single is implemnted (which is fine for switch v2) but it needs tobe
+   extended to many secondary slaves...
+3) some error handling is missing
 
 
 
-date -s "2010-08-24 14:23" -u
+Known bugs:
+1) When a port x is a primary slave, but then port y becomes primary slave, the port x, which
+   should become secondary slave, does not enter UNCALIBRATED state and does not 
+   start WR Link Setup. (grep for 'TODO: bug 1')
