@@ -47,7 +47,6 @@ LDFLAGS = #-L. -lwripc -lptpnetif
 CFLAGS += -DPTPD_NO_DAEMON  -DPTPD_TRACE_MASK=0xFFF7
 #CFLAGS += -DNETIF_VERBOSE
 CFLAGS += -DMACIEK_HACKs
-CFLAGS += -DNewTxCal
 
 # Targets follows (note that the freestanding version is only an object
 all: check $(TARGETS)

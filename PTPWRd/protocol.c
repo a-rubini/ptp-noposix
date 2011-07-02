@@ -438,17 +438,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   m1(ptpPortDS);
   msgPackHeader(ptpPortDS->msgObuf, ptpPortDS);
 
-  /*
-   * The tx calibration cannot be done at the start of ptpd, many reasons, e.x.;
-   * if non-WR device is connected it can hang
-   * an alternative solution (calibration during Link Setup) is ifdef-ed with NewTxCal
-   */
-#ifndef NewTxCal  
-      if(ptpPortDS->wrConfig != NON_WR)
-      {
-	initWRcalibration(ptpPortDS->netPath.ifaceName, ptpPortDS);
-      }
-#endif
   toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
   return TRUE;

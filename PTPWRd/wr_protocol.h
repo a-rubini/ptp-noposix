@@ -44,21 +44,6 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts,
 */
 UInteger8 returnCurrentWRMainState(PtpPortDS*);
 
-#ifndef NewTxCal
-/*
-Function tries to read fixed delays (if PTPWRd restarted, they are remembered by HW
-if delays not known, Tx fixed delays are measured
-
-we wait here as long as it takes to calibrate Tx !!!!!!
-
-return:
-  TRUE 	- calibration OK
-  FALSE - sth wrong
-
-*/
-Boolean initWRcalibration(const char *ifaceName,PtpPortDS *ptpPortDS );
-#endif
-
 /*
 A function a value in a bit form
  
