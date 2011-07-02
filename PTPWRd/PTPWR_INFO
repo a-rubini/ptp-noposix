@@ -2,7 +2,7 @@ Author	: Maciej Lipinski
 email 	: maciej.lipinski@cern.ch
 info  	: implementatin of White Rabbit extension
 version	: wrptpd.v2: compliant with second release of White Rabbit Specification (wrspec.v2)
-
+updated : 2/07/2011
 
 
 1)compilation flags:
