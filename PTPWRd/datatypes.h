@@ -502,6 +502,11 @@ typedef struct {
 	UInteger32 calPeriod;//[us]
 
 	/*
+	 * Calibration retry number 
+	 */
+	UInteger8 calRetry;
+	
+	/*
 	 * white rabbit FSM state
 	 */
 	Enumeration8  wrPortState;
@@ -570,7 +575,12 @@ typedef struct {
 	/*
 	 * Calibration period requested by the other port
 	 */
-	UInteger32 otherNodeCalPeriod;      
+	UInteger32 otherNodeCalPeriod;   
+
+	/*
+	 * Calibration retry number requested by the other port
+	 */
+	UInteger8 otherNodeCalRetry;
 	
 	/*
 	 * used to implemetn two-step clock

@@ -718,14 +718,17 @@ UInteger16 msgPackWRSignalingMsg(void *buf,PtpPortDS *ptpPortDS, Enumeration16 w
 
 	    if(ptpPortDS->calibrated)
 	    {
-	      put_be16(buf+56, 0x0000);
-	      PTPD_TRACE(TRACE_MSG, NULL," calibrationSendPattern........ FALSE \n");
+	      //put_be16(buf+56, 0x0000);
+	      put_be16(buf+56, (ptpPortDS->calRetry << 8 | 0x0000));
+	      PTPD_TRACE(TRACE_MSG, NULL," calibrationSendPattern........ FALSE \n");	      
 	    }
 	    else
 	    {
-	      put_be16(buf+56, 0x0001);
+	      //put_be16(buf+56, 0x0001);
+	      put_be16(buf+56, (ptpPortDS->calRetry << 8 | 0x0001));
 	      PTPD_TRACE(TRACE_MSG, NULL," calibrationSendPattern........ TRUE \n");
 	    }
+	    
 	    put_be32(buf+58, ptpPortDS->calPeriod);
 	    len = 20;
 
@@ -852,8 +855,10 @@ void msgUnpackWRSignalingMsg(void *buf,MsgSignaling *signalingMsg, Enumeration16
 
 	    case CALIBRATE:
 
-	      ptpPortDS->otherNodeCalSendPattern= get_be16(buf+56);
-	      ptpPortDS->otherNodeCalPeriod     = get_be32(buf+58);
+	      ptpPortDS->otherNodeCalSendPattern = 0x00FF & get_be16(buf+56);
+	      ptpPortDS->otherNodeCalRetry 	 = 0x00FF & (get_be16(buf+56) >> 8);
+	      
+	      ptpPortDS->otherNodeCalPeriod      = get_be32(buf+58);
 	      if(ptpPortDS->otherNodeCalSendPattern & SEND_CALIBRATION_PATTERN)
 		PTPD_TRACE(TRACE_MSG, NULL," calibrationSendPattern........ TRUE \n")
 	      else

@@ -182,6 +182,7 @@ this function checks if wr timer has expired for a current WR state
 */
 void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, Enumeration8 wrMode)
 {
+  UInteger8 wrStateRetry;
   /*WRS_IDLE state does not expire */
   if(currentState == WRS_IDLE)
     return;
@@ -189,7 +190,14 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
   if(timerExpired(&ptpPortDS->wrTimers[currentState]))
   {
 
-      if (ptpPortDS->currentWRstateCnt < ptpPortDS->wrStateRetry )
+      if(currentState == WRS_REQ_CALIBRATION && ptpPortDS->calRetry > 0)
+	wrStateRetry = ptpPortDS->calRetry;
+      else if(currentState == WRS_RESP_CALIB_REQ && ptpPortDS->otherNodeCalRetry > 0)
+	wrStateRetry = ptpPortDS->otherNodeCalRetry;
+      else
+	wrStateRetry = ptpPortDS->wrStateRetry;
+	
+      if (ptpPortDS->currentWRstateCnt < wrStateRetry)
       {
 	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS, "WR_Slave_TIMEOUT: state[= %d] timeout, repeat state\n", currentState);
 	toWRState(currentState, rtOpts, ptpPortDS);
@@ -955,6 +963,7 @@ void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
   ptpPortDS->parentCalibrated		  = FALSE;
   
   ptpPortDS->otherNodeCalPeriod		  		= 0;
+  ptpPortDS->otherNodeCalRetry		  		= 0;
   ptpPortDS->otherNodeCalSendPattern	  		= 0;
   ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.lsb  	= 0;
   ptpPortDS->otherNodeDeltaTx.scaledPicoseconds.msb  	= 0;

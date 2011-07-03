@@ -49,6 +49,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->wrStateTimeout		     = rtOpts->wrStateTimeout;
 	ptpPortDS->wrStateRetry			     = rtOpts->wrStateRetry;
 	ptpPortDS->calPeriod			     = rtOpts->calPeriod;	
+	ptpPortDS->calRetry			     = ptpPortDS->ptpClockDS->numberPorts + 2;
 	
 	ptpPortDS->knownDeltaTx.scaledPicoseconds.lsb = rtOpts->knownDeltaTx.scaledPicoseconds.lsb;
 	ptpPortDS->knownDeltaTx.scaledPicoseconds.msb = rtOpts->knownDeltaTx.scaledPicoseconds.msb;
