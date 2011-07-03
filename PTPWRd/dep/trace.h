@@ -29,11 +29,11 @@
     {\
       if(p) \
       {\
-	fprintf(stderr, "([p=%d] %s WR->%s%s%s) " x ,port->portIdentity.portNumber,\
+	fprintf(stderr, "([p=%d] %s WR: %s%s%s) " x ,port->portIdentity.portNumber,\
 	(port->portState==PTP_SLAVE ? "ptp[S]" : (port->portState==PTP_MASTER ? "ptp[M]" : "ptp[-]")),\
 						    (port->wrModeON== TRUE ? "ON->" : "OFF "),\
 						    (port->wrMode== WR_MASTER ? "MASTER" : ""),\
-						    (port->wrMode== WR_SLAVE ? "SLAVE" : ""), \
+	(port->wrMode== WR_SLAVE ? (port->wrSlaveRole == PRIMARY_SLAVE ? "p-SLAVE" : "s-SLAVE") : ""), \
 						      ##__VA_ARGS__); \
       } else \
       {\
