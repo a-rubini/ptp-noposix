@@ -64,7 +64,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   int c, fd = -1, nondaemon = 0, noclose = 0;
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDMASBNPxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDABMSNPxta:w:M:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -96,12 +96,12 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "\n"
 "-n NUMBER         specify announce interval in 2^NUMBER sec\n"
 "-y NUMBER         specify sync interval in 2^NUMBER sec\n"
-"-m NUMBER         specify max number of foreign master records\n"
+//"-m NUMBER         specify max number of foreign master records\n"
 "\n"
 "-g                run as slave only\n"
-"-v NUMBER         specify system clock allen variance\n"
+//"-s NUMBER         specify system clock allen variance\n"
 "-r NUMBER         specify system clock accuracy\n"
-"-s NUMBER         specify system clock class\n"
+"-v NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
 
   "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked"
@@ -110,6 +110,11 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   "-A                WR: hands free - multiport mode, autodetection of ports and interfaces ,"
 		    "[default startup configuration], HAVE FUN !!!!\n"
   "-M                WR: run PTP node as Master-only (ordinary clock only ! Defaults to 1 port)\n"
+  "-m NAME           WR: run PTP port (interface name NAME) on a switch as Master-only (ordinary clock only ! Defaults to 1 port)\n"
+  
+  "-S                WR: run PTP node with wrConfig=WR_S_ONLY (Jut for test, Defaults to 1 port)\n"
+  "-s NAME           WR: run PTP port (interface name NAME) on a switch as with wrConfig=WR_S_ONLY (Jut for test, Defaults to 1 port)\n"  
+  
   "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
   "-N                WR: run PTP node as NON_WR port -- only standard PTP\n"
   "-q NUMBER         WR: override clock identity -- if you want to run two ptpd on the same machine"
@@ -206,25 +211,25 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
      rtOpts->announceInterval=strtol(optarg, 0, 0);
      break;
 
-    case 'm':
-      rtOpts->max_foreign_records = strtol(optarg, 0, 0);
-      if(rtOpts->max_foreign_records < 1)
-        rtOpts->max_foreign_records = 1;
-      break;
+//     case 'm':
+//       rtOpts->max_foreign_records = strtol(optarg, 0, 0);
+//       if(rtOpts->max_foreign_records < 1)
+//         rtOpts->max_foreign_records = 1;
+//       break;
 
     case 'g':
       rtOpts->slaveOnly = TRUE;
       break;
 
-    case 'v':
-      rtOpts->clockQuality.offsetScaledLogVariance = strtol(optarg, 0, 0);
-      break;
+//     case 's':
+//       rtOpts->clockQuality.offsetScaledLogVariance = strtol(optarg, 0, 0);
+//       break;
 
     case 'r':
       rtOpts->clockQuality.clockAccuracy = strtol(optarg, 0, 0);
       break;
 
-    case 's':
+    case 'v':
       rtOpts->clockQuality.clockClass = strtol(optarg, 0, 0);
       break;
 
@@ -258,13 +263,24 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	   break;
 
    case 'M':
-	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only\n");
+	    PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only\n");
 	   rtOpts->autoPortDiscovery 	= FALSE;
 	   rtOpts->masterOnly 		= TRUE;
 	   rtOpts->portNumber		= 1;
 	   rtOpts->wrConfig 		= WR_M_ONLY; //only for ordinary clock
 	   break;
-
+   case 'm':
+	    
+	   memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+	   strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->masterOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_M_ONLY; //only for ordinary clock
+	   
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only : interface specified: %s\n", rtOpts->ifaceName[0]);
+	   break;
+	   
    case 'B':
 	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master and Slave\n");
 	   rtOpts->wrConfig = WR_M_AND_S;
@@ -278,7 +294,26 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
    case 'P':
 	   PTPD_TRACE(TRACE_STARTUP, NULL,"Primary Source of time (Timing Master) \n");
 	   rtOpts->primarySource = TRUE;	  
-	   break;	   
+	   break;	  
+  
+   case 'S':
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR wrConfig=WR_S_ONLY\n");
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   //rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
+	   break;
+   case 's':
+	    
+	   memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+	   strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   //rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
+
+	   
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR wrConfig=WR_S_ONLY: interface specified: %s\n", rtOpts->ifaceName[0]);	   
 	   
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);

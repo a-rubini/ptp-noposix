@@ -860,17 +860,14 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 	else
 	    ptpPortDS->wrTimeouts[WRS_RESP_CALIB_REQ]   = ptpPortDS->wrStateTimeout;
 	
-	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: trying to enable calibration pattern\n");
 	if( ptpd_netif_calibration_pattern_enable( ptpPortDS->netPath.ifaceName, \
 				ptpPortDS->otherNodeCalPeriod, \
 				0, 0) == PTPD_NETIF_OK)
 	{
-	  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: Succeded to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ_1; 
 	}
 	else
 	{
-	  PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"PROBLEM: failed to enable calibration pattern\n");
 	  ptpPortDS->wrPortState = WRS_RESP_CALIB_REQ;   //try again
 	}
 
