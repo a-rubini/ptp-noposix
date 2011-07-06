@@ -321,16 +321,23 @@ Integer8 bmcDataSetComparison(MsgHeader *headerA, MsgAnnounce *announceA, UInteg
 	
 	short comp = 0;
 
-	if(receptionPortNumberA == 0) // the indexing of ports starts from 1, 0 indicates no port
+	// the indexing of ports starts from 1, 0 indicates no port
+	if(receptionPortNumberA == 0 && receptionPortNumberB == 0)
 	{
-	  PTPD_TRACE(TRACE_BMC, ptpPortDS,"A better B because B is empty !!!\n");
-	  return A_better_then_B;
+	  PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Data Set Comparison Alg ERROR: both data sets to be compared are empty !!!\n");
+	  return DSC_error;
 	}
 	else if(receptionPortNumberB == 0)
 	{
-	  PTPD_TRACE(TRACE_BMC, ptpPortDS,"B better A because B is empty !!!\n");
+	  PTPD_TRACE(TRACE_BMC, ptpPortDS,"A better than B because B is empty !!!\n");
+	  return A_better_then_B;
+	}	
+	else if(receptionPortNumberA == 0) 
+	{
+	  PTPD_TRACE(TRACE_BMC, ptpPortDS,"B better than A because A is empty !!! [in theory, this should not happen !!!\n");
 	  return B_better_then_A;
 	}
+
 
 	/*Identity comparison*/
 	if (!memcmp(announceA->grandmasterIdentity,announceB->grandmasterIdentity,CLOCK_IDENTITY_LENGTH)) // (1)
