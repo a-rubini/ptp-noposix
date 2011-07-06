@@ -450,6 +450,8 @@ typedef struct {
 	 */
 	Enumeration16 msgTmpManagementId;	
 	
+	
+	
 /*************************************White Rabbit ************************************************/
 
       //////////////// White Rabbit staff specified in WR SPEC

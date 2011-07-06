@@ -467,6 +467,16 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
 		ptpPortDS->wrMode 	= NON_WR;
 		
+		/*
+		 * HACK: This is not standard compliant... but will work
+		 */
+		if(ptpPortDS->ptpClockDS->slaveOnly)
+		{
+		    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Slave-only: forcing PTP_LISTENING (a small non-standard hack)\n");
+		    toState(PTP_LISTENING, rtOpts, ptpPortDS);
+		    ptpPortDS->record_update = FALSE;
+		}
+		
 	}
 	
 	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
@@ -504,11 +514,12 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			if(state != ptpPortDS->portState)
 			{
 				if(state == PTP_SLAVE        && (
-				   ptpPortDS->portState == PTP_LISTENING    || 
-				   ptpPortDS->portState == PTP_PRE_MASTER   ||
-				   ptpPortDS->portState == PTP_MASTER       ||
-				   ptpPortDS->portState == PTP_PASSIVE      ||
-				   ptpPortDS->portState == PTP_UNCALIBRATED ))
+				    ptpPortDS->portState == PTP_LISTENING    || 
+				    ptpPortDS->portState == PTP_PRE_MASTER   ||
+				    ptpPortDS->portState == PTP_MASTER       ||
+				    ptpPortDS->portState == PTP_PASSIVE      ||
+				    ptpPortDS->portState == PTP_UNCALIBRATED )
+				    )
 				{
 				  
 					/* implementation of PTP_UNCALIBRATED state
@@ -875,6 +886,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 
 		if(msgIsFromCurrentParent(header, ptpPortDS))
 		{
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"handle ..... WR_ANNOUNCE:  msg is from current parent\n");
 			msgUnpackAnnounce(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.announce,header);
 
 			if(ptpPortDS->msgTmp.announce.wr_flags != NON_WR)
@@ -1886,13 +1898,14 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	Boolean found = FALSE;
 
 	j = ptpPortDS->foreign_record_best;
-
+	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign=>number_foreign_records = %d\n",ptpPortDS->number_foreign_records);
 	/*Check if Foreign master is already known*/
 	for (i=0;i<ptpPortDS->number_foreign_records;i++)
 	{
 		if (!memcmp(header->sourcePortIdentity.clockIdentity,ptpPortDS->foreign[j].foreignMasterPortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 		    && (header->sourcePortIdentity.portNumber == ptpPortDS->foreign[j].foreignMasterPortIdentity.portNumber))
 		{
+			PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign=>foreign master already in data set\n");
 			/*Foreign Master is already in Foreignmaster data set*/
 			ptpPortDS->foreign[j].foreignMasterAnnounceMessages++;
 			found = TRUE;
@@ -1900,7 +1913,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 			msgUnpackHeader(buf,&ptpPortDS->foreign[j].header);
 			msgUnpackAnnounce(buf,&ptpPortDS->foreign[j].announce,&ptpPortDS->foreign[j].header);
 			if(ptpPortDS->foreign[j].announce.wr_flags != NON_WR)
-				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign: message from another White Rabbit node [wr_flag != NON_WR]\n");
+				PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign=> message from another White Rabbit node [wr_flag != NON_WR]\n");
 			break;
 		}
 
@@ -1916,6 +1929,7 @@ void addForeign(Octet *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 		}
 		j = ptpPortDS->foreign_record_i;
 
+		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign=>brand new foreign master\n");
 		/*Copy new foreign master data set from Announce message*/
 		memcpy(ptpPortDS->foreign[j].foreignMasterPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
 		ptpPortDS->foreign[j].foreignMasterPortIdentity.portNumber = header->sourcePortIdentity.portNumber;
@@ -2005,7 +2019,7 @@ Boolean globalSecondSlavesUpdate(PtpPortDS *ptpPortDS)
 void clearForeignMasters(PtpPortDS *ptpPortDS)
 {
     Integer16 i;
-  
+    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"addForeign=>clearing the number_foreign_records\n");
     for (i=0;i<ptpPortDS->number_foreign_records;i++)
       ptpPortDS->foreign[i].receptionPortNumber = 0;// we recognize that ForeignMaster record is empty
 						    // by the value of receptionPortNumber - port numbers

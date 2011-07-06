@@ -299,7 +299,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
    case 'S':
 	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR wrConfig=WR_S_ONLY\n");
 	   rtOpts->autoPortDiscovery 	= FALSE;
-	   //rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->slaveOnly 		= TRUE;
 	   rtOpts->portNumber		= 1;
 	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
 	   break;
@@ -308,7 +308,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	   memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
 	   strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
 	   rtOpts->autoPortDiscovery 	= FALSE;
-	   //rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->slaveOnly 		= TRUE;
 	   rtOpts->portNumber		= 1;
 	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
 

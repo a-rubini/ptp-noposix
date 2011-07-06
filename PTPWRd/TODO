@@ -12,11 +12,22 @@ TODO-ptpx:
 6) switch-over and the possibility of locking on multiple ports is not implemented in HW yet, thus
    I've introduced a very nasty hack, which is turned on with MACIEK_HACKs, as soon as HW 
    implementation is ready, I need to get rid of that. [this is mainly in ptpd_netif]
+7) aging of ForeignMaster records needs to be implemented (feature of a standard PTP, not provided 
+   by the original daemoan)
+8) the transition from PTP_SLAVE to PTP_UNCALIBRATED:
+    (Recommended State == BMC_SLAVE && new_master != old_master)
+   is not implemented (feature of a standard PTP, not provided by the original daemoan), this will
+   be of any use, if (8) is implemented, to make slave-only work
+9)
 
 Known bugs:
 1) When a port x is a primary slave, but then port y becomes primary slave, the port x, which
    should become secondary slave, does not enter UNCALIBRATED state and does not 
    start WR Link Setup. (grep for 'TODO: bug 1')
-2) the transition from PTP_SLAVE to PTP_UNCALIBRATED:
-    (Recommended State == BMC_SLAVE && new_master != old_master)
-   is not implemented (feature of the original ptpd).
+
+HACKS:
+1) in ptpd_netif_locking_enable () to make up for the lack of HW implementation of switch-over
+   it's ifdef with MACIEK_HACKs
+2) not-exactly-standard implementation of Slave-only mode, we go to PTP_LISTENING ptp state
+   as soon as the linkDown is detected, this is to make up for the lacking
+   implementation of (7) & (8) from TODO-ptpx list

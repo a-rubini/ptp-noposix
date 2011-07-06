@@ -89,6 +89,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	ptpPortDS->max_foreign_records = rtOpts->max_foreign_records;
     
 	ptpPortDS->linkUP = FALSE;
+	
 }
 
 /* initialize ptpClockDS*/
