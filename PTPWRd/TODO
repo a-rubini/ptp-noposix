@@ -17,3 +17,6 @@ Known bugs:
 1) When a port x is a primary slave, but then port y becomes primary slave, the port x, which
    should become secondary slave, does not enter UNCALIBRATED state and does not 
    start WR Link Setup. (grep for 'TODO: bug 1')
+2) the transition from PTP_SLAVE to PTP_UNCALIBRATED:
+    (Recommended State == BMC_SLAVE && new_master != old_master)
+   is not implemented (feature of the original ptpd).
