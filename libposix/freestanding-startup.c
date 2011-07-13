@@ -50,7 +50,6 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret,
 	 *         -g                run as slave only
 	 */
 	strcpy(rtOpts->ifaceName[0], "wru1");
-	rtOpts->slaveOnly = TRUE;
 
 	currentPtpdClockData = ptpPortDS;
 	for(i = 0; i < MAX_PORT_NUMBER; i++) {

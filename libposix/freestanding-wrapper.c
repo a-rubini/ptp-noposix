@@ -27,8 +27,6 @@ static uint8_t pkg[sizeof(uint8_t)+ETH_HEADER_SIZE+MAX_PAYLOAD+sizeof(struct hw_
 
 int usleep(unsigned useconds)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   while(useconds--) asm volatile("nop");
 
   return 0;
@@ -36,15 +34,11 @@ int usleep(unsigned useconds)
 
 uint64_t ptpd_netif_get_msec_tics(void)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   return timer_get_tics();
 }
 
 int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   switch(cmd)
   {
     case HEXP_PPSG_CMD_GET:
@@ -83,15 +77,12 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
 
 int ptpd_netif_init()
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
   memset(wr_sockets, 0, sizeof(wr_sockets));
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   get_mac_addr((uint8_t *)mac);
 
   return 0;
@@ -99,22 +90,16 @@ int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac)
 
 int ptpd_netif_calibrating_disable(int txrx, const char *ifaceName)
 {
-  TRACE_WRAP("%s\n", __FUNCTION__);
-
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_calibrating_enable(int txrx, const char *ifaceName)
 {
-  TRACE_WRAP("%s\n", __FUNCTION__);
-
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName, uint64_t *delta)
 {
-  TRACE_WRAP("%s\n", __FUNCTION__);
-
   return PTPD_NETIF_READY;
 }
 
@@ -123,16 +108,12 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
                                           unsigned int calibrationPattern,
                                           unsigned int calibrationPatternLen)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   ep_cal_pattern_enable();
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_calibration_pattern_disable(const char *ifaceName)
 {
-  TRACE_WRAP("%s\n", __FUNCTION__);
-
   ep_cal_pattern_disable();
   return PTPD_NETIF_OK;
 }
@@ -140,7 +121,6 @@ int ptpd_netif_calibration_pattern_disable(const char *ifaceName)
 int read_phase_val(hexp_port_state_t *state)
 {
   int32_t dmtd_phase;
-  TRACE_WRAP("%s\n", __FUNCTION__);
   
   if(ep_get_psval(&dmtd_phase))
   {
@@ -160,14 +140,11 @@ int read_phase_val(hexp_port_state_t *state)
     state->phase_val_valid = 0;
   }
 
-  // TRACE_WRAP("TS SlavePhase %d\n", dmtd_phase);
-
   return 0;
 }
 
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
   state->valid         = 1;
   state->mode          = HEXP_PORT_MODE_WR_SLAVE;
   ep_get_deltas( &state->delta_tx, &state->delta_rx);
@@ -252,7 +229,6 @@ int ptpd_netif_close_socket(wr_socket_t *sock)
 
 int ptpd_netif_get_ifName(char *ifname, int number)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
 
   strcpy(ifname,"wru1");
   return PTPD_NETIF_OK;
@@ -260,31 +236,25 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 
 int ptpd_netif_get_port_state(const char *ifaceName)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
 
   return ep_link_up() ? PTPD_NETIF_OK : PTPD_NETIF_ERROR;
 }
 
-int ptpd_netif_locking_disable(int txrx, const char *ifaceName)
+int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 {
-  //TRACE_WRAP("LCK %s\n", __FUNCTION__);
 
  //softpll_disable();
  return PTPD_NETIF_OK;
 }
 
-int ptpd_netif_locking_enable(int txrx, const char *ifaceName)
+int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
-  TRACE_WRAP("LCK %s\n", __FUNCTION__);
-
   softpll_enable();
   return PTPD_NETIF_OK;
 }
 
-int ptpd_netif_locking_poll(int txrx, const char *ifaceName)
+int ptpd_netif_locking_poll(int txrx, const char *ifaceName, int priority)
 {
-  TRACE_WRAP("LCK %s\n", __FUNCTION__);
-
   return softpll_check_lock() ? PTPD_NETIF_READY : PTPD_NETIF_ERROR;
 }
 
@@ -330,7 +300,6 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 	int ph;
 
 
-  TRACE_WRAP("%s\n", __FUNCTION__);
   TRACE_WRAP("%s: got \t utc=%d\n \tnsec=%d\n \tphase=%d\n", __FUNCTION__, ts->utc, ts->nsec, ts->phase);
 
     update_dmtd(sock);
@@ -382,7 +351,6 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
           size_t data_length, wr_timestamp_t *rx_timestamp)
 {
-  uint8_t i;
   struct my_socket *my_sock = (struct my_socket *)sock;
   uint32_t cpy, size, remain;
   ethhdr_t *header;
@@ -429,7 +397,6 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
   memcpy( data, pkg+sizeof(ethhdr_t), remain);
   
   memcpy(&hwts, pkg+sizeof(ethhdr_t)+remain, sizeof(struct hw_timestamp));
-  //TRACE_WRAP("aabc: ");
   //for(i=0;i<size;i++)
   //  TRACE_WRAP("%d ", pkg[i]);
   //TRACE_WRAP("\n%s: %x: %x: %x, size=%d, recvd=%d, sizeof=%d\n", "aabc", hwts.utc, hwts.nsec, hwts.phase, size, remain, sizeof(ethhdr_t));
@@ -446,10 +413,6 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
     rx_timestamp->phase  = 0;
    
     linearize_rx_timestamp(rx_timestamp, sock, hwts.ahead);
-
-    
-    
-
 
   }
 
@@ -468,8 +431,6 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 int ptpd_netif_select( wr_socket_t *wrSock)
 {
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
   return 0;
 }
 
@@ -480,8 +441,6 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
   int rval;
   struct hw_timestamp ts;
   uint8_t hdr[ETH_HEADER_SIZE];
-
-  //TRACE_WRAP("%s\n", __FUNCTION__);
 
 
   //if(s->bind_addr.family != PTPD_SOCK_RAW_ETHERNET)
@@ -496,8 +455,8 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
   /*ethtype*/
   memcpy(hdr+12, &to->ethertype, 2);
 
-  TRACE_WRAP("Sending %d bytes from %02x:%02x:%02x:%02x:%02x:%02x\n", data_length + 14, hdr[6], hdr[7], hdr[8], hdr[9], hdr[10], hdr[11]);
-  TRACE_WRAP("Sending %d bytes to %02x:%02x:%02x:%02x:%02x:%02x\n", data_length + 14, hdr[0], hdr[1], hdr[2], hdr[3], hdr[4], hdr[5]);
+  //mprintf("Sending %d bytes from %02x:%02x:%02x:%02x:%02x:%02x\n", data_length + 14, hdr[6], hdr[7], hdr[8], hdr[9], hdr[10], hdr[11]);
+  //mprintf("Sending %d bytes to %02x:%02x:%02x:%02x:%02x:%02x\n", data_length + 14, hdr[0], hdr[1], hdr[2], hdr[3], hdr[4], hdr[5]);
 
   rval = minic_tx_frame(hdr, (uint8_t*)data, data_length + ETH_HEADER_SIZE, &ts);
   
@@ -514,12 +473,9 @@ int update_rx_queues(void)
 {
   struct hw_timestamp hwts;
   uint8_t sidx, recvd, size;
-  uint8_t cpy, i;
+  uint8_t cpy;
   ethhdr_t *hdr;
   struct my_socket *sock = NULL;
-
-  //TRACE_WRAP("%s\n", __FUNCTION__);
-
 
   recvd = minic_rx_frame(&(pkg[sizeof(uint8_t)]), &(pkg[sizeof(uint8_t)+ETH_HEADER_SIZE]), MAX_PAYLOAD, &hwts);
   //TRACE_WRAP("%s: recvd=%d\n", __FUNCTION__, recvd);
@@ -583,23 +539,42 @@ int update_rx_queues(void)
 }
 
 
-void protocol_nonblock(RunTimeOpts *rtOpts, PtpClock *ptpClock)
+void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
-//  TRACE_WRAP("event POWERUP\n");
 
-//  while(1)
-  //{
-    if(ptpClock->portState != PTP_INITIALIZING)
-    {
-      doState(rtOpts, ptpClock);
-    }
-    else if(!doInit(rtOpts, ptpClock))
-    {
-      return;
-    }
+  if(ptpPortDS->portState != PTP_INITIALIZING)
+  {
+    doState(rtOpts, ptpPortDS);
+  }
+  else if(!doInit(rtOpts, ptpPortDS))
+  {
+    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"returning...\n");
+    return;
+  }
 
-  //  update_rx_queues();
- // }
+  //if(ptpPortDS->wrPortState != WRS_IDLE) return;  /*instead of while()*/
+
+  if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
+  {    
+    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"update secondary slaves\n");
+    /* Do after State Decision Even in all the ports */
+    if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
+      PTPD_TRACE(TRACE_WRPC, ptpPortDS,"no secondary slaves\n");
+    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+  }    
+
+  /* Handle Best Master Clock Algorithm globally */
+  if(globalBestForeignMastersUpdate(ptpPortDS))
+  {    
+    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"Initiate global State Decision Event\n");
+    ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
+  }    
+  else 
+  {
+    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+  }
+
+  checkClockClassValidity(ptpPortDS->ptpClockDS);
 }
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
@@ -631,4 +606,17 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 	}
 	return PTPD_NETIF_OK;
 
+}
+
+/*not implemented yet*/
+int ptpd_netif_extsrc_detection()
+{
+  return PTPD_NETIF_OK;
+}
+
+char* format_wr_timestamp(wr_timestamp_t ts)
+{
+  static char buf[10];
+  buf[0]='\0';
+  return buf;
 }
