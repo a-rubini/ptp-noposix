@@ -61,7 +61,8 @@ void ptpdShutdown()
 
 PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
-  int c, fd = -1, nondaemon = 0, noclose = 0;
+  int c, fd = -1, /*nondaemon = 1,*/ noclose = 0;
+  int startupMode = DEFAULT_STARTUP_MODE; //1=> daemon, 0=>nondaemon
 
   /* parse command line arguments */
   while( (c = getopt(argc, argv, "?cf:dDABMSNPxta:w:M:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
@@ -73,9 +74,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "\n"
 "-?                show this page\n"
 "\n"
-"-c                run in command line (non-daemon) mode\n"
 "-f FILE           send output to FILE\n"
-"-d                display stats\n"
 "-D                display stats in .csv format\n"
 "\n"
 "-x                do not reset the clock if off by more than one second\n"
@@ -104,6 +103,8 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "-v NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
 
+  "-d                run in daemon mode !!! \n"
+  "-c                run in non-daemon mode\n"
   "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked"
 		    " to external source (extsrc needs to be configured in wrsw_hal.conf and "
 		    "detected by the HW\n"
@@ -131,9 +132,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
       *ret = 0;
       return 0;
 
-    case 'c':
-      nondaemon = 1;
-      break;
+
 
     case 'f':
       if((fd = creat(optarg, 0400)) != -1)
@@ -148,12 +147,21 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 
       
     case 'd':
+        startupMode = DAEMONE_MODE;
+       
+    case 'c':
+      
+        startupMode = NONDAEMONE_MODE;
+      //nondaemon = 1;
+      break;       
+/*      
 #ifndef PTPD_DBG
       rtOpts->displayStats = TRUE;
 #endif
+*/
       break;
 
-    case 'D':
+    case 'D':      
 #ifndef PTPD_DBG
       rtOpts->displayStats = TRUE;
       rtOpts->csvStats = TRUE;
@@ -355,7 +363,8 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   }
   else
   {
-    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
+    if(startupMode == NONDAEMONE_MODE)
+       PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
     if(rtOpts->autoPortDiscovery == TRUE)
       rtOpts->portNumber = autoPortNumberDiscovery();
@@ -378,7 +387,8 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 	}
 	else
 	{
-	    PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",
+	    if(startupMode == NONDAEMONE_MODE)
+	      PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",
 		      (int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),
 		       currentPtpdClockData->portIdentity.portNumber);
 	    /*Init to 0 net buffer*/
@@ -400,8 +410,10 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
     
   }
 
-#ifndef PTPD_NO_DAEMON
-  if(!nondaemon)
+//#ifndef PTPD_NO_DAEMON
+  //if(!nondaemon)
+  PTPD_TRACE(TRACE_STARTUP, NULL,"WRPTP.v2 daemon started. HAVE FUN !!! \n");
+  if(startupMode == DAEMONE_MODE)
   {
     if(daemon(0, noclose) == -1)
     {
@@ -410,7 +422,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
       return 0;
     }
   }
-#endif
+//#endif
 
   signal(SIGINT, catch_close);
   signal(SIGTERM, catch_close);

@@ -10,6 +10,15 @@
  */
 #include "ptpd_netif.h"
 
+/**
+
+*/
+#define DAEMONE_MODE				1
+#define NONDAEMONE_MODE				0
+
+
+#define DEFAULT_STARTUP_MODE                    DAEMONE_MODE
+
 #define MANUFACTURER_ID "MaceG VanKempen;2.0.0"
 
 /* implementation specific constants */
