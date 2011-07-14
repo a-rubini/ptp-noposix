@@ -18,6 +18,7 @@
 #define TRACE_ARITH (1<<10)
 #define TRACE_PTPD_MAIN (1<<11)
 #define TRACE_SPECIAL_DBG (1<<12)
+#define TRACE_WRPC (1<<13)
 
 #define TRACE_ALL 0xffff
 

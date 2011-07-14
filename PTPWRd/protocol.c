@@ -45,6 +45,8 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
  * 'port_state' by calling toState(), but once they are done we loop around
  * again and perform the actions required for the new 'port_state'.
  */
+#ifndef WRPC_EXTRA_SLIM
+
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  {
 
@@ -130,6 +132,7 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 }
 
+#endif
 
 //////////// this function is obsoleted (we use multiProtocol for single and multiport) //////////
 /* 
@@ -138,6 +141,9 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
  * 'port_state' by calling toState(), but once they are done we loop around
  * again and perform the actions required for the new 'port_state'. 
  */
+
+#ifndef WRPC_EXTRA_SLIM
+
 void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
   PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event POWERUP\n");
@@ -178,6 +184,7 @@ void protocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   }
 }
 
+#endif
 
 /*
  * perform actions required when leaving 'port_state' and entering 'state'
@@ -457,9 +464,9 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
 	{
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK DOWN  <<---------\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK DOWN  <<---------\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
 		
 		ptpPortDS->wrModeON 	= FALSE;
 		ptpPortDS->calibrated 	= FALSE;
@@ -472,7 +479,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		 */
 		if(ptpPortDS->ptpClockDS->slaveOnly)
 		{
-		    PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Slave-only: forcing PTP_LISTENING (a small non-standard hack)\n");
+		    PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"Slave-only: forcing PTP_LISTENING (a small non-standard hack)\n");
 		    toState(PTP_LISTENING, rtOpts, ptpPortDS);
 		    ptpPortDS->record_update = FALSE;
 		}
@@ -481,9 +488,9 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	
 	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
 	{
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"----->> LINK UP  <<---------\n");
-		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK UP  <<---------\n");
+		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
 	}
 	/*
 	 * remember the current state 
@@ -571,14 +578,14 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		   		    (ptpPortDS->parentWrModeON       == FALSE     || \
 		   		     ptpPortDS->wrModeON             == FALSE     ))
 		 		  {
-				      PTPD_TRACE(TRACE_PROTO, ptpPortDS,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
+				      PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"event SYNCHRONIZATION_FAULT : go to UNCALIBRATED\n");
 				      if(ptpPortDS->parentWrModeON  == FALSE)
-					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"parent node left White Rabbit Mode- WR Master-forced\n");
+					PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"parent node left White Rabbit Mode- WR Master-forced\n");
 					
 				      if(ptpPortDS->wrModeON             == FALSE)
-					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"this node left White Rabbit Mode - WR Slave-forced\n");
+					PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"this node left White Rabbit Mode - WR Slave-forced\n");
 					
-					PTPD_TRACE(TRACE_PROTO, ptpPortDS,"re-synchronization\n");
+					PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"re-synchronization\n");
 				      
 				      toState(PTP_UNCALIBRATED, rtOpts, ptpPortDS);
 
