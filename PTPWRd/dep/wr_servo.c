@@ -164,10 +164,17 @@ int wr_servo_init(PtpPortDS *clock)
 	// fixme: full precision
 	s->delta_tx_m = ((int32_t)clock->otherNodeDeltaTx.scaledPicoseconds.lsb) >> 16;
 	s->delta_rx_m = ((int32_t)clock->otherNodeDeltaRx.scaledPicoseconds.lsb) >> 16;
-	s->delta_tx_s = ((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
-	s->delta_rx_s = ((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
+	s->delta_tx_s = pstate.delta_tx;//((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
+	s->delta_rx_s = pstate.delta_rx;//((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
 
+	mprintf("Deltas: txm %d rxm %d txs %d rxs %d\n",
+	s->delta_tx_m,
+	s->delta_rx_m,
+	s->delta_tx_s,
+	s->delta_rx_s);
+	
 
+                                                   
 	cur_servo_state.delta_tx_m = (int64_t)s->delta_tx_m;
 	cur_servo_state.delta_rx_m = (int64_t)s->delta_rx_m;
 	cur_servo_state.delta_tx_s = (int64_t)s->delta_tx_s;
@@ -209,8 +216,8 @@ int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)
 	s->t2 = timeint_to_wr(t2);
 
 	//merge problem:
-	dump_timestamp("sync->t1", s->t1);
-	dump_timestamp("sync->t2", s->t2);
+//	dump_timestamp("sync->t1", s->t1);
+//	dump_timestamp("sync->t2", s->t2);
 
 	got_sync = 1;
 
@@ -244,7 +251,7 @@ int wr_servo_update(PtpPortDS *clock)
 		
 	got_sync = 0;
 
-	if (0) { /* enable for debugging */
+	if (1) { /* enable for debugging */
 		dump_timestamp("->t1", s->t1);
 		dump_timestamp("->t2", s->t2);
 		dump_timestamp("->t3", s->t3);
@@ -297,6 +304,9 @@ int wr_servo_update(PtpPortDS *clock)
 	s->delta_ms = delay_ms_fix;
 
 	tics = ptpd_netif_get_msec_tics();
+
+	dump_timestamp("->HWOffset", ts_offset_hw);
+
 
 	switch(s->state)
 	{
