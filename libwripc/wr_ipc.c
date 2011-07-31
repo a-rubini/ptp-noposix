@@ -579,6 +579,7 @@ static int handle_call(struct wripc_server_context *srv,
 	current_pos = 3 + 1+ ((strlen(func_name)+4)>>2);
 
 	DBG("conn %x call %s nargs = %d\n", conn, func_name, num_args);
+	free(func_name);
 
 	if(!func)
 	{
