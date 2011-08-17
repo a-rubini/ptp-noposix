@@ -580,6 +580,8 @@ static int handle_call(struct wripc_server_context *srv,
 
 	PTPD_TRACE(TRACE_WR_IPC, NULL,"conn %x call %s nargs = %d\n", conn, func_name, num_args);
 
+	free(func_name);
+
 	if(!func)
 	{
 		reply_error(conn, WRIPC_ERROR_UNKNOWN_FUNCTION);
