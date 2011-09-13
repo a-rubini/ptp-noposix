@@ -432,7 +432,6 @@ void doWRState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	    
 	    if(ptpd_netif_calibrating_poll(PTPD_NETIF_TX, ptpPortDS->netPath.ifaceName,&delta) == PTPD_NETIF_READY)
 	    {
-		printf("TX fixed delay = %d\n\n",(int)delta);
 		ptpPortDS->deltaTx.scaledPicoseconds.msb = 0xFFFFFFFF & (delta >> 16);
 		ptpPortDS->deltaTx.scaledPicoseconds.lsb = 0xFFFFFFFF & (delta << 16);
 		PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"Tx=>>scaledPicoseconds.msb = 0x%x\n",ptpPortDS->deltaTx.scaledPicoseconds.msb);

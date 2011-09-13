@@ -167,7 +167,7 @@ int wr_servo_init(PtpPortDS *clock)
 	s->delta_tx_s = pstate.delta_tx;//((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
 	s->delta_rx_s = pstate.delta_rx;//((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
 
-	mprintf("Deltas: txm %d rxm %d txs %d rxs %d\n",
+	PTPD_TRACE(TRACE_SERVO, NULL, "Deltas: txm %d rxm %d txs %d rxs %d\n",
 	s->delta_tx_m,
 	s->delta_rx_m,
 	s->delta_tx_s,
@@ -205,7 +205,7 @@ static int ph_adjust = 0;
 int wr_servo_man_adjust_phase(int phase)
 {
 	ph_adjust = phase;
-	return phase;
+	return ph_adjust;
 }
 
 int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)

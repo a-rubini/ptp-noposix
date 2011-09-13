@@ -1390,7 +1390,6 @@ if (!rtOpts->E2E_mode)
 					integer64_to_internalTime(header->correctionfield,&correctionField);
 
 
-					printf("\n\n --------------------------- finish calculateion------- ---------------------\n");
 
 					break;
 				}

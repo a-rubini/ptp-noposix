@@ -5,6 +5,7 @@
 	#define PTPD_TRACE_MASK 0xffff
 #endif
 
+
 #define TRACE_PROTO (1<<0)
 #define TRACE_WR_PROTO (1<<1)
 #define TRACE_NET (1<<2)
@@ -22,6 +23,14 @@
 
 #define TRACE_ALL 0xffff
 
+extern void wrc_debug_printf(int subsys, const char *fmt, ...);
+
+#ifdef PTPD_FREESTANDING
+	#define _PTPD_DPRINTF(subsys,...) wrc_debug_printf(subsys, __VA_ARGS__)
+#else
+	#define _PTPD_DPRINTF(subsys,...) fprintf(stderr,__VA_ARGS__)
+#endif
+
 
 #define PTPD_TRACE(subsys, p, x, ...) \
   {\
@@ -30,7 +39,7 @@
     {\
       if(p) \
       {\
-	fprintf(stderr, "([p=%d] %s WR: %s%s%s) " x ,port->portIdentity.portNumber,\
+	_PTPD_DPRINTF(subsys,"([p=%d] %s WR: %s%s%s) " x ,port->portIdentity.portNumber,\
 	(port->portState==PTP_SLAVE ? "ptp[S]" : (port->portState==PTP_MASTER ? "ptp[M]" : "ptp[-]")),\
 						    (port->wrModeON== TRUE ? "ON->" : "OFF "),\
 						    (port->wrMode== WR_MASTER ? "MASTER" : ""),\
@@ -38,7 +47,7 @@
 						      ##__VA_ARGS__); \
       } else \
       {\
-	fprintf(stderr, x, ## __VA_ARGS__); \
+	_PTPD_DPRINTF(subsys,x, ## __VA_ARGS__); \
       }\
     }\
   }\
@@ -49,8 +58,8 @@
   {\
       if(~PTPD_TRACE_PTPDATADS & subsys) \
       {\
-	fprintf(stderr, x,## __VA_ARGS__); \
+	_PTPD_DPRINTF(subsys, x,## __VA_ARGS__); \
       }\
   }
-
+  
 #endif
