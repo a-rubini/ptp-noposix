@@ -467,7 +467,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK DOWN  <<---------\n");
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
-		
+
 		ptpPortDS->wrModeON 	= FALSE;
 		ptpPortDS->calibrated 	= FALSE;
 		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
@@ -491,6 +491,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK UP  <<---------\n");
 		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
+		wr_servo_reset();
 	}
 	/*
 	 * remember the current state 
