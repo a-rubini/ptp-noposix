@@ -146,6 +146,13 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
 
 static int got_sync = 0;
 
+void wr_servo_reset()
+{
+    pps_gen_enable_output(0); /* fixme: unportable */
+	cur_servo_state.valid = 0;
+	servo_state_valid = 0;
+}
+
 int wr_servo_init(PtpPortDS *clock)
 {
 	hexp_port_state_t pstate;
@@ -378,7 +385,7 @@ int wr_servo_update(PtpPortDS *clock)
 
 		if(tracking_enabled)
 		{
-
+         	pps_gen_enable_output(1);
 			// just follow the changes of deltaMS
 			s->cur_setpoint += (s->delta_ms - s->delta_ms_prev);
 
