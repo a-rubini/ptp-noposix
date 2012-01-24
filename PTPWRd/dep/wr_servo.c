@@ -24,6 +24,10 @@
 
 #define SERVO_ADJUST_TIMEOUT 2000
 
+#if 1 /* This was an undefined symbol. Just hack it here to do nothing*/
+static inline void pps_gen_enable_output(int i) {}
+#endif
+
 /* my own timestamp arithmetic functions */
 
 int servo_state_valid = 0;
