@@ -474,6 +474,7 @@ int update_rx_queues(void)
   struct hw_timestamp hwts;
   uint8_t sidx, recvd, size;
   uint8_t cpy;
+  uint16_t aligned_ethtype;
   ethhdr_t *hdr;
   struct my_socket *sock = NULL;
 
@@ -487,10 +488,12 @@ int update_rx_queues(void)
   //                                                          hdr->dstmac[3],hdr->dstmac[4],hdr->dstmac[5],
   //                                                          hdr->dstmac[6],hdr->dstmac[7]);
   /*received frame, find the right socket*/
+  
+  memcpy(&aligned_ethtype, &hdr->ethtype, 2);
   for(sidx=0; sidx<SOCKS_NUM; sidx++)
     if( wr_sockets[sidx].in_use && 
         !memcmp(hdr->dstmac, wr_sockets[sidx].bind_addr.mac, 6) && 
-        hdr->ethtype == wr_sockets[sidx].bind_addr.ethertype)
+        aligned_ethtype == wr_sockets[sidx].bind_addr.ethertype)
     {
       sock = &wr_sockets[sidx];
       break;  /*they match*/
