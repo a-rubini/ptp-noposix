@@ -488,7 +488,9 @@ int update_rx_queues(void)
   //                                                          hdr->dstmac[6],hdr->dstmac[7]);
   /*received frame, find the right socket*/
   for(sidx=0; sidx<SOCKS_NUM; sidx++)
-    if( wr_sockets[sidx].in_use && !memcmp(hdr->dstmac, wr_sockets[sidx].bind_addr.mac, 6))
+    if( wr_sockets[sidx].in_use && 
+        !memcmp(hdr->dstmac, wr_sockets[sidx].bind_addr.mac, 6) && 
+        hdr->ethtype == wr_sockets[sidx].bind_addr.ethertype)
     {
       sock = &wr_sockets[sidx];
       break;  /*they match*/
