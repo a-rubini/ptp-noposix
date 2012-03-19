@@ -25,7 +25,7 @@ static struct my_socket wr_sockets[SOCKS_NUM];
  * can share this buffer*/
 static uint8_t pkg[sizeof(uint8_t)+ETH_HEADER_SIZE+MAX_PAYLOAD+sizeof(struct hw_timestamp)];
 
-int usleep(unsigned useconds)
+int usleep(useconds_t useconds)
 {
   while(useconds--) asm volatile("nop");
 

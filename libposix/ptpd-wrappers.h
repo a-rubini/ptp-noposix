@@ -14,6 +14,7 @@
 
 #else
 
+#include <stdio.h>
 #include <inttypes.h>
 /*
  * This is a freestanding compilation, and we may miss some data
@@ -43,8 +44,8 @@ static inline uint32_t htonl(uint32_t x)
 { return htons(x>>16) | ((uint32_t)(htons(x) << 16));}
 #endif /* endian */
 
-/* usleep is not there in zpu */
-extern int usleep(unsigned useconds);
+extern int usleep(useconds_t usec);
+
 
 /* The exports are not used in freestanding environment */
 static inline void ptpd_init_exports() {}
@@ -57,7 +58,6 @@ static inline void ptpd_handle_wripc() {}
 #define sprintf(buf, ...) msprintf(buf, __VA_ARGS__)
 //#define DBG(x, ...) mprintf(x, ##__VA_ARGS__)
 
-int usleep(unsigned useconds);
 
 
 #endif /* hosted */
