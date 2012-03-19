@@ -1,4 +1,9 @@
 
+IMPORTANT NOTE: This README is mostly obsolete. It's up to date as of
+end of May 2011, as a blindly-ported present to hardware people that
+_later_ made it really work.
+
+
 This is a version of wr_ptpd somewhat ported to ZPU or other embedded
 processors. The core program is ported, but external functions
 (hardware access) are still missing).  The program still compiles and
