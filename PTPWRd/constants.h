@@ -10,6 +10,15 @@
  */
 #include "ptpd_netif.h"
 
+/**
+
+*/
+#define DAEMONE_MODE				1
+#define NONDAEMONE_MODE				0
+
+
+#define DEFAULT_STARTUP_MODE                    DAEMONE_MODE
+
 #define MANUFACTURER_ID "MaceG VanKempen;2.0.0"
 
 /* implementation specific constants */
@@ -28,14 +37,18 @@
 #define DEFAULT_DELAYREQ_INTERVAL		0
 #define DEFAULT_SYNC_INTERVAL			0 //-7 in 802.1AS
 #define DEFAULT_SYNC_RECEIPT_TIMEOUT		3
-#define DEFAULT_ANNOUNCE_RECEIPT_TIMEOUT	2 //6 // 3 by default
+#define DEFAULT_ANNOUNCE_RECEIPT_TIMEOUT	6 //6 // 3 by default
 #define DEFAULT_QUALIFICATION_TIMEOUT		2
 #define DEFAULT_FOREIGN_MASTER_TIME_WINDOW	4
 #define DEFAULT_FOREIGN_MASTER_THRESHOLD	2
-#define DEFAULT_CLOCK_CLASS			100
 #define DEFAULT_CLOCK_ACCURACY			0xFE
-#define DEFAULT_PRIORITY1			100
-#define DEFAULT_PRIORITY2			100
+
+#define DEFAULT_CLOCKCLASS_VALIDATE_TIMEOUT	5		//new staff
+
+#define DEFAULT_CLOCK_CLASS			187
+
+#define DEFAULT_PRIORITY1			128
+#define DEFAULT_PRIORITY2			128
 #define DEFAULT_CLOCK_VARIANCE			-4000 //To be determined in 802.1AS...so same value of ptpdv1 is used
 
 /* In WR mode we need only one foreign master */
@@ -48,10 +61,9 @@
 #define DEFAULT_PARENTS_STATS			FALSE
 
 /* features, only change to refelect changes in implementation */
-#define NUMBER_PORTS		1
+#define NUMBER_PORTS		2
 #define VERSION_PTP		2
 #define TWO_STEP_FLAG		0x02
-#define BOUNDARY_CLOCK		FALSE
 #define SLAVE_ONLY		FALSE
 #define NO_ADJUST		FALSE
 
@@ -81,32 +93,31 @@
   /*
    * if this defined, WR uses new implementation of timeouts (not using interrupt)
    */
-#define IRQ_LESS_TIMER
+//#define IRQ_LESS_TIMER
 
 #define WR_NODE				0x80
 #define WR_IS_CALIBRATED		0x04
 #define WR_IS_WR_MODE			0x08
 #define WR_NODE_MODE			0x03
-#define WR_TLV_TYPE			0x2004
+
+# define WR_TLV_TYPE			0x2004
+
 #define WR_MASTER_PRIORITY1		6
 #define WR_DEFAULT_CAL_PERIOD		3000     //[us]
 #define WR_DEFAULT_CAL_PATTERN		0x3E0     //1111100000
 #define WR_DEFAULT_CAL_PATTERN_LEN	0xA       //10 bits
 
-#define WR_DEFAULT_STATE_TIMEOUT_MS	5000 //[ms]
+#define WR_DEFAULT_STATE_TIMEOUT_MS	300 //[ms]
 #define WR_DEFAULT_STATE_REPEAT		3
 #define WR_DEFAULT_INIT_REPEAT		3
 
 /*White Rabbit package Size*/
-#ifdef WR_IN_HEADER_AND_ANNBODY
-# define WR_ANNOUNCE_TLV_LENGTH		0
-#else
-# define WR_ANNOUNCE_TLV_LENGTH		6
-#endif
 
-#define WR_ANNOUNCE_LENGTH	(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH)
+#define WR_ANNOUNCE_TLV_LENGTH		0x0A
+
+#define WR_ANNOUNCE_LENGTH		(ANNOUNCE_LENGTH + WR_ANNOUNCE_TLV_LENGTH + 4)
 #define WR_MANAGEMENT_TLV_LENGTH	 6
-#define WR_MANAGEMENT_LENGTH	 (MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
+#define WR_MANAGEMENT_LENGTH	 	(MANAGEMENT_LENGTH + WR_MANAGEMENT_TLV_LENGTH)
 
 /* memory footprint tweak for WRPC */
 #ifdef WRPC_EXTRA_SLIM
@@ -121,6 +132,29 @@
 
 #define WR_SLAVE_CLOCK_CLASS		248
 #define WR_MASTER_CLOCK_CLASS		5
+
+#define WR_MASTER_ONLY_CLOCK_CLASS	70
+
+///// new staff for WRPTPv2
+
+#define TLV_TYPE_ORG_EXTENSION 		0x0003 //organization specific 
+
+#define WR_PRIORITY1                    64
+
+#define WR_TLV_ORGANIZATION_ID		0x080030
+#define WR_TLV_MAGIC_NUMBER		0xDEAD
+#define WR_TLV_WR_VERSION_NUMBER	0x01
+
+#define WR_SIGNALING_MSG_BASE_LENGTH	48  //=length( header ) + lenght( targetPortId ) + length (tlvType) + lenght(lenghtField) 
+					    //      34          +           10           +         2        +     2 
+
+#define WR_DEFAULT_DELTAS_KNOWN		FALSE
+#define WR_DEFAULT_DELTA_TX		0
+#define WR_DEFAULT_DELTA_RX		0
+
+#define     SEND_CALIBRATION_PATTERN 	0X0001
+#define NOT_SEND_CALIBRATION_PATTERN 	0X0000
+
 
 /** \}*/
 
@@ -229,11 +263,24 @@ enum {
 
 
 /**
- * \brief Indicates if a node runs as White Rabbit, and what kind (master/slave) [White Rabbit]
+ * \brief Indicates if a port is configured as White Rabbit, and what kind (master/slave) [White Rabbit]
  */
 /*White Rabbit node */
 enum{
-	NON_WR    = 0x0,
+	NON_WR      = 0x0,
+	WR_S_ONLY   = 0x2, 
+	WR_M_ONLY   = 0x1,
+	WR_M_AND_S  = 0x3,
+	WR_MODE_AUTO= 0x4, // only for ptpx - not in the spec
+};
+
+/**
+ * \brief Indicate current White Rabbit mode of a given port (non wr/wr master/wr slave) [White Rabbit]
+ */
+/*White Rabbit node */
+enum{
+	//NON_WR = 0x0,
+	// below tric used in calling e.g.: ptpd_netif_locking_enable()
 	WR_SLAVE  = PTPD_NETIF_RX, // just for convenient useage with ptpd_netif interface
 	WR_MASTER = PTPD_NETIF_TX, // just for convenient useage with ptpd_netif interface
 };
@@ -256,7 +303,7 @@ enum{
  */
 enum {
 	WRS_PRESENT = 0,  WRS_S_LOCK, WRS_M_LOCK,  WRS_LOCKED,
-	WRS_REQ_CALIBRATION,  WRS_CALIBRATED,  WRS_RESP_CALIB_REQ ,WRS_WR_LINK_ON,
+	WRS_CALIBRATION,  WRS_CALIBRATED,  WRS_RESP_CALIB_REQ ,WRS_WR_LINK_ON,
 	/*
 	  each WR main state (except IDLE) has an associated timetout
 	  we use state names to manage timeouts as well
@@ -266,9 +313,14 @@ enum {
 	/* here are substates*/
 	WRS_S_LOCK_1,
 	WRS_S_LOCK_2,
-	WRS_REQ_CALIBRATION_1,
-	WRS_REQ_CALIBRATION_2,
-	WRS_REQ_CALIBRATION_3,
+	WRS_CALIBRATION_1,
+	WRS_CALIBRATION_2,
+	WRS_CALIBRATION_3,
+	WRS_CALIBRATION_4,
+	WRS_CALIBRATION_5,
+	WRS_CALIBRATION_6,
+	WRS_CALIBRATION_7,
+	WRS_CALIBRATION_8,
 	WRS_RESP_CALIB_REQ_1,
 	WRS_RESP_CALIB_REQ_2,
 	WRS_RESP_CALIB_REQ_3,
@@ -280,16 +332,51 @@ enum {
  * \brief White Rabbit commands (for new implementation, single FSM), see table 38 [White Rabbit]
  */
 enum{
-	NULL_MANAGEMENT = 0x0000,
-	SLAVE_PRESENT	= 0x6000,
+	
+	NULL_WR_TLV = 0x0000,
+	SLAVE_PRESENT	= 0x1000,
 	LOCK,
 	LOCKED,
 	CALIBRATE,
 	CALIBRATED,
-	WR_MODE_ON,
+	WR_MODE_ON,	
+	ANN_SUFIX = 0x2000,
 };
 
-#define     SEND_CALIBRATION_PATTERN 0X0001
-#define NOT_SEND_CALIBRATION_PATTERN 0X0000
+
+/**
+ * \brief White Rabbit slave port's role 
+ */
+
+enum{
+	NON_SLAVE	= 0x0,
+	PRIMARY_SLAVE 	,
+	SECONDARY_SLAVE ,
+};
+
+/**
+ * \brief White Rabbit data initialization  mode
+ */
+
+enum{
+	INIT,
+	RE_INIT,
+};
+
+/** \name Best Master Clock 
+  Here are constants used in the full implementation of BMC.
+.*/
+ /**\{*/
+
+#define A_better_by_topology_then_B 	-2
+#define A_better_then_B 		-1
+#define B_better_then_A 		1
+#define B_better_by_topology_then_A	2
+
+#define A_equals_B			0
+#define DSC_error			0
+
+/** \}*/
+
 
 #endif /*CONSTANTS_H_*/

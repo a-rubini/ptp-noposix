@@ -7,7 +7,7 @@
 
 #include "../ptpd.h"
 
-PtpClock *ptpClock;
+PtpPortDS *ptpPortDS;
 
 void catch_close(int sig)
 {
@@ -33,7 +33,6 @@ void catch_close(int sig)
     s = "?";
   }
 
-  PTPD_TRACE(TRACE_SYS, "shutdown on %s signal\n", s);
 
   exit(0);
 }
@@ -42,31 +41,31 @@ void ptpdShutdown()
 {
 
   int i;
-  PtpClock * currentPtpdClockData;
+  PtpPortDS * currentPtpdClockData;
 
-  currentPtpdClockData = ptpClock;
+  currentPtpdClockData = ptpPortDS;
 
   for (i=0; i < MAX_PORT_NUMBER; i++)
   {
-     netShutdown(&currentPtpdClockData->netPath);
      if (currentPtpdClockData->foreign)
      {
        free(currentPtpdClockData->foreign);
      }
-     //netShutdown(&currentPtpdClockData->netPath);
+
      currentPtpdClockData++;
   }
 
-  free(ptpClock);
+  free(ptpPortDS);
 
 }
 
-PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts)
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
-  int c, fd = -1, nondaemon = 0, noclose = 0;
+  int c, fd = -1, /*nondaemon = 1,*/ noclose = 0;
+  int startupMode = DEFAULT_STARTUP_MODE; //1=> daemon, 0=>nondaemon
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDMASxta:w:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDABMSNPxta:w:M:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -75,9 +74,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 "\n"
 "-?                show this page\n"
 "\n"
-"-c                run in command line (non-daemon) mode\n"
 "-f FILE           send output to FILE\n"
-"-d                display stats\n"
 "-D                display stats in .csv format\n"
 "\n"
 "-x                do not reset the clock if off by more than one second\n"
@@ -98,18 +95,32 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 "\n"
 "-n NUMBER         specify announce interval in 2^NUMBER sec\n"
 "-y NUMBER         specify sync interval in 2^NUMBER sec\n"
-"-m NUMBER         specify max number of foreign master records\n"
+//"-m NUMBER         specify max number of foreign master records\n"
 "\n"
 "-g                run as slave only\n"
-"-v NUMBER         specify system clock allen variance\n"
+//"-s NUMBER         specify system clock allen variance\n"
 "-r NUMBER         specify system clock accuracy\n"
-"-s NUMBER         specify system clock class\n"
+"-v NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
 
-  "-A                WR: hands free - multiport mode, autodetection of ports and interfaces, HAVE FUN !!!!\n"
-  "-M                WR: run PTP node as WR Master\n"
-  "-S                WR: run PTP node as WR Slave\n"
-  "-q NUMBER         WR: if you want to use one eth interface for testing ptpd (run two which communicate) define here different port numbers (need to be > 1)\n"
+  "-d                run in daemon mode !!! \n"
+  "-c                run in non-daemon mode\n"
+  "-P  		     WR: enables switch to be Primary Source of timing (clockClass=6) if it's looked"
+		    " to external source (extsrc needs to be configured in wrsw_hal.conf and "
+		    "detected by the HW\n"
+  "-A                WR: hands free - multiport mode, autodetection of ports and interfaces ,"
+		    "[default startup configuration], HAVE FUN !!!!\n"
+  "-M                WR: run PTP node as Master-only (ordinary clock only ! Defaults to 1 port)\n"
+  "-m NAME           WR: run PTP port (interface name NAME) on a switch as Master-only (ordinary clock only ! Defaults to 1 port)\n"
+  
+  "-S                WR: run PTP node with wrConfig=WR_S_ONLY (Jut for test, Defaults to 1 port)\n"
+  "-s NAME           WR: run PTP port (interface name NAME) on a switch as with wrConfig=WR_S_ONLY (Jut for test, Defaults to 1 port)\n"  
+  
+  "-B                WR: run PTP node as WR Slave and Master (depending on needs)\n"
+  "-N                WR: run PTP node as NON_WR port -- only standard PTP\n"
+  "-q NUMBER         WR: override clock identity -- if you want to run two ptpd on the same machine"
+			  " and they are supposed to cummunicate, this enables you to differentiated "
+			  " their clock ID, so the ptpds think they are on different machiens\n"
   "-1 NAME           WR: network interface for port 1\n"
   "-2 NAME           WR: network interface for port 2\n"
   "-3 NAME           WR: network interface for port 3\n"
@@ -121,17 +132,36 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
       *ret = 0;
       return 0;
 
-    case 'c':
-      nondaemon = 1;
+
+
+    case 'f':
+      if((fd = creat(optarg, 0400)) != -1)
+      {
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        noclose = 1;
+      }
+      else
+        PTPD_TRACE(TRACE_ERROR, NULL,"could not open output file");
       break;
 
+      
     case 'd':
+        startupMode = DAEMONE_MODE;
+       
+    case 'c':
+      
+        startupMode = NONDAEMONE_MODE;
+      //nondaemon = 1;
+      break;       
+/*      
 #ifndef PTPD_DBG
       rtOpts->displayStats = TRUE;
 #endif
+*/
       break;
 
-    case 'D':
+    case 'D':      
 #ifndef PTPD_DBG
       rtOpts->displayStats = TRUE;
       rtOpts->csvStats = TRUE;
@@ -160,6 +190,7 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case 'u':
@@ -188,25 +219,25 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
      rtOpts->announceInterval=strtol(optarg, 0, 0);
      break;
 
-    case 'm':
-      rtOpts->max_foreign_records = strtol(optarg, 0, 0);
-      if(rtOpts->max_foreign_records < 1)
-        rtOpts->max_foreign_records = 1;
-      break;
+//     case 'm':
+//       rtOpts->max_foreign_records = strtol(optarg, 0, 0);
+//       if(rtOpts->max_foreign_records < 1)
+//         rtOpts->max_foreign_records = 1;
+//       break;
 
     case 'g':
       rtOpts->slaveOnly = TRUE;
       break;
 
-    case 'v':
-      rtOpts->clockQuality.offsetScaledLogVariance = strtol(optarg, 0, 0);
-      break;
+//     case 's':
+//       rtOpts->clockQuality.offsetScaledLogVariance = strtol(optarg, 0, 0);
+//       break;
 
     case 'r':
       rtOpts->clockQuality.clockAccuracy = strtol(optarg, 0, 0);
       break;
 
-    case 's':
+    case 'v':
       rtOpts->clockQuality.clockClass = strtol(optarg, 0, 0);
       break;
 
@@ -217,7 +248,6 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     case 'q':
 
       rtOpts->overrideClockIdentity  = strtol(optarg, 0, 0);
-      PTPD_TRACE(TRACE_PROTO, "WR, port clockIdentity overwritten !!\n");
 
 
       break;
@@ -234,38 +264,84 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
 
    case 'A':
-//	   DBGNPI("WR AUTO MODE\n");
-	   rtOpts->portNumber = WR_PORT_NUMBER;
-
-	   break;
-
-   case 'S':
-	   rtOpts->wrNodeMode = WR_SLAVE;
-
-//	   DBGNPI("WR Slave\n");
+	   PTPD_TRACE(TRACE_STARTUP, NULL, "WR AUTO MODE\n");
+	   rtOpts->portNumber 		= WR_PORT_NUMBER; 
+	   rtOpts->wrConfig 		= WR_MODE_AUTO;
+	   rtOpts->autoPortDiscovery 	= TRUE;
 	   break;
 
    case 'M':
-	   rtOpts->wrNodeMode = WR_MASTER;
-
-//	   DBGNPI("WR Master\n");
+	    PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only\n");
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->masterOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_M_ONLY; //only for ordinary clock
 	   break;
+   case 'm':
+	    
+	   memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+	   strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->masterOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_M_ONLY; //only for ordinary clock
+	   
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master-only : interface specified: %s\n", rtOpts->ifaceName[0]);
+	   break;
+	   
+   case 'B':
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR Master and Slave\n");
+	   rtOpts->wrConfig = WR_M_AND_S;
+	   break;
+	   
+   case 'N':
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"NON_WR wrMode !! \n");
+	   rtOpts->wrConfig = NON_WR;
+	   break;	   
+
+   case 'P':
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"Primary Source of time (Timing Master) \n");
+	   rtOpts->primarySource = TRUE;	  
+	   break;	  
+  
+   case 'S':
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR wrConfig=WR_S_ONLY\n");
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
+	   break;
+   case 's':
+	    
+	   memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
+	   strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
+	   rtOpts->autoPortDiscovery 	= FALSE;
+	   rtOpts->slaveOnly 		= TRUE;
+	   rtOpts->portNumber		= 1;
+	   rtOpts->wrConfig 		= WR_S_ONLY; //only for ordinary clock
+
+	   
+	   PTPD_TRACE(TRACE_STARTUP, NULL,"WR wrConfig=WR_S_ONLY: interface specified: %s\n", rtOpts->ifaceName[0]);	   
+	   
     case '1':
       memset(rtOpts->ifaceName[0], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[0], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 1;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case '2':
       memset(rtOpts->ifaceName[1], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[1], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber = 2;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
     case '3':
       memset(rtOpts->ifaceName[2], 0, IFACE_NAME_LENGTH);
       strncpy(rtOpts->ifaceName[2], optarg, IFACE_NAME_LENGTH);
       rtOpts->portNumber  = 3;
+      rtOpts->autoPortDiscovery = FALSE;
       break;
 
 
@@ -275,63 +351,78 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
     }
   }
 
-  ptpClock = (PtpClock*)calloc(MAX_PORT_NUMBER, sizeof(PtpClock));
+  ptpPortDS  = (PtpPortDS*)calloc(MAX_PORT_NUMBER, sizeof(PtpPortDS));
+  
+  
+  PtpPortDS * currentPtpdClockData;
 
-  PtpClock * currentPtpdClockData;
-
-  if(!ptpClock)
+  if(!ptpPortDS)
   {
-    PTPD_TRACE(TRACE_ERROR, "failed to allocate memory for protocol engine data");
     *ret = 2;
     return 0;
   }
   else
   {
-/*    DBGNPI("allocated %d bytes for protocol engine data\n", (int)sizeof(PtpClock)); */
+    if(startupMode == NONDAEMONE_MODE)
+       PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for protocol engine data\n", (int)sizeof(PtpPortDS));
 
-    currentPtpdClockData = ptpClock;
+    if(rtOpts->autoPortDiscovery == TRUE)
+      rtOpts->portNumber = autoPortNumberDiscovery();
+    
+    currentPtpdClockData = ptpPortDS;
     int i;
 
     for(i = 0; i < MAX_PORT_NUMBER; i++)
     {
 	currentPtpdClockData->portIdentity.portNumber = i + 1;
 	currentPtpdClockData->foreign = (ForeignMasterRecord*)calloc(rtOpts->max_foreign_records, sizeof(ForeignMasterRecord));
+	
 	if(!currentPtpdClockData->foreign)
 	{
-	 //   PERROR("failed to allocate memory for foreign master data");
+	    PTPD_TRACE(TRACE_ERROR, NULL,"failed to allocate memory for foreign master data");
 	    *ret = 2;
 	  //TODO:
-	      free(ptpClock);
+	      free(ptpPortDS);
 	    return 0;
 	}
 	else
 	{
-//	    DBGNPI("allocated %d bytes for foreign master data @ port = %d\n",(int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),currentPtpdClockData->portIdentity.portNumber);
+	    if(startupMode == NONDAEMONE_MODE)
+	      PTPD_TRACE(TRACE_STARTUP, NULL,"allocated %d bytes for foreign master data @ port = %d\n",
+		      (int)(rtOpts->max_foreign_records*sizeof(ForeignMasterRecord)),
+		       currentPtpdClockData->portIdentity.portNumber);
 	    /*Init to 0 net buffer*/
 
 	}
 	memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
 	memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
 
+	currentPtpdClockData->ptpClockDS = ptpClockDS; // common data
+	
 	currentPtpdClockData++;
     }
+    
+    if(rtOpts->portNumber >1 && rtOpts->masterOnly == TRUE)
+    {
+      PTPD_TRACE(TRACE_ERROR, NULL,"ERROR: boundary clock cannot be masterOnly\n");
+      return 0;
+    }
+    
   }
 
-
-
-
-#ifndef PTPD_NO_DAEMON
-  if(!nondaemon)
+//#ifndef PTPD_NO_DAEMON
+  //if(!nondaemon)
+  PTPD_TRACE(TRACE_STARTUP, NULL,"WRPTP.v2 daemon started. HAVE FUN !!! \n");
+  if(startupMode == DAEMONE_MODE)
   {
     if(daemon(0, noclose) == -1)
     {
-  //    PERROR("failed to start as daemon");
+      PTPD_TRACE(TRACE_ERROR, NULL,"failed to start as daemon");
       *ret = 3;
       return 0;
     }
-    PTPD_TRACE(TRACE_SYS, "running as daemon\n");
   }
-#endif
+//#endif
 
   signal(SIGINT, catch_close);
   signal(SIGTERM, catch_close);
@@ -339,5 +430,5 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOpt
 
   *ret = 0;
 
-  return ptpClock;
+  return ptpPortDS;
 }

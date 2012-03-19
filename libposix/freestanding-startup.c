@@ -2,14 +2,14 @@
 /* startup.c, for freestanding application */
 #include <ptpd.h>
 
-static PtpClock ptpClock[MAX_PORT_NUMBER];
+static PtpPortDS ptpPortDS[MAX_PORT_NUMBER];
 static ForeignMasterRecord foreign[MAX_PORT_NUMBER][DEFAULT_MAX_FOREIGN_RECORDS];
 
 
-PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret,
-		       RunTimeOpts *rtOpts)
+PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret,
+		       RunTimeOpts *rtOpts,PtpClockDS *ptpClockDS)
 {
-	PtpClock * currentPtpdClockData;
+	PtpPortDS * currentPtpdClockData;
 	int i;
 
 	/* When running freestanding, configuration is compiled-in
@@ -50,20 +50,20 @@ PtpClock * ptpdStartup(int argc, char **argv, Integer16 *ret,
 	 *         -g                run as slave only
 	 */
 	strcpy(rtOpts->ifaceName[0], "wru1");
-	rtOpts->slaveOnly = TRUE;
 
-	currentPtpdClockData = ptpClock;
+	currentPtpdClockData = ptpPortDS;
 	for(i = 0; i < MAX_PORT_NUMBER; i++) {
 		currentPtpdClockData->portIdentity.portNumber = i + 1;
 		currentPtpdClockData->foreign = foreign[i];
 		/* This memset is repeated for no reason. Bah! */
 		memset(currentPtpdClockData->msgIbuf,0,PACKET_SIZE);
 		memset(currentPtpdClockData->msgObuf,0,PACKET_SIZE);
+		currentPtpdClockData->ptpClockDS = ptpClockDS; // common data
 		currentPtpdClockData++;
 	}
 
 	*ret = 0;
-	return ptpClock;
+	return ptpPortDS;
 }
 
 void ptpdShutdown(void)

@@ -18,16 +18,16 @@
  /** \name System messages*/
  /**\{*/
 
-/*#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
+#define ERROR(x, ...)  fprintf(stderr, "(ptpd error) " x, ##__VA_ARGS__)
 #define PERROR(x, ...) fprintf(stderr, "(ptpd error) " x ": %m\n", ##__VA_ARGS__)
-#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)*/
+#define NOTIFY(x, ...) fprintf(stderr, "(ptpd notice) " x, ##__VA_ARGS__)
 /** \}*/
 
 /** \name Debug messages*/
  /**\{*/
 
 
-/*#ifdef PTPD_DBGV
+#ifdef PTPD_DBGV
 #define PTPD_DBG
 #define DBGV(x, ...) fprintf(stderr, "(DBG [%s()]) " x,__func__, ##__VA_ARGS__)
 #else
@@ -36,12 +36,12 @@
 
 
 
-//this DBG we use when there is no PtpClock* in the function
+//this DBG we use when there is no PtpPortDS* in the function
 #ifdef PTPD_DBG
 #define DBGNPI(x, ...)  fprintf(stderr, "(ptpd debug) " x, ##__VA_ARGS__)
 #else
 #define DBGNPI(x, ...)
-#endif*/
+#endif
 
 
 /** \}*/
@@ -105,18 +105,18 @@ void msgUnpackPDelayReq(void*,MsgPDelayReq*);
 void msgUnpackPDelayResp(void*,MsgPDelayResp*);
 void msgUnpackPDelayRespFollowUp(void*,MsgPDelayRespFollowUp*);
 void msgUnpackManagement(void*,MsgManagement*);
-UInteger8 msgUnloadManagement(void*,MsgManagement*,PtpClock*,RunTimeOpts*);
+UInteger8 msgUnloadManagement(void*,MsgManagement*,PtpPortDS*,RunTimeOpts*);
 void msgUnpackManagementPayload(void *buf, MsgManagement *manage);
-void msgPackHeader(void*,PtpClock*);
-void msgPackAnnounce(void*,PtpClock*);
-void msgPackSync(void*,Timestamp*,PtpClock*);
-void msgPackFollowUp(void*,PtpClock*);
-void msgPackPDelayReq(void*,Timestamp*,PtpClock*);
-void msgPackPDelayResp(void*,MsgHeader*,Timestamp*,PtpClock*);
+void msgPackHeader(void*,PtpPortDS*);
+void msgPackAnnounce(void*,PtpPortDS*);
+void msgPackSync(void*,Timestamp*,PtpPortDS*);
+void msgPackFollowUp(void*,PtpPortDS*);
+void msgPackPDelayReq(void*,Timestamp*,PtpPortDS*);
+void msgPackPDelayResp(void*,MsgHeader*,Timestamp*,PtpPortDS*);
 
-void msgPackPDelayRespFollowUp(void*,MsgHeader*,Timestamp*,PtpClock*);
-UInteger16 msgPackManagement(void*,MsgManagement*,PtpClock*);
-UInteger16 msgPackManagementResponse(void*,MsgHeader*,MsgManagement*,PtpClock*);
+void msgPackPDelayRespFollowUp(void*,MsgHeader*,Timestamp*,PtpPortDS*);
+UInteger16 msgPackManagement(void*,MsgManagement*,PtpPortDS*);
+UInteger16 msgPackManagementResponse(void*,MsgHeader*,MsgManagement*,PtpPortDS*);
 /** \}*/
 
 /** \name net.c (Linux API dependent)
@@ -124,8 +124,8 @@ UInteger16 msgPackManagementResponse(void*,MsgHeader*,MsgManagement*,PtpClock*);
  /**\{*/
 
 Boolean netStartup();
-Boolean netInit(NetPath*,RunTimeOpts*,PtpClock*);
-Boolean netShutdown(NetPath*);
+Boolean netInit(NetPath*,RunTimeOpts*,PtpPortDS*);
+Boolean autoDetectPortWrConfig(NetPath*, PtpPortDS*);
 int netSelect(TimeInternal*,NetPath*);
 
 ssize_t netRecvMsg(Octet*, NetPath*, wr_timestamp_t*);
@@ -139,25 +139,25 @@ ssize_t netSendPeerEvent(Octet*,UInteger16,NetPath*,wr_timestamp_t*);
  * -Clock servo*/
  /**\{*/
 
-void initClock(RunTimeOpts*,PtpClock*);
-void updatePeerDelay (one_way_delay_filter*, RunTimeOpts*,PtpClock*,TimeInternal*,Boolean);
-void updateDelay (one_way_delay_filter*, RunTimeOpts*, PtpClock*,TimeInternal*);
+void initClock(RunTimeOpts*,PtpPortDS*);
+void updatePeerDelay (one_way_delay_filter*, RunTimeOpts*,PtpPortDS*,TimeInternal*,Boolean);
+void updateDelay (one_way_delay_filter*, RunTimeOpts*, PtpPortDS*,TimeInternal*);
 void updateOffset(TimeInternal*,TimeInternal*,
-  offset_from_master_filter*,RunTimeOpts*,PtpClock*,TimeInternal*);
-void updateClock(RunTimeOpts*,PtpClock*);
+  offset_from_master_filter*,RunTimeOpts*,PtpPortDS*,TimeInternal*);
+void updateClock(RunTimeOpts*,PtpPortDS*);
 /** \}*/
 
 /** \name startup.c (Linux API dependent)
  * -Handle with runtime options*/
  /**\{*/
-PtpClock * ptpdStartup(int,char**,Integer16*,RunTimeOpts*);
+PtpPortDS * ptpdStartup(int,char**,Integer16*,RunTimeOpts*,PtpClockDS*);
 void ptpdShutdown(void);
 /** \}*/
 
 /** \name sys.c (Linux API dependent) 
  * -Manage timing system API*/
  /**\{*/
-void displayStats(RunTimeOpts *rtOpts, PtpClock *ptpClock);
+void displayStats(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS);
 Boolean nanoSleep(TimeInternal*);
 void getTime(TimeInternal*);
 void setTime(TimeInternal*);
@@ -173,50 +173,8 @@ void timerInit(IntervalTimer *itimer, const char *name);
 void timerStart(IntervalTimer *itimer, int interval);
 void timerStop(IntervalTimer *itimer);
 Boolean timerExpired(IntervalTimer *itimer);
-
-
+UInteger16 autoPortNumberDiscovery(void);
+Boolean extsrcLocked(void);
 /** \}*/
-
-
-/*Test functions*/
-
-
-/*
- *
- *
- ***************** White Rabbit *****************************
- *
- *
- *
- */
-
-/* includes */
-
-
-/*
-//this DBG we use when there is PtpClock* in the function
-#ifdef PTPD_DBG
-# ifdef PTPD_DBG_S_FUN
-#  define DBG(x, ...)  fprintf(stderr, "(DBG [p=%d, %15s()]) " x, ptpClock->portIdentity.portNumber,__func__, ##__VA_ARGS__)
-# else
-#  define DBG(x, ...)  fprintf(stderr, "(DBG [p=%d]) " x, ptpClock->portIdentity.portNumber, ##__VA_ARGS__)
-# endif
-#else
-# define DBG(x, ...)
-#endif
-
-
-#ifdef PTPD_DBGWR
-#define DBGWR(x, ...) fprintf(stderr, "(PTPWRd  debug) " x, ##__VA_ARGS__)
-#else
-#define DBGWR(x, ...)
-#endif
-
-#ifdef PTPD_DBGMSG
-#define DBGM(x, ...) fprintf(stderr, "(PTPWRd msg) " x, ##__VA_ARGS__)
-#else
-#define DBGM(x, ...)
-#endif
-*/
 
 #endif /*PTPD_DEP_H_*/

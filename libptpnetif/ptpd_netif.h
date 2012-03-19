@@ -29,6 +29,14 @@
 
 #define IFACE_NAME_LEN 16
 
+
+#define SLAVE_PRIORITY_0 0
+#define SLAVE_PRIORITY_1 1
+#define SLAVE_PRIORITY_2 2
+#define SLAVE_PRIORITY_3 3
+#define SLAVE_PRIORITY_4 4
+
+
 // Some system-independent definitions
 typedef uint8_t mac_addr_t[6];
 typedef uint32_t ipv4_addr_t;
@@ -123,7 +131,7 @@ int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac);
  * 	PTPD_NETIF_ERROR - locking not started
  * 	PTPD_NETIF_OK	 - locking started
  */
-int ptpd_netif_locking_enable(int txrx, const char *ifaceName);
+int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority);
 
 /*
  * 
@@ -132,9 +140,9 @@ int ptpd_netif_locking_enable(int txrx, const char *ifaceName);
  * 	PTPD_NETIF_OK	 - locking started
  */
 
-int ptpd_netif_locking_disable(int txrx, const char *ifaceName);
+int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority);
 
-int ptpd_netif_locking_poll(int txrx, const char *ifaceName);
+int ptpd_netif_locking_poll(int txrx, const char *ifaceName, int priority);
 
 /*
  * Function turns on calibration (measurement of delay)
@@ -217,5 +225,15 @@ int ptpd_netif_get_ifName(char *ifname, int number);
 /* Returns the millisecond "tics" counter value */
 uint64_t ptpd_netif_get_msec_tics();
 
+
+/*
+ * Function detects external source lock, 
+ *
+ * return:
+ * HEXP_EXTSRC_STATUS_LOCKED 	0 
+ * HEXP_LOCK_STATUS_BUSY  	1
+ * HEXP_EXTSRC_STATUS_NOSRC  	2
+ */
+int ptpd_netif_extsrc_detection();
 
 #endif

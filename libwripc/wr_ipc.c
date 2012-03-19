@@ -16,9 +16,9 @@
 #include "asm_helpers.h"
 
 #ifdef DEBUG
-#define DBG(...) dbg_printf(__func__, __VA_ARGS__)
+#define PTPD_TRACE(TRACE_WR_IPC, NULL,...) dbg_printf(__func__, __VA_ARGS__)
 #else
-#define DBG(...)
+#define PTPD_TRACE(TRACE_WR_IPC, NULL,...)
 #endif
 
 #define WRIPC_SERVER 1
@@ -162,7 +162,7 @@ static void *safe_zmalloc(size_t howmuch)
 	p = malloc(howmuch);
 	if(!p)
 	{
-		DBG("FATAL: not enough memory\n");
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"FATAL: not enough memory\n");
 		exit(-1);
 	}
 
@@ -241,7 +241,7 @@ wripc_handle_t wripc_create_server(const char *name)
 
 	fcntl(fd, F_SETFL, O_NONBLOCK);
 
-	DBG("created server '%s'\n", name);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"created server '%s'\n", name);
 	return handle;
 }
 
@@ -277,14 +277,14 @@ wripc_handle_t wripc_connect(const char *name)
 	if((rval = connect (fd, (struct sockaddr *)&sun,
 			    sizeof(struct sockaddr_un))) < 0)
 	{
-		DBG("connect failed: %s\n", strerror(errno));
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"connect failed: %s\n", strerror(errno));
 		close(fd);
 		return rval;
 	}
 
 	cli->fd = fd;
 
-	DBG("fd = %d\n", fd);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"fd = %d\n", fd);
 	return handle;
 }
 
@@ -340,7 +340,7 @@ int wripc_export(wripc_handle_t handle, int rval_type, const char *name,
 	va_list ap;
 	int i;
 
-	DBG("export '%s'\n", name);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"export '%s'\n", name);
 	if(num_args > WRIPC_MAX_ARGS)
 		return -EINVAL;
 
@@ -545,10 +545,10 @@ static inline int send_call_reply(struct wripc_connection *conn,
 
 	buf[1] = total_size << 2;
 
-	DBG("about_to_send ts %d ", total_size * 4);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"about_to_send ts %d ", total_size * 4);
 
 	int n_sent  = send(conn->cli_fd, buf, total_size * 4, 0);
-	DBG("about_to_send ts %d n_sent %d", total_size * 4, n_sent);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"about_to_send ts %d n_sent %d", total_size * 4, n_sent);
 
 	if(n_sent != total_size * 4)
 		return -1;
@@ -578,7 +578,7 @@ static int handle_call(struct wripc_server_context *srv,
 
 	current_pos = 3 + 1+ ((strlen(func_name)+4)>>2);
 
-	DBG("conn %x call %s nargs = %d\n", conn, func_name, num_args);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"conn %x call %s nargs = %d\n", conn, func_name, num_args);
 	free(func_name);
 
 	if(!func)
@@ -605,7 +605,7 @@ static int handle_call(struct wripc_server_context *srv,
 	for(i=0;i<num_args;i++)
 	{
 		int arg_type = buf[current_pos++];
-		DBG("argtype  %d cp %d\n", arg_type, current_pos);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"argtype  %d cp %d\n", arg_type, current_pos);
 		switch(arg_type)
 		{
 		case T_INT8:
@@ -639,7 +639,7 @@ static int handle_call(struct wripc_server_context *srv,
 				deserialize_string(buf, current_pos,
 						   buf_size,
 						   &arg_buf[arg_buf_pos]);
-			DBG("DeserializeString, pos = %d string = %s\n",
+			PTPD_TRACE(TRACE_WR_IPC, NULL,"DeserializeString, pos = %d string = %s\n",
 			    current_pos, &arg_buf[arg_buf_pos]);
 			    
 			    arg_buf_pos++;
@@ -656,7 +656,7 @@ static int handle_call(struct wripc_server_context *srv,
 				deserialize_struct(buf, current_pos,
 						   buf_size,
 						   &arg_buf[arg_buf_pos++]);
-			DBG("StructArg, pos= %d\n",current_pos);
+			PTPD_TRACE(TRACE_WR_IPC, NULL,"StructArg, pos= %d\n",current_pos);
 
 			if(current_pos < 0)
 			{
@@ -673,18 +673,18 @@ static int handle_call(struct wripc_server_context *srv,
 	if(!direct_rval)
 	{
 		arg_buf[0] = (uint32_t) rval_buf;
-		DBG("Rval_ptr: %x\n", arg_buf[0]);
-		DBG("Func_ptr: %x\n", func->ptr);
-		//DBG("String: %s\n", arg_buf[1]);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"Rval_ptr: %x\n", arg_buf[0]);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"Func_ptr: %x\n", func->ptr);
+		//PTPD_TRACE(TRACE_WR_IPC, NULL,"String: %s\n", arg_buf[1]);
 		_do_call(func->ptr, arg_buf, arg_buf_pos * 4);
 
 	} else {
-		DBG("Rval_ptr: %x\n", arg_buf[0]);
-		DBG("Func_ptr: %x\n", func->ptr);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"Rval_ptr: %x\n", arg_buf[0]);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"Func_ptr: %x\n", func->ptr);
 
 		rval_buf[0] = _do_call(func->ptr, arg_buf, arg_buf_pos * 4);
 
-		DBG("Rval: %d\n", rval_buf[0]);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"Rval: %d\n", rval_buf[0]);
 	}
 
 	return send_call_reply(conn, func, rval_buf, MAX_MESSAGE_SIZE);
@@ -745,13 +745,13 @@ static int process_server(struct wripc_server_context *srv)
 
 		fcntl(new_fd, F_SETFL, O_NONBLOCK);
 
-		DBG("got connection: fd = %d.\n", new_fd);
+		PTPD_TRACE(TRACE_WR_IPC, NULL,"got connection: fd = %d.\n", new_fd);
 
 		conn = new_connection(srv);
 		if(conn)
 			conn->cli_fd = new_fd;
 		else {
-			DBG("too many connections active, refusing...\n");
+			PTPD_TRACE(TRACE_WR_IPC, NULL,"too many connections active, refusing...\n");
 			close(new_fd);
 		}
 	}
@@ -771,7 +771,7 @@ static int process_server(struct wripc_server_context *srv)
 			{
 				if(pfd.revents & (POLLERR | POLLHUP))
 				{
-					DBG("poll returned error, "
+					PTPD_TRACE(TRACE_WR_IPC, NULL,"poll returned error, "
 					    "killing connection (fd = %d)\n",
 					    conn->cli_fd);
 					conn->in_use = 0;
@@ -781,11 +781,11 @@ static int process_server(struct wripc_server_context *srv)
 					int rv = handle_client_request(srv,
 								       conn);
 
-					DBG("handle request returned %d\n", rv);
+					PTPD_TRACE(TRACE_WR_IPC, NULL,"handle request returned %d\n", rv);
 
 					if(rv < 0)
 					{
-						DBG("Request failed. "
+						PTPD_TRACE(TRACE_WR_IPC, NULL,"Request failed. "
 						    "Closing connection");
 						conn->in_use = 0;
 						close(conn->cli_fd);
@@ -869,7 +869,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 
 	struct wripc_client_context *cli = get_cli_context(handle);
 
-	DBG("call %s handle %d ctx %x\n", name, handle, cli);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"call %s handle %d ctx %x\n", name, handle, cli);
 
 	if(!cli) return -EINVAL;
 	if(num_args > WRIPC_MAX_ARGS)
@@ -879,7 +879,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 	if(name_len > 128)
 		return WRIPC_ERROR_INVALID_ARG;
 
-	//DBG("dupa?");
+	//PTPD_TRACE(TRACE_WR_IPC, NULL,"dupa?");
 
 	buffer[0] = MSG_TYPE_CALL;
 	buffer[1] = 0; // size will be put here later
@@ -924,7 +924,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 			break;
 		}
 		case T_STRING: {
-//				DBG("serialize: T_STRING\n");
+//				PTPD_TRACE(TRACE_WR_IPC, NULL,"serialize: T_STRING\n");
 			int new_pos = serialize_string(buffer, current_pos,
 						       MAX_MESSAGE_SIZE,
 						       va_arg(ap, char *));
@@ -947,7 +947,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 		}
 
 		default:
-			DBG("invalid parameter type %d\n", type);
+			PTPD_TRACE(TRACE_WR_IPC, NULL,"invalid parameter type %d\n", type);
 			return WRIPC_ERROR_INVALID_ARG;
 		}
 	}
@@ -962,7 +962,7 @@ int wripc_call(wripc_handle_t handle, const char *name, void *rval,
 
 	rv = send(cli->fd, buffer, msg_size, 0);
 
-	DBG("total size: %d, sent: %d\n", current_pos*4, rv);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"total size: %d, sent: %d\n", current_pos*4, rv);
 
 	if(rv != msg_size)
 		return rv;
@@ -1013,7 +1013,7 @@ static int do_subscribe(wripc_handle_t handle, int event_id, int onoff)
 	   || buf[2] != event_id)
 		return WRIPC_ERROR_MALFORMED_PACKET;
 
-	DBG("event %d", event_id);
+	PTPD_TRACE(TRACE_WR_IPC, NULL,"event %d", event_id);
 
 
 	return 0;
@@ -1032,7 +1032,7 @@ int wripc_subscribe_event(wripc_handle_t handle, int event_id)
 
 __attribute__((constructor)) int wripc_init()
 {
-	//DBG("\n");
+	//PTPD_TRACE(TRACE_WR_IPC, NULL,"\n");
 	memset(handle_map, 0, sizeof(handle_map));
 	return 0;
 }

@@ -24,7 +24,7 @@ ifeq ($(PTPD_FREESTANDING), y)
    TARGETS := ptpd-freestanding
 else
    SAY := $(shell echo "CPU is hosted" > /dev/tty)
-   TARGETS :=  ptpd ptpd-freestanding.o
+   TARGETS :=  ptpd #ptpd-freestanding.o
    CHECKVARS = LINUX
 endif
 
@@ -43,10 +43,12 @@ CORELIBS = libwripc.a libptpnetif.a
 LDFLAGS = #-L. -lwripc -lptpnetif
 
 # Flags from the original Makefiles
-CFLAGS += -DPTPD_NO_DAEMON -DPTPD_TRACE_MASK=TRACE_SERVO
-#CFLAGS += -DDEBUG
-#CFLAGS += -DPTPD_DBG
 
+#CFLAGS += -DPTPD_NO_DAEMON 
+#CFLAGS += -DPTPD_TRACE_MASK=0xFFF7
+#CFLAGS += -DPTPD_TRACE_MASK=0x0000
+#CFLAGS += -DNETIF_VERBOSE
+CFLAGS += -DMACIEK_HACKs
 
 # Targets follows (note that the freestanding version is only an object
 all: check $(TARGETS)
@@ -129,7 +131,7 @@ printhf:
 
 # clean and so on.
 clean:
-	rm -f *.a */*.o */dep/*.o *~ */*~
+	rm -f *.a */*.o */dep/*.o *~ */*~ */dep/*~
 
 distclean:
 	git clean -f -d

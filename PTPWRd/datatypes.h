@@ -255,45 +255,49 @@ typedef struct
 	PortIdentity foreignMasterPortIdentity;
 	UInteger16 foreignMasterAnnounceMessages;
 
+	UInteger16 receptionPortNumber;
+
 	//This one is not in the spec
 	MsgAnnounce  announce;
 	MsgHeader    header;
 
 } ForeignMasterRecord;
 
-
 /**
- * \struct PtpClock
- * \brief Main program data structure
+ * \struct PtpClockDS
+ * \brief Clock data structure - all PTP Data Sets common to entire Boundardy Clock
  */
-/* main program data structure */
-typedef struct {
-/***** Default data set ******/
-	NetPath netPath;
+typedef struct
+{
+	/******** defaultDS ***************/
 
 	/*Static members*/
 	Boolean twoStepFlag;
-	ClockIdentity clockIdentity;
+	//ClockIdentity clockIdentity; // TODO: should be here but is in portDS
 	UInteger16 numberPorts;
 
 	/*Dynamic members*/
 	ClockQuality clockQuality;
-
-	/*Configurable members*/
+  
+  	/*Configurable members*/
 	UInteger8 priority1;
 	UInteger8 priority2;
 	UInteger8 domainNumber;
 	Boolean slaveOnly;
+	
+	/******** Current data set *****/
 
-/***** Current data set ******/
 	/*Dynamic members*/
 	UInteger16 stepsRemoved;
 	TimeInternal offsetFromMaster;
 	TimeInternal meanPathDelay;
-
-/******* Parent data set *******/
-
-  /*Dynamic members*/
+	//WRPTP:
+	UInteger16 primarySlavePortNumber;
+	UInteger16 secondarySlavePortNumber;
+	
+	/********   Parent data set ********/
+	
+	/*Dynamic members*/
 	PortIdentity parentPortIdentity;
 	Boolean parentStats;
 	UInteger16 observedParentOffsetScaledLogVariance;
@@ -302,21 +306,8 @@ typedef struct {
 	ClockQuality grandmasterClockQuality;
 	UInteger8 grandmasterPriority1;
 	UInteger8 grandmasterPriority2;
-
-	/*
-   ******* White Rabbit *******
-   *       (parentDS)
-   */
-	Boolean grandmasterIsWRnode;
-	Boolean grandmasterIsWRmode;
-	Boolean grandmasterIsCalibrated;
-	Enumeration8 grandmasterWrNodeMode;
-
-	FixedDelta grandmasterDeltaTx;
-	FixedDelta grandmasterDeltaRx;
-
-/******* Global time properties data set *********/
-
+	
+	/**********  Time Property data set *********/
 	/*Dynamic members*/
 	Integer16 currentUtcOffset;
 	Boolean currentUtcOffsetValid;
@@ -326,12 +317,41 @@ typedef struct {
 	Boolean frequencyTraceable;
 	Boolean ptpTimescale;
 	Enumeration8 timeSource;
+	
+	/**********  custom data set *********/	
+	
+	Integer16  Ebest;
+	Boolean globalStateDecisionEvent;
+	ForeignMasterRecord *bestForeign;
+	ForeignMasterRecord *secondBestForeign;
+	
+	IntervalTimer clockClassValidityTimer;
+	UInteger8 clockClassValidityTimeout;
+} PtpClockDS;
 
-/****** Port configuration data set ***********/
+/**
+ * \struct PtpPortDS
+ * \brief Port Data structure - all the PTP Data Sets (+ implementation-specific) common to a single port
+ */
+typedef struct {
+
+	/*
+	 * pointer to a common clock Data Set 
+	 * which is common to all ports (pointer from all
+	 * port DSs to single clock DS)
+	 */
+	PtpClockDS *ptpClockDS;
+	
+	/***** Default data set ******/
+	NetPath netPath;
+
+	ClockIdentity clockIdentity; //TODO(5): should be in clockDS
+
+	/****** Port configuration data set ***********/
 
 	/*Static members*/
 	PortIdentity portIdentity;
-
+	
 	/*Dynamic members*/
 	Enumeration8 portState;
 	Integer8 logMinDelayReqInterval;
@@ -415,21 +435,84 @@ typedef struct {
 	UInteger8 port_communication_technology;
 	Octet port_uuid_field[PTP_UUID_LENGTH];
 
-	wr_servo_state_t wr_servo;
+	struct {
+		IntervalTimer pdelayReq;
+		IntervalTimer delayReq;
+		IntervalTimer sync;
+		IntervalTimer announceReceipt;
+		IntervalTimer announceInterval;
 
-	/***********White Rabbit ***************/
-
-	/*
-	 * white rabbit FSM state
-	 */
-	Enumeration8  wrPortState;
+	} timers;
 
 	/*
 	 * stores current managementId
 	 * it's set to null when used
 	 */
-	Enumeration16 msgTmpManagementId;
+	Enumeration16 msgTmpManagementId;	
+	
+	
+	
+/*************************************White Rabbit ************************************************/
 
+      //////////////// White Rabbit staff specified in WR SPEC
+	/*
+	 * Indicates WR configuration of the port
+	 * NON_WR
+	 * WR_S_ONLY
+	 * WR_M_ONLY
+	 * WR_M_AND_S
+	 */	
+	Enumeration8 wrConfig;	
+
+	/*
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * they are stored in this static fields, if they are not known, 
+	 * the filds shall be set to 0x0
+	 */	
+	FixedDelta knownDeltaTx; 
+	FixedDelta knownDeltaRx; 
+	
+	/*
+	 * If fixed delays are known (most probably a deterministric PHY is used),
+	 * a TRUE value of deltasKnown indicates it and validates the values of
+	 * knownDeltaTx and knownDeltaRx
+	 */		
+	Boolean deltasKnown;
+	
+	/*
+	 * Determines the timeout (in microseconds) for 
+	 * an execution of a state of the WR State Machine
+	 * (excluding REQ_CALIBRATION and CAL_REQ_RESP, if calPeriod known)
+	 */	
+	UInteger32 wrStateTimeout; 
+
+	/*
+	 * Determines the number of times a state of WR State Machine is re-entered 
+	 * (as a consequence of wrStateTimeout expiration) before the WR Link Setup is abandoned. 
+	 * If the number of the given state execution retries equals wrStateRetry, 
+	 * the EXC\_TIMEOUT\_RETRY event is generated (see \ref{sec:wrEventsAndConditions}).
+	 */	
+	UInteger8 wrStateRetry;
+	
+	/*
+	 * The wrConfig of the parent port (send with Announce msg)
+	 */	
+	Enumeration8 parentWrConfig; 
+	/*
+	 * Calibration parameters of the current port
+	 */
+	UInteger32 calPeriod;//[us]
+
+	/*
+	 * Calibration retry number 
+	 */
+	UInteger8 calRetry;
+	
+	/*
+	 * white rabbit FSM state
+	 */
+	Enumeration8  wrPortState;
+	
 	/*
 	 * This says whether PTPd is run for:
 	 * - non-WR node,
@@ -439,14 +522,14 @@ typedef struct {
 	 * Its important that the node knows what it is,
 	 * by default PTPd runs in NON_WR
 	 */
-	Enumeration8 wrNodeMode; //copied to new
+	Enumeration8 wrMode; 
 
 	/*
 	 * tell us whether we work in WR
 	 * mode at the moment
 	 * starts with FALSE
 	 */
-	Boolean isWRmode;
+	Boolean wrModeON; 
 
 	/*
 	 * If port is aware of it's
@@ -454,28 +537,53 @@ typedef struct {
 	 * stored in deltaTx and deltaRx)
 	 * it's TRUE
 	 */
-	Boolean isCalibrated;
+	Boolean calibrated;
 
 	/*
-	 * Fixed elays
+	 * Fixed delays of the port
 	 */
-	FixedDelta deltaTx;
-	FixedDelta deltaRx;
+	FixedDelta deltaTx; 
+	FixedDelta deltaRx; 
 
 	/*
-	 * Calibration parameters of the
-	 * current port
+	 * Fixed delays of the other port
+	 */	
+	FixedDelta otherNodeDeltaTx; 
+	FixedDelta otherNodeDeltaRx; 	
+	
+	/*
+	 * tell us whether the port on 
+	 * the other side of the link works in WR
+	 * mode at the moment starts with FALSE
+	 */	
+	Boolean parentWrModeON; 
+	
+	/*
+	 * value of calibrated of the other port
 	 */
+	Boolean parentCalibrated;
+	
+	/*
+	 * Mode of the port on the other side of the link
+	 */
+	Enumeration8 parentWrNodeMode; 
 
-	UInteger32 calibrationPeriod;//[us]
-	UInteger32 calibrationPattern;
-	UInteger16 calibrationPatternLen;
+	/*
+	 * Indicates whether the other port requested
+	 * calibration pattern
+	 */
+	UInteger16 otherNodeCalSendPattern; 
+	
+	/*
+	 * Calibration period requested by the other port
+	 */
+	UInteger32 otherNodeCalPeriod;   
 
-	UInteger16 otherNodeCalibrationSendPattern;
-	UInteger32 otherNodeCalibrationPeriod;
-	UInteger32 otherNodeCalibrationPattern;
-	UInteger16 otherNodeCalibrationPatternLen;
-
+	/*
+	 * Calibration retry number requested by the other port
+	 */
+	UInteger8 otherNodeCalRetry;
+	
 	/*
 	 * used to implemetn two-step clock
 	 * this is implemented in WR differently than
@@ -483,32 +591,33 @@ typedef struct {
 	 * self message to read timestam and know that
 	 * follow up should be read)
 	 */
-	Enumeration8   pending_follow_up;
-
+	
 	/*
 	 * Alpha parameter, represents physical
 	 * medium correlation
 	 * used to obtan asymmetry
 	 */
-	UInteger32 scalled_alpha;
-
+	UInteger32 scalled_alpha;	 // not used :-(
+    ////////////// White Rabbit implementation-specific //////////////////////
+	
+	/*
+	 * indicates that the port on the other side of the link
+	 * is WR-enabled (i.e. slave_only, master_only or M_and_S)
+	 */
+	Boolean parentIsWRnode;
+	/*
+	 * stores current wrMessageID
+	 * it's set to null when used
+	 */
+	Enumeration16 msgTmpWrMessageID;	
+	
 	/******White rabbit HW timestamps *******/
 
 	/*
-	 * if any Tx timestamps should
-	 * be read (any pending) it's true
+	 * used by White Rabbit servo control (questions to Tomek)
 	 */
-	Boolean pending_tx_ts;
-
-	/*
-	 * pending flags for each kind
-	 * of tx message (not needed for Rx
-	 */
-	Boolean pending_Synch_tx_ts;
-	Boolean pending_DelayReq_tx_ts;
-	Boolean pending_PDelayReq_tx_ts;
-	Boolean pending_PDelayResp_tx_ts;
-
+	wr_servo_state_t wr_servo;
+	
 	/*
 	 * for storing frame_tags which keep
 	 * track of which timestamp is read from HW
@@ -538,19 +647,35 @@ typedef struct {
 	 */
 	UInteger8 currentWRstateCnt;
 
-	struct {
-		IntervalTimer pdelayReq;
-		IntervalTimer delayReq;
-		IntervalTimer sync;
-		IntervalTimer announceReceipt;
-		IntervalTimer announceInterval;
-
-	} timers;
 
 	IntervalTimer wrTimers[WR_TIMER_ARRAY_SIZE];
 	int wrTimeouts[WR_TIMER_ARRAY_SIZE];
 
-} PtpClock;
+	/*
+	 * secondary foreign master for this port.
+	 * only one possible, because we don't care about
+	 * non-point-to-point connections
+	 */
+	ForeignMasterRecord secondaryForeignMaster;
+	
+	/*
+	 * this is true if port is a secondary slave (by modifiedBMC)
+	 */
+	Boolean isSecondarySlave;
+	
+	/*
+	 * role of the port slave-wise, i.e.:
+	 * NON_SLAVE, PRIMARY_SLAVE, SECONDARY_SLAVE.
+	 */
+	Enumeration8 wrSlaveRole;
+	
+	/*
+	 * Tells whether the port is connected (linkUP=TRUE)
+	 * or disconnected
+	 */
+	Boolean linkUP;
+	
+} PtpPortDS;
 
 /**
  * \struct RunTimeOpts
@@ -583,13 +708,18 @@ typedef struct {
 
 	/********* White Rabbit ********/
 	UInteger16	portNumber;
-	Enumeration8	wrNodeMode;
-	UInteger32	calibrationPeriod;
-	UInteger32	calibrationPattern;
-	UInteger16	calibrationPatternLen;
+	UInteger32	calPeriod;
 	//tmp
 	UInteger8	overrideClockIdentity;
-
+	Enumeration8 	wrConfig;	
+	FixedDelta 	knownDeltaTx; 
+	FixedDelta 	knownDeltaRx; 
+	Boolean 	deltasKnown;
+	UInteger32 	wrStateTimeout; 
+	UInteger8 	wrStateRetry;
+	Boolean 	autoPortDiscovery;
+	Boolean		primarySource;
+	Boolean		masterOnly;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/

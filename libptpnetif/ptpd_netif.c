@@ -75,6 +75,15 @@ struct my_socket {
 
 };
 
+struct nasty_hack{
+	char if_name[20];
+	int clockedAsPrimary;
+};
+
+#ifdef MACIEK_HACKs
+struct nasty_hack locking_hack;
+#endif
+
 static uint64_t get_tics()
 {
 	struct timezone tz = {0, 0};
@@ -519,12 +528,71 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 /*
  * Turns on locking
  */
-int ptpd_netif_locking_enable(int txrx, const char *ifaceName)
+int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
-
+int ret;
 #ifdef TOMEK
+	
 	// this should always work
-	halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
+	if(priority == SLAVE_PRIORITY_0)
+	{
+	 
+	  /* TODO(6)
+	   * this is extremely nasty hack because the hardware implementation of multiport locking
+	   * is not ready, so only one port can lock frequency and it cannot be changed.
+	   * So, we remember which port was locked as primary slave (the secondary slave is not 
+	   * locked at all. 
+	   * if we try to lock different lock.... it will pretend to be locked
+	   */
+	  netif_dbg("(PTPD_NETIF): start locking\n");
+#ifdef MACIEK_HACKs	  
+	  if(locking_hack.clockedAsPrimary == 0)
+	  {
+	    // remember the locked port
+	    strcpy(locking_hack.if_name, ifaceName);
+	    locking_hack.clockedAsPrimary = 1;
+#endif	    
+	    
+	    ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
+	    netif_dbg("(PTPD_NETIF): finished locking, ret=%d\n",ret);
+
+	  }
+#ifdef MACIEK_HACKs	  
+	  else
+	  {
+	    
+	    if(!strcmp(locking_hack.if_name, ifaceName)) // retrying to lock the choosen port
+	      ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
+	    else
+	    {
+	      //check whether the currently locked port is really locked
+	      if( halexp_lock_cmd(locking_hack.if_name, HEXP_LOCK_CMD_CHECK, 0) == HEXP_LOCK_STATUS_LOCKED)
+	      {
+		// ok, it is locked, so let it be
+		netif_dbg("(PTPD_NETIF): [nasty hack] not really locking the port, because other port is locked \n");
+	      }
+	      else
+	      {
+		// it's not locked, so maybe we have linkdown, let's lock the newly requested port
+		  strcpy(locking_hack.if_name, ifaceName); // new actually locked port
+		  locking_hack.clockedAsPrimary = 1;
+	    
+		  ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
+		  netif_dbg("(PTPD_NETIF): finished locking, ret=%d\n",ret);
+	      }
+	    }
+	    /*
+	     * if an attempt to lock another port (then the one being locked first) is made, 
+	     * the locking will not take place, but the ptpx will think it has taken place
+	     */
+	  }
+#endif	  
+
+	}
+	else
+	  netif_dbg("(PTPD_NETIF): locking_enable() => implement me !!!! HOLDOVER\n");
+	//TODO(6): this is to work for other priorities when holdover is implemented
+	  
 	return PTPD_NETIF_OK;
 #else
 	if(txrx == PTPD_NETIF_TX)
@@ -540,7 +608,7 @@ int ptpd_netif_locking_enable(int txrx, const char *ifaceName)
 	return PTPD_NETIF_OK;
 }
 
-int ptpd_netif_locking_disable(int txrx, const char *ifaceName)
+int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 {
 #ifdef TOMEK
 //seems not needed
@@ -556,14 +624,41 @@ int ptpd_netif_locking_disable(int txrx, const char *ifaceName)
 	return PTPD_NETIF_OK;
 }
 
-int ptpd_netif_locking_poll(int txrx, const char *ifaceName)
+int ptpd_netif_locking_poll(int txrx, const char *ifaceName, int priority)
 {
 #ifdef TOMEK
-	if( halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_CHECK, 0)
-	    == HEXP_LOCK_STATUS_LOCKED)
-		return PTPD_NETIF_READY;
-	else
-		return PTPD_NETIF_NOT_READY;
+	//TODO: this is to work for all priorities once holdover is implemented
+	if(priority == SLAVE_PRIORITY_0) 
+	{  
+	  
+	  /*
+	   * extremely nasty hack here:
+	   * we check whether we are polling the port which is actually locked 
+	   * (only the first port which attempted locking is possible to be locked)
+	   * of we poll the actually being locked port, everything works normally,
+	   * otherwise, we pretend that the port is locked, to enable ptpx to work
+	   */
+	  if(locking_hack.clockedAsPrimary &&  strcmp(locking_hack.if_name, ifaceName))
+	  {
+	      netif_dbg("(PTPD_NETIF): [nasty hack] trying to poll different port then actually locked\n");
+	      return PTPD_NETIF_READY;
+	  }
+	  
+	  if( halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_CHECK, 0) == HEXP_LOCK_STATUS_LOCKED)
+	  {
+		  netif_dbg("(PTPD_NETIF): polling locking: PTPD_NETIF_READY\n");
+		  return PTPD_NETIF_READY;
+	  }
+	  else
+	  {	  netif_dbg("(PTPD_NETIF): polling locking: PTPD_NETIF_NOT_READY\n");
+		  return PTPD_NETIF_NOT_READY;
+	  }
+	}
+	else 
+	{
+	   netif_dbg("(PTPD_NETIF): locking_poll() =>implement me !!!! HOLDOVER\n");
+	   return PTPD_NETIF_READY; 
+	}
 #else
 	if(tmp_lock_cnt++ > 5)
 		return PTPD_NETIF_READY;
@@ -584,6 +679,9 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 #ifdef TOMEK
 	int ret;
 	/* check if any other port is not calibrated at the moment*/
+	
+//TODO(6)	
+#ifndef MACIEK_HACKs	
 	if( (ret = halexp_calibration_cmd(ifaceName,
 					  HEXP_CAL_CMD_CHECK_IDLE,HEXP_ON))
 	    != HEXP_CAL_RESP_OK)
@@ -593,6 +691,7 @@ int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 			  "on interface %s FAILED !!\n",ret, ifaceName);
 		return PTPD_NETIF_NOT_READY;
 	}
+#endif
 
 	if((ret = halexp_calibration_cmd(ifaceName,
 					 HEXP_CAL_CMD_TX_PATTERN,HEXP_ON))
@@ -906,4 +1005,33 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 uint64_t ptpd_netif_get_msec_tics()
 {
 	return get_tics() / 1000ULL;
+}
+
+int ptpd_netif_extsrc_detection()
+{
+    int ret;
+    ret=halexp_extsrc_cmd(HEXP_EXTSRC_CMD_CHECK);
+/* halexp_extsrc_cmd() retunrs: 
+  #define HEXP_EXTSRC_STATUS_LOCKED 	0 
+  #define HEXP_LOCK_STATUS_BUSY	  	1
+  #define HEXP_EXTSRC_STATUS_NOSRC  	2
+*/ 
+    
+    if(ret == HEXP_EXTSRC_STATUS_LOCKED) //0
+    {
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_OK [ret=%d]\n",ret);
+      return PTPD_NETIF_OK;
+    }
+    else if(ret == HEXP_EXTSRC_STATUS_NOSRC) //2
+    {
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_NOT_FOUND [ret=%d]\n",ret);
+      return PTPD_NETIF_NOT_FOUND;
+    }
+    else 
+    { 
+      //probably ret == HEXP_LOCK_STATUS_BUSY (1)
+      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_ERROR [ret=%d]\n",ret);
+      return PTPD_NETIF_ERROR;
+    }
+
 }

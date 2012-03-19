@@ -28,70 +28,50 @@ RunTimeOpts rtOpts = {
    .ap = DEFAULT_AP,
    .ai = DEFAULT_AI,
    .max_foreign_records = DEFAULT_MAX_FOREIGN_RECORDS,
-
+   .autoPortDiscovery  	= TRUE,
+   .primarySource	= FALSE,
+   
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
-   .wrNodeMode 		= NON_WR,
-   .calibrationPeriod     = WR_DEFAULT_CAL_PERIOD,
-   .calibrationPattern    = WR_DEFAULT_CAL_PATTERN,
-   .calibrationPatternLen = WR_DEFAULT_CAL_PATTERN_LEN,
+   .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
    .E2E_mode 		= TRUE,
+   .wrConfig		= WR_MODE_AUTO, //autodetection
+   .wrStateRetry	= WR_DEFAULT_STATE_REPEAT,
+   .wrStateTimeout	= WR_DEFAULT_STATE_TIMEOUT_MS,
+   .deltasKnown		= WR_DEFAULT_DELTAS_KNOWN,
+   .knownDeltaTx	= WR_DEFAULT_DELTA_TX,
+   .knownDeltaRx	= WR_DEFAULT_DELTA_RX,
+   .masterOnly		= FALSE,
    /********************************************************/
 };
 
 int main(int argc, char **argv)
 {
-   PtpClock *ptpClock;
+   PtpPortDS *ptpPortDS;
+   PtpClockDS ptpClockDS;
    Integer16 ret;
-   int i;
 
-   netStartup();
+   /* start netif */
+   if( !netStartup())
+     return -1;
 
-  /*Initialize run time options with command line arguments*/
-   if( !(ptpClock = ptpdStartup(argc, argv, &ret, &rtOpts)) )
+   /*Initialize run time options with command line arguments*/
+   if( !(ptpPortDS = ptpdStartup(argc, argv, &ret, &rtOpts, &ptpClockDS)) )
      return ret;
-
-    /* White rabbit debugging info*/
-    PTPD_TRACE(TRACE_SYS, "------------- INFO ----------------------\n\n")
-    if(rtOpts.E2E_mode)
-      PTPD_TRACE(TRACE_SYS, "E2E_mode ........................ TRUE\n")
-    else
-      PTPD_TRACE(TRACE_SYS, "P2P_mode ........................ TRUE\n")
-
-    PTPD_TRACE(TRACE_SYS, "portNumber  ..................... %d\n",rtOpts.portNumber)
-    for(i = 0; i < rtOpts.portNumber; i++)
-      PTPD_TRACE(TRACE_SYS, "net ifaceName [port = %d] ........ %s\n",i+1,rtOpts.ifaceName[i])
-
-
-    for(i = 0; i < rtOpts.portNumber; i++)
-    {
-
-      if(i == 0 && rtOpts.wrNodeMode == WR_SLAVE)
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ Slave \n",i+1)
-      else if(rtOpts.wrNodeMode != NON_WR)
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ Master\n",i+1)
-      else
-	PTPD_TRACE(TRACE_SYS, "wrNodeMode    [port = %d] ........ NON WR\n",i+1)
-    }
-    if(rtOpts.portNumber == 1)
-	PTPD_TRACE(TRACE_SYS, "running as ...................... single port node\n")
-    else
-	PTPD_TRACE(TRACE_SYS, "running as ....................... multi port node [%d]\n",rtOpts.portNumber )
-
-    if(rtOpts.wrNodeMode == WR_SLAVE)
-    	ptpd_init_exports();
-
-  /* do the protocol engine */
-   if(rtOpts.portNumber == 1)
-     protocol(&rtOpts, ptpClock);	 //forever loop..
-   else if(rtOpts.portNumber > 1)
-     multiProtocol(&rtOpts, ptpClock); 	//forever loop when many ports (not fully implemented/tested)
+    
+   ptpd_init_exports();//from Tomeks'
+   
+   /* initialize data sets common to entire boundary clock*/
+   initDataClock(&rtOpts, &ptpClockDS);
+   
+   /* show the options you are starting with*/
+   displayConfigINFO(&rtOpts);
+	
+    /* do the protocol engine */
+   if(rtOpts.portNumber > 0) 
+     multiProtocol(&rtOpts, ptpPortDS); //forever loop for any number of ports
    else
-     PTPD_TRACE(TRACE_ERROR, "Not appropriate portNumber\n");
-
-   ptpdShutdown();
-
-   PTPD_TRACE(TRACE_SYS, "self shutdown, probably due to an error\n");
+     ptpdShutdown();
 
   return 1;
 }
