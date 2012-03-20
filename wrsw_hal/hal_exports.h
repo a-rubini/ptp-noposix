@@ -139,16 +139,120 @@ typedef struct {
 
 } hexp_pll_cmd_t;
 
-int halexp_check_running();
-int halexp_reset_port(const char *port_name);
-int halexp_calibration_cmd(const char *port_name, int command, int on_off);
-int halexp_lock_cmd(const char *port_name, int command, int priority);
-int halexp_query_ports(hexp_port_list_t *list);
-int halexp_get_port_state(hexp_port_state_t *state, const char *port_name);
-int halexp_pps_cmd(int cmd, hexp_pps_params_t *params);
-int halexp_pll_set_gain(int pll, int branch, int kp, int ki);
+/* Prototypes of functions that call on rpc */
+extern int halexp_check_running(void);
+extern int halexp_reset_port(const char *port_name);
+extern int halexp_calibration_cmd(const char *port_name, int command, int on_off);
+extern int halexp_lock_cmd(const char *port_name, int command, int priority);
+extern int halexp_query_ports(hexp_port_list_t *list);
+extern int halexp_get_port_state(hexp_port_state_t *state, const char *port_name);
+extern int halexp_pps_cmd(int cmd, hexp_pps_params_t *params);
+extern int halexp_pll_set_gain(int pll, int branch, int kp, int ki);
+extern int halexp_extsrc_cmd(int command); //added by ML
 
-int halexp_extsrc_cmd(int command); //added by ML
+
+/* Export structures, shared by server and client for argument matching */
+#ifdef HAL_EXPORT_STRUCTURES
+
+//int halexp_check_running();
+struct minipc_pd __rpcdef_check_running = {
+	.name = "check_running",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_reset_port(const char *port_name);
+struct minipc_pd __rpcdef_reset_port = {
+	.name = "reset_port",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRING, char *),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_calibration_cmd(const char *port_name, int command, int on_off);
+struct minipc_pd __rpcdef_calibration_cmd = {
+	.name = "calibration_cmd",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRING, char *),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_lock_cmd(const char *port_name, int command, int priority);
+struct minipc_pd __rpcdef_lock_cmd = {
+	.name = "lock_cmd",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRING, char *),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_query_ports(hexp_port_list_t *list);
+struct minipc_pd __rpcdef_query_ports = {
+	.name = "query_ports",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRUCT, hexp_port_list_t),
+	.args = {
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_get_port_state(hexp_port_state_t *state, const char *port_name);
+struct minipc_pd __rpcdef_get_port_state = {
+	.name = "get_port_state",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRUCT, hexp_port_state_t),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRING, char *),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_pps_cmd(int cmd, hexp_pps_params_t *params);
+struct minipc_pd __rpcdef_pps_cmd = {
+	.name = "pps_cmd",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_STRUCT, hexp_pps_params_t),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_pll_set_gain(int pll, int branch, int kp, int ki);
+struct minipc_pd __rpcdef_pll_set_gain = {
+	.name = "pll_set_gain",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_END,
+	},
+};
+
+//int halexp_extsrc_cmd(int command); //added by ML
+struct minipc_pd __rpcdef_extsrc_cmd = {
+	.name = "extsrc_cmd",
+	.retval = MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+	.args = {
+		MINIPC_ARG_ENCODE(MINIPC_ATYPE_INT, int),
+		MINIPC_ARG_END,
+	},
+};
+
+
+#endif /* HAL_EXPORT_STRUCTURES */
+
 
 #endif
 

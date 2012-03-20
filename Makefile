@@ -33,14 +33,14 @@ CFLAGS += $(shell ./check-endian $(CC))
 
 # Flags for standalone compilation
 TOPDIR=$(shell /bin/pwd)
-CFLAGS += -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libwripc \
+CFLAGS += -Wall -ggdb -I$(TOPDIR)/wrsw_hal -I$(TOPDIR)/libminipc \
 	-I$(TOPDIR)/libptpnetif -I$(TOPDIR)/PTPWRd -I$(LINUX)/include \
 	-include compat.h -include libposix/ptpd-wrappers.h
 
 # These are lifted in the ptp.o temporary object file, for me to see the size
-CORELIBS = libwripc.a libptpnetif.a
+CORELIBS = libptpnetif.a libminipc.a 
 
-LDFLAGS = #-L. -lwripc -lptpnetif
+LDFLAGS = #-L. -lminipc -lptpnetif
 
 # Flags from the original Makefiles
 
@@ -94,7 +94,8 @@ check:
 
 libs: check $(CORELIBS)
 
-libwripc.a: libwripc/wr_ipc.o libwripc/helper_arm.o
+libminipc.a: libminipc/minipc-core.o \
+	libminipc/minipc-server.o libminipc/minipc-client.o
 	$(AR) r $@ $^
 
 libptpnetif.a: libptpnetif/hal_client.o libptpnetif/ptpd_netif.o

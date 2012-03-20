@@ -1,15 +1,17 @@
 #ifdef __STDC_HOSTED__
 
 #include <string.h>
-#include <wr_ipc.h>
+#include <minipc.h>
 
 #include "ptpd.h"
+
+#define PTP_EXPORT_STRUCTURES
 #include "ptpd_exports.h"
 
 extern int servo_state_valid;
 extern ptpdexp_sync_state_t cur_servo_state;
 
-void ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
+int ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 {
 	if(servo_state_valid)
 	{
@@ -17,9 +19,10 @@ void ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 		state->valid = 1;
 	} else
 		state->valid = 0;
+	return 0;
 }
 
-void ptpdexp_cmd(int cmd, int value)
+int ptpdexp_cmd(int cmd, int value)
 {
 
 	if(cmd == PTPDEXP_COMMAND_TRACKING)
@@ -27,23 +30,49 @@ void ptpdexp_cmd(int cmd, int value)
 
 	if(cmd == PTPDEXP_COMMAND_MAN_ADJUST_PHASE)
 		wr_servo_man_adjust_phase(value);
+	return 0;
 
 }
 
-static wripc_handle_t wripc_srv;
-
-void ptpd_init_exports()
+/* Two functions to manage packet/args conversions */
+static int export_get_sync_state(const struct minipc_pd *pd,
+				 uint32_t *args, void *ret)
 {
-	wripc_srv = wripc_create_server("ptpd");
+	ptpdexp_sync_state_t state;
 
-	wripc_export(wripc_srv, T_STRUCT(ptpdexp_sync_state_t), "ptpdexp_get_sync_state", ptpdexp_get_sync_state, 0);
-	wripc_export(wripc_srv, T_VOID, "ptpdexp_cmd", ptpdexp_cmd, 2, T_INT32, T_INT32);
+	ptpdexp_get_sync_state(&state);
+	*(ptpdexp_sync_state_t *)ret = state;
+	return 0;
+
+}
+
+static int export_cmd(const struct minipc_pd *pd,
+				 uint32_t *args, void *ret)
+{
+	int i;
+
+        i = ptpdexp_cmd(args[0], args[1]);
+        *(int *)ret = i;
+        return 0;
+}
+
+static struct minipc_ch *ptp_ch;
+
+void ptpd_init_exports(void)
+{
+	ptp_ch = minipc_server_create("ptpd", 0);
+
+	__rpcdef_get_sync_state.f = export_get_sync_state;
+	__rpcdef_cmd.f = export_cmd;
+
+	minipc_export(ptp_ch, &__rpcdef_get_sync_state);
+	minipc_export(ptp_ch, &__rpcdef_cmd);
 }
 
 void ptpd_handle_wripc()
 {
 //	fprintf(stderr, ".");
-	wripc_process(wripc_srv);
+	minipc_server_action(ptp_ch, 200 /* ms */);
 }
 
 #endif
