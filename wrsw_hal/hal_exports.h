@@ -1,9 +1,9 @@
 #ifndef __HAL_EXPORTS_H
 #define __HAL_EXPORTS_H
 
-//#include <inttypes.h> 
+#include <stdint.h>
 
-#define HAL_MAX_PORTS 64
+#define HAL_MAX_PORTS 32
 
 #define WRSW_HAL_SERVER_ADDR "wrsw_hal"
 
@@ -128,7 +128,8 @@ typedef struct {
 } hexp_port_state_t;
 
 typedef struct {
-  int num_ports;
+  int num_ports;					/* Number of ports in the list */
+  int num_physical_ports; /* Number of physical ports compiled into the FPGA bitstream */
   char port_names[HAL_MAX_PORTS][16];
 } hexp_port_list_t;
 
