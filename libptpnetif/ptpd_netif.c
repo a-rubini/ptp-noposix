@@ -1,5 +1,4 @@
-// Simulation of real WR network interface with hardware timestamping.
-// Supports only raw ethernet now.
+// Wrapper functions for network/timestamping/adjustment operations
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +33,7 @@
 #endif
 
 #define ETHER_MTU 1518
-#define DMTD_UPDATE_INTERVAL 100
+#define DMTD_UPDATE_INTERVAL 500
 
 struct scm_timestamping {
 	struct timespec systime;
@@ -45,13 +44,6 @@ struct scm_timestamping {
 PACKED struct etherpacket {
 	struct ethhdr ether;
 	char data[ETHER_MTU];
-};
-
-struct tx_timestamp {
-	int valid;
-	wr_timestamp_t ts;
-	uint32_t tag;
-	uint64_t t_acq;
 };
 
 typedef struct
@@ -70,19 +62,9 @@ struct my_socket {
 	uint32_t clock_period;
 	uint32_t phase_transition;
 	uint32_t dmtd_phase;
-
+	int dmtd_phase_valid;
 	timeout_t dmtd_update_tmo;
-
 };
-
-struct nasty_hack{
-	char if_name[20];
-	int clockedAsPrimary;
-};
-
-#ifdef MACIEK_HACKs
-struct nasty_hack locking_hack;
-#endif
 
 static uint64_t get_tics()
 {
@@ -131,6 +113,7 @@ static void update_dmtd(wr_socket_t *sock)
 
 		// FIXME: ccheck if phase value is ready
 		s->dmtd_phase = pstate.phase_val;
+		s->dmtd_phase_valid = pstate.phase_val_valid;
 
 		tmo_restart(&s->dmtd_update_tmo);
 	}
@@ -150,8 +133,8 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 	// TS counter will appear
 	ts->raw_phase = s->dmtd_phase;
 
-  phase = s->clock_period -1 -s->dmtd_phase;
-	
+  phase = s->clock_period - 1 -s->dmtd_phase;
+
 
 	// calculate the range within which falling edge timestamp is stable
 	// (no possible transitions)
@@ -293,6 +276,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags,
 	// store the linearization parameters
 	s->clock_period = pstate.clock_period;
 	s->phase_transition = pstate.t2_phase_transition;
+	s->dmtd_phase_valid = 0;
 	s->dmtd_phase = pstate.phase_val;
 
 	tmo_init(&s->dmtd_update_tmo, DMTD_UPDATE_INTERVAL);
@@ -306,12 +290,12 @@ int ptpd_netif_close_socket(wr_socket_t *sock)
 
 	if(!s)
 		return 0;
-		
+
 	close(s->fd);
 	return 0;
 }
 
-static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp);
+static void poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp);
 
 int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 		      size_t data_length, wr_timestamp_t *tx_ts)
@@ -320,7 +304,6 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 	struct my_socket *s = (struct my_socket *)sock;
 	struct sockaddr_ll sll;
 	int rval;
-	wr_timestamp_t ts;
 
 	if(s->bind_addr.family != PTPD_SOCK_RAW_ETHERNET)
 		return -ENOTSUP;
@@ -337,8 +320,8 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
 	size_t len = data_length + sizeof(struct ethhdr);
 
-	if(len < 72)
-		len = 72;
+	if(len < 60) /* pad to the minimum allowed packet size */
+		len = 60;
 
 	memset(&sll, 0, sizeof(struct sockaddr_ll));
 
@@ -347,22 +330,10 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 	sll.sll_protocol = htons(to->ethertype);
 	sll.sll_halen = 6;
 
-	//    fprintf(stderr,"fd %d ifi %d ethertype %d\n", s->fd,
-	// s->if_index, to->ethertype);
-
 	rval =  sendto(s->fd, &pkt, len, 0, (struct sockaddr *)&sll,
 		       sizeof(struct sockaddr_ll));
 
-	if(poll_tx_timestamp(sock, &ts) > 0)
-	{
-		//	fprintf(stderr,"P");
-		//	mdump_timestamp("Polled", ts);
-		if(tx_ts)
-		{
-			memcpy(tx_ts, &ts, sizeof(wr_timestamp_t));
-		}
-		return rval;
-	}
+	poll_tx_timestamp(sock, tx_ts);
 
 	return rval;
 }
@@ -379,7 +350,8 @@ static void hdump(uint8_t *buf, int size)
 #endif
 
 
-static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
+/* Waits for the transmission timestamp and stores it in tx_timestamp (if not null). */
+static void poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 {
 	char data[16384];
 
@@ -410,15 +382,16 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 
 	res = recvmsg(s->fd, &msg, MSG_ERRQUEUE); //|MSG_DONTWAIT);
 
-	if(res <= 0) return PTPD_NETIF_NOT_READY;
+	if(tx_timestamp) tx_timestamp->correct = 0;
 
-	if(res >= 0)
-	{
-		memcpy(&rtag, data+res-4, 4);
+	if(res <= 0)
+		return;
 
-		for (cmsg = CMSG_FIRSTHDR(&msg);
-		     cmsg;
-		     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+	memcpy(&rtag, data+res-4, 4);
+
+	for (cmsg = CMSG_FIRSTHDR(&msg);
+	     cmsg;
+	     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 
 			void *dp = CMSG_DATA(cmsg);
 
@@ -432,25 +405,14 @@ static int poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 
 			//fprintf(stderr, "Serr %x sts %x\n", serr, sts);
 
-			if(serr && sts)
+			if(serr && sts && tx_timestamp)
 			{
-				// fprintf(stderr,"GotTXTS ts at %x\n",
-				// tx_timestamp);
-
-				// tx_timestamp->cntr_ahead = 0;
+				tx_timestamp->correct = 1;
 				tx_timestamp->phase = 0;
 				tx_timestamp->nsec = sts->hwtimeraw.tv_nsec;
-				tx_timestamp->utc =
-					(uint64_t) sts->hwtimeraw.tv_sec
-					& 0x7fffffff;
-				// mdump_timestamp("TXTS", *tx_timestamp);
-
-				return 1;
+				tx_timestamp->utc = (uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
 			}
-		}
 	}
-
-	return 0;
 }
 
 int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
@@ -482,7 +444,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 
 	int ret = recvmsg(s->fd, &msg, MSG_DONTWAIT);
 
-	if(ret < 0 && errno==EAGAIN) return 0; // would be blocking
+	if(ret < 0 && errno == EAGAIN) return 0; // would be blocking
 	if(ret == -EAGAIN) return 0;
 
 	if(ret <= 0) return ret;
@@ -493,7 +455,8 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 	memcpy(from->mac, pkt.ether.h_source, 6);
 	memcpy(from->mac_dest, pkt.ether.h_dest, 6);
 
-	//fnetif_dbg(stderr, "recvmsg: ret %d\n", ret);
+	if(rx_timestamp)
+		rx_timestamp->correct = 0;
 
 	for (cmsg = CMSG_FIRSTHDR(&msg);
 	     cmsg;
@@ -513,389 +476,86 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 		rx_timestamp->nsec = sts->hwtimeraw.tv_nsec;
 		rx_timestamp->utc =
 			(uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
-	
+
 		rx_timestamp->raw_nsec = sts->hwtimeraw.tv_sec & 0x7fffffff;
 		rx_timestamp->raw_ahead = cntr_ahead;
 
 		linearize_rx_timestamp(rx_timestamp, sock, cntr_ahead);
+		rx_timestamp->correct = 1;
 	}
 
 	return ret - sizeof(struct ethhdr);
 }
-
-#define TOMEK
 
 /*
  * Turns on locking
  */
 int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
-int ret;
-#ifdef TOMEK
-	
-	// this should always work
-	if(priority == SLAVE_PRIORITY_0)
-	{
-	 
-	  /* TODO(6)
-	   * this is extremely nasty hack because the hardware implementation of multiport locking
-	   * is not ready, so only one port can lock frequency and it cannot be changed.
-	   * So, we remember which port was locked as primary slave (the secondary slave is not 
-	   * locked at all. 
-	   * if we try to lock different lock.... it will pretend to be locked
-	   */
-	  netif_dbg("(PTPD_NETIF): start locking\n");
-#ifdef MACIEK_HACKs	  
-	  if(locking_hack.clockedAsPrimary == 0)
-	  {
-	    // remember the locked port
-	    strcpy(locking_hack.if_name, ifaceName);
-	    locking_hack.clockedAsPrimary = 1;
-#endif	    
-	    
-	    ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
-	    netif_dbg("(PTPD_NETIF): finished locking, ret=%d\n",ret);
+  netif_dbg("(PTPD_NETIF): start locking\n");
+  int ret = halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
 
-	  }
-#ifdef MACIEK_HACKs	  
-	  else
-	  {
-	    
-	    if(!strcmp(locking_hack.if_name, ifaceName)) // retrying to lock the choosen port
-	      ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
-	    else
-	    {
-	      //check whether the currently locked port is really locked
-	      if( halexp_lock_cmd(locking_hack.if_name, HEXP_LOCK_CMD_CHECK, 0) == HEXP_LOCK_STATUS_LOCKED)
-	      {
-		// ok, it is locked, so let it be
-		netif_dbg("(PTPD_NETIF): [nasty hack] not really locking the port, because other port is locked \n");
-	      }
-	      else
-	      {
-		// it's not locked, so maybe we have linkdown, let's lock the newly requested port
-		  strcpy(locking_hack.if_name, ifaceName); // new actually locked port
-		  locking_hack.clockedAsPrimary = 1;
-	    
-		  ret=halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_START, 0);
-		  netif_dbg("(PTPD_NETIF): finished locking, ret=%d\n",ret);
-	      }
-	    }
-	    /*
-	     * if an attempt to lock another port (then the one being locked first) is made, 
-	     * the locking will not take place, but the ptpx will think it has taken place
-	     */
-	  }
-#endif	  
-
-	}
-	else
-	  netif_dbg("(PTPD_NETIF): locking_enable() => implement me !!!! HOLDOVER\n");
-	//TODO(6): this is to work for other priorities when holdover is implemented
-	  
-	return PTPD_NETIF_OK;
-#else
-	if(txrx == PTPD_NETIF_TX)
-		netif_dbg("(PTPD_NETIF): enable locking TX, interface: %s\n",
-			  ifaceName);
-	else
-		netif_dbg("(PTPD_NETIF): enable locking RX, interface: %s\n",
-			  ifaceName);
-
-	tmp_lock_cnt = 0;
-#endif
-
-	return PTPD_NETIF_OK;
+ 	return (ret < 0 ? PTPD_NETIF_ERROR : PTPD_NETIF_OK);
 }
 
 int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 {
-#ifdef TOMEK
-//seems not needed
-#else
-	if(txrx == PTPD_NETIF_TX)
-		netif_dbg("(PTPD_NETIF): disable locking TX, interface: %s\n",
-			  ifaceName);
-	else
-		netif_dbg("(PTPD_NETIF): disable locking RX, interface: %s\n",
-			  ifaceName);
-#endif
-
 	return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_locking_poll(int txrx, const char *ifaceName, int priority)
 {
-#ifdef TOMEK
-	//TODO: this is to work for all priorities once holdover is implemented
-	if(priority == SLAVE_PRIORITY_0) 
-	{  
-	  
-	  /*
-	   * extremely nasty hack here:
-	   * we check whether we are polling the port which is actually locked 
-	   * (only the first port which attempted locking is possible to be locked)
-	   * of we poll the actually being locked port, everything works normally,
-	   * otherwise, we pretend that the port is locked, to enable ptpx to work
-	   */
-	  if(locking_hack.clockedAsPrimary &&  strcmp(locking_hack.if_name, ifaceName))
-	  {
-	      netif_dbg("(PTPD_NETIF): [nasty hack] trying to poll different port then actually locked\n");
-	      return PTPD_NETIF_READY;
-	  }
-	  
-	  if( halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_CHECK, 0) == HEXP_LOCK_STATUS_LOCKED)
-	  {
-		  netif_dbg("(PTPD_NETIF): polling locking: PTPD_NETIF_READY\n");
-		  return PTPD_NETIF_READY;
-	  }
-	  else
-	  {	  netif_dbg("(PTPD_NETIF): polling locking: PTPD_NETIF_NOT_READY\n");
-		  return PTPD_NETIF_NOT_READY;
-	  }
-	}
-	else 
-	{
-	   netif_dbg("(PTPD_NETIF): locking_poll() =>implement me !!!! HOLDOVER\n");
-	   return PTPD_NETIF_READY; 
-	}
-#else
-	if(tmp_lock_cnt++ > 5)
-		return PTPD_NETIF_READY;
+  if( halexp_lock_cmd(ifaceName, HEXP_LOCK_CMD_CHECK, 0) == HEXP_LOCK_STATUS_LOCKED)
+	  return PTPD_NETIF_READY;
 	else
-		return PTPD_NETIF_NOT_READY;
-#endif
-
+	  return PTPD_NETIF_NOT_READY;
 }
 
-
+/* We don't need these functions in V3/spec anymore - the transceivers are deterministic! */
 
 int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
 					  unsigned int calibrationPeriod,
 					  unsigned int calibrationPattern,
 					  unsigned int calibrationPatternLen)
 {
-
-#ifdef TOMEK
-	int ret;
-	/* check if any other port is not calibrated at the moment*/
-	
-//TODO(6)	
-#ifndef MACIEK_HACKs	
-	if( (ret = halexp_calibration_cmd(ifaceName,
-					  HEXP_CAL_CMD_CHECK_IDLE,HEXP_ON))
-	    != HEXP_CAL_RESP_OK)
-	{
-		netif_dbg("(PTPD_NETIF): Calibrating other interface, "
-			  "returned %d, attempt to send calibratin patern "
-			  "on interface %s FAILED !!\n",ret, ifaceName);
-		return PTPD_NETIF_NOT_READY;
-	}
-#endif
-
-	if((ret = halexp_calibration_cmd(ifaceName,
-					 HEXP_CAL_CMD_TX_PATTERN,HEXP_ON))
-	   != HEXP_CAL_RESP_OK)
-	{
-		netif_dbg("(PTPD_NETIF): returned %d, attempt to start "
-			  "sending calibration pattern on interface %s "
-			  "FAILED !!\n", ret,ifaceName);
-		return PTPD_NETIF_NOT_READY;
-	}
-	netif_dbg("(PTPD_NETIF): Started sending calibration pattern "
-		  "on port %s SUCCESSFULLY !!\n",ifaceName);
-
-#else
-
-	netif_dbg("(PTPD_NETIF): start sending calibration "
-		  "pattern[%s] for %d us on interface = %s\n",
-		  ptpd_netif_netif_dbg_bits(calibrationPattern,
-					    calibrationPatternLen),
-		  calibrationPeriod,ifaceName);
-
-#endif
 	return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_calibrating_disable(int txrx, const char *ifaceName)
 {
-
-#ifdef TOMEK
-
-	int ret;
-
-	if(txrx == PTPD_NETIF_RX)
-	{
-		/*
-		 * stop calibration of reception delay (RX)
-		 */
-		if((ret = halexp_calibration_cmd(ifaceName,
-						 HEXP_CAL_CMD_RX_MEASURE,
-						 HEXP_OFF)) != HEXP_CAL_RESP_OK)
-		{
-			netif_dbg("(PTPD_NETIF): returned %d, attempt "
-				  "to stop RX calibration  interface %s "
-				  "FAILED !!\n", ret,ifaceName);
-			return PTPD_NETIF_ERROR;
-		}
-		netif_dbg("(PTPD_NETIF): Stopped RX calibrating interface "
-			  "%s SUCCESSFULLY !!\n",ifaceName);
-	}
-	else  if(txrx == PTPD_NETIF_TX)
-	{
-		/*
-		 * stop calibration of transmision delay (TX)
-		 */
-		if((ret = halexp_calibration_cmd(ifaceName,
-						 HEXP_CAL_CMD_TX_MEASURE,
-						 HEXP_OFF)) != HEXP_CAL_RESP_OK)
-		{
-			netif_dbg("(PTPD_NETIF): returned %d, attempt "
-				  "to stop calibration of interface %s "
-				  "FAILED !!\n", ret,ifaceName);
-			return PTPD_NETIF_NOT_READY;
-		}
-		netif_dbg("(PTPD_NETIF): Stopped TX calibrating interface %s "
-			  "SUCCESSFULLY !!\n",ifaceName);
-	}
-	else
-		return PTPD_NETIF_ERROR;
-
-#else
-	if(txrx == PTPD_NETIF_TX)
-		netif_dbg("(PTPD_NETIF): disable calibrating TX, interface: "
-			  "%s\n",ifaceName);
-	else
-		netif_dbg("(PTPD_NETIF): disable calibrating RX, interface: "
-			  "%s\n",ifaceName);
-#endif
-
-
 	return PTPD_NETIF_OK;
 }
 
-
 int ptpd_netif_calibrating_enable(int txrx, const char *ifaceName)
 {
-
-#ifdef TOMEK
-
-	int ret;
-
-	if(txrx == PTPD_NETIF_RX)
-	{
-		/*
-		 * stop calibration of reception delay (RX)
-		 */
-		if((ret = halexp_calibration_cmd(ifaceName,
-						 HEXP_CAL_CMD_RX_MEASURE,
-						 HEXP_ON)) != HEXP_CAL_RESP_OK)
-		{
-			netif_dbg("(PTPD_NETIF): returned %d, attempt "
-				  "to sttart RX calibration  interface %s "
-				  "FAILED !!\n", ret,ifaceName);
-			return PTPD_NETIF_ERROR;
-		}
-		netif_dbg("(PTPD_NETIF): Started RX calibrating interface %s "
-			  "SUCCESSFULLY !!\n",ifaceName);
-	}
-	else  if(txrx == PTPD_NETIF_TX)
-	{
-		/*
-		 * stop calibration of transmision delay (TX)
-		 */
-		if((ret = halexp_calibration_cmd(ifaceName,
-						 HEXP_CAL_CMD_TX_MEASURE,
-						 HEXP_ON)) != HEXP_CAL_RESP_OK)
-		{
-			netif_dbg("(PTPD_NETIF): returned %d, attempt to "
-				  "start calibration of interface %s "
-				  "FAILED !!\n", ret,ifaceName);
-			return PTPD_NETIF_NOT_READY;
-		}
-		netif_dbg("(PTPD_NETIF): Started TX calibrating interface %s "
-			  "SUCCESSFULLY !!\n",ifaceName);
-	}
-	else
-		return PTPD_NETIF_ERROR;
-
-#else
-	if(txrx == PTPD_NETIF_TX)
-		netif_dbg("(PTPD_NETIF): enable calibrating TX, interface: "
-			  "%s\n",ifaceName);
-	else
-		netif_dbg("(PTPD_NETIF): enable calibrating RX, interface: "
-			  "%s\n",ifaceName);
-#endif
-
 	return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName,
 				uint64_t *delta)
 {
-#ifdef TOMEK
-	hexp_port_state_t state;
+	uint64_t delta_rx, delta_tx;
+	int32_t alpha;
 
-	halexp_get_port_state(&state, ifaceName);
-
-	if(txrx == PTPD_NETIF_TX && state.tx_calibrated)
-	{
-		*delta = state.delta_tx;
-		return PTPD_NETIF_READY;
-	}  else if(txrx == PTPD_NETIF_RX && state.rx_calibrated)
-	{
-		*delta = state.delta_rx;
-		return PTPD_NETIF_READY;
-	}
-
-	return PTPD_NETIF_NOT_READY;
-#else
-	if(tmp_calibration_cnt++ > 1)
-	{
-		*delta = (uint64_t)1<<8; //[ps];
-
-		netif_dbg("(PTPD_NETIF): delta = : %ldd [0x%x]\n",
-			  (uint64_t)*delta,(uint64_t)*delta);
-		return PTPD_NETIF_READY;
-	}
+	ptpd_netif_read_calibration_data(ifaceName, &delta_tx, &delta_rx, &alpha);
+	if(txrx)
+		*delta = delta_tx;
 	else
-		return PTPD_NETIF_NOT_READY;
-#endif
+		*delta = delta_rx;
+		
+	return PTPD_NETIF_READY;
 }
 
 int ptpd_netif_calibration_pattern_disable(const char *ifaceName)
 {
-#ifdef TOMEK
-	int ret;
-
-	if((ret = halexp_calibration_cmd(ifaceName,
-					 HEXP_CAL_CMD_TX_PATTERN,
-					 HEXP_OFF)) != HEXP_CAL_RESP_OK)
-	{
-		netif_dbg("(PTPD_NETIF): returned %d, attempt to stop "
-			  "sending calibration pattern on interface %s "
-			  "FAILED !!\n", ret,ifaceName);
-		return PTPD_NETIF_ERROR;
-	}
-	netif_dbg("(PTPD_NETIF): Stopped sending calibration pattern "
-		  "on port %s SUCCESSFULLY !!\n",ifaceName);
-#else
-
-	netif_dbg("(PTPD_NETIF): stop sending calibration pattern, "
-		  "interface = %s\n",ifaceName);
-
-#endif
 	return PTPD_NETIF_OK;
 }
 
-
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
-				     uint64_t *deltaRx)
+				     uint64_t *deltaRx, int32_t *fix_alpha)
 {
 	hexp_port_state_t state;
 
-#ifdef TOMEK
 	//read the port state
 	halexp_get_port_state(&state, ifaceName);
 
@@ -917,12 +577,12 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 		else
 			return PTPD_NETIF_NOT_FOUND;
 
-	}
-	return PTPD_NETIF_OK;
-#else
-	return PTPD_NETIF_NOT_FOUND;
-#endif
+		*fix_alpha = state.fiber_fix_alpha;
 
+		return PTPD_NETIF_OK;
+	}
+
+	return PTPD_NETIF_NOT_FOUND;
 }
 
 int ptpd_netif_select( wr_socket_t *wrSock)
@@ -974,8 +634,8 @@ int ptpd_netif_get_port_state(const char *ifaceName)
 		}
 
 	}
-	printf("(ptpd_netif) linkdown detected on port: %s "
-	       "[no valid port state data)\n",ifaceName);
+/*	printf("(ptpd_netif) linkdown detected on port: %s "
+	       "[no valid port state data)\n",ifaceName);*/
 	//should not get here
 	return PTPD_NETIF_ERROR;
 }
@@ -1004,34 +664,60 @@ int ptpd_netif_get_ifName(char *ifname, int number)
 
 uint64_t ptpd_netif_get_msec_tics()
 {
+//	printf("getmsec: %lld\n", get_tics() / 1000ULL);
 	return get_tics() / 1000ULL;
 }
 
 int ptpd_netif_extsrc_detection()
 {
-    int ret;
-    ret=halexp_extsrc_cmd(HEXP_EXTSRC_CMD_CHECK);
-/* halexp_extsrc_cmd() retunrs: 
-  #define HEXP_EXTSRC_STATUS_LOCKED 	0 
-  #define HEXP_LOCK_STATUS_BUSY	  	1
-  #define HEXP_EXTSRC_STATUS_NOSRC  	2
-*/ 
-    
-    if(ret == HEXP_EXTSRC_STATUS_LOCKED) //0
-    {
-      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_OK [ret=%d]\n",ret);
-      return PTPD_NETIF_OK;
-    }
-    else if(ret == HEXP_EXTSRC_STATUS_NOSRC) //2
-    {
-      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_NOT_FOUND [ret=%d]\n",ret);
-      return PTPD_NETIF_NOT_FOUND;
-    }
-    else 
-    { 
-      //probably ret == HEXP_LOCK_STATUS_BUSY (1)
-      printf("(ptpd_netif)  ptpd_netif_extsrc_detection() PTPD_NETIF_ERROR [ret=%d]\n",ret);
-      return PTPD_NETIF_ERROR;
+  return PTPD_NETIF_OK;
+}
+
+int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
+{
+	hexp_pps_params_t p;
+	int cmd;
+
+    if(!adjust_nsec && !adjust_utc)
+        return PTPD_NETIF_OK;
+
+	if(adjust_utc && adjust_nsec)
+	{
+	    fprintf(stderr, " FATAL : trying to adjust both the UTC and the NS counters simultaneously. \n");
+	    exit(-1);
+	}
+
+	if(adjust_utc)
+	{
+	    cmd = HEXP_PPSG_CMD_ADJUST_UTC;
+	    p.adjust_utc = adjust_utc;
+	} else {
+        cmd = HEXP_PPSG_CMD_ADJUST_NSEC;
+        p.adjust_nsec = adjust_nsec;
     }
 
+    if(!halexp_pps_cmd(cmd, &p))
+        return PTPD_NETIF_OK;
+
+    return PTPD_NETIF_ERROR;
 }
+
+
+int ptpd_netif_adjust_phase(int32_t phase_ps)
+{
+	hexp_pps_params_t p;
+    p.adjust_phase_shift = phase_ps;
+    if(!halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &p))
+        return PTPD_NETIF_OK;
+    return PTPD_NETIF_ERROR;
+}
+
+int ptpd_netif_adjust_in_progress()
+{
+	hexp_pps_params_t p;
+    if(halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &p))
+        return PTPD_NETIF_NOT_READY;
+    else
+        return PTPD_NETIF_OK;
+}
+
