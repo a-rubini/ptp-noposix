@@ -72,7 +72,7 @@ void ptpd_init_exports(void)
 void ptpd_handle_wripc()
 {
 //	fprintf(stderr, ".");
-	minipc_server_action(ptp_ch, 200 /* ms */);
+//	minipc_server_action(ptp_ch, 200 /* ms */);
 }
 
 #endif
