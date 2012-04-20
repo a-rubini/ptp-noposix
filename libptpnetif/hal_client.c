@@ -54,7 +54,7 @@ int halexp_query_ports(hexp_port_list_t *list)
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
 	int ret;
-	ret = minipc_call(hal_ch, DEFAULT_TO, &__rpcdef_query_ports,
+	ret = minipc_call(hal_ch, DEFAULT_TO, &__rpcdef_get_port_state,
 			 state /* retval */, port_name);
 	return ret;
 }
