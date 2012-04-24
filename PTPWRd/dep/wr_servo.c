@@ -21,12 +21,9 @@
 #define WR_SYNC_PHASE 3
 #define WR_TRACK_PHASE 4
 #define WR_WAIT_SYNC_IDLE 5
+#define WR_WAIT_OFFSET_STABLE 6
 
-#define SERVO_ADJUST_TIMEOUT 2000
-
-#if 1 /* This was an undefined symbol. Just hack it here to do nothing*/
-static inline void pps_gen_enable_output(int i) {}
-#endif
+#define WR_SERVO_OFFSET_STABILITY_THRESHOLD 60 /* psec */
 
 /* my own timestamp arithmetic functions */
 
@@ -44,7 +41,7 @@ void wr_servo_enable_tracking(int enable)
 static void dump_timestamp(char *what, wr_timestamp_t ts)
 {
 	//fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
-	PTPD_TRACE(TRACE_SERVO, NULL, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
+	fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
 }
 
 static int64_t ts_to_picos(wr_timestamp_t ts)
@@ -78,7 +75,8 @@ static wr_timestamp_t ts_add(wr_timestamp_t a, wr_timestamp_t b)
 	c.nsec = 0;
 
 	c.phase =a.phase + b.phase;
-	if(c.phase >= 1000)
+
+	while(c.phase >= 1000)
 	{
 		c.phase -= 1000;
 		c.nsec++;
@@ -86,7 +84,7 @@ static wr_timestamp_t ts_add(wr_timestamp_t a, wr_timestamp_t b)
 
 	c.nsec += (a.nsec + b.nsec);
 
-	if(c.nsec >= 1000000000L)
+	while(c.nsec >= 1000000000L)
 	{
 		c.nsec -= 1000000000L;
 		c.utc++;
@@ -106,14 +104,14 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 
 	c.phase = a.phase - b.phase;
 
-	if(c.phase < 0)
+	while(c.phase < 0)
 	{
 		c.phase+=1000;
 		c.nsec--;
 	}
 
 	c.nsec += a.nsec - b.nsec;
-	if(c.nsec < 0)
+	while(c.nsec < 0)
 	{
 		c.nsec += 1000000000L;
 		c.utc--;
@@ -126,11 +124,15 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 
 // "Hardwarizes" the timestamp - e.g. makes the nanosecond field a multiple
 // of 8ns cycles and puts the extra nanoseconds in the phase field
-static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
+static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts, int clock_period_ps)
 {
+    int32_t q_threshold;
+
+    q_threshold = (clock_period_ps + 999) / 1000;
+
 	if(ts.nsec > 0)
 	{
-		int32_t extra_nsec = ts.nsec % 8;
+		int32_t extra_nsec = ts.nsec % q_threshold;
 
 		if(extra_nsec)
 		{
@@ -138,12 +140,23 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts)
 			ts.phase += extra_nsec * 1000;
 		}
 	}
-	
-/*	if(ts.nsec < 0) {
-	 	ts.nsec += 125000000;
-	 	ts.utc--;
-	}*/
 
+	if(ts.nsec < 0) {
+	 	ts.nsec += 1000000000LL;
+	 	ts.utc--;
+	}
+
+    if(ts.utc == -1 && ts.nsec > 0)
+    {
+        ts.utc++;
+        ts.nsec -= 1000000000LL;
+    }
+
+    if(ts.nsec < 0 && ts.nsec >= (-q_threshold) && ts.utc == 0)
+    {
+        ts.nsec += q_threshold;
+        ts.phase -= q_threshold * 1000;
+    }
 
 	return ts;
 }
@@ -152,40 +165,42 @@ static int got_sync = 0;
 
 void wr_servo_reset()
 {
-    pps_gen_enable_output(0); /* fixme: unportable */
+//    pps_gen_enable_output(0); /* fixme: unportable */
 	cur_servo_state.valid = 0;
 	servo_state_valid = 0;
+    ptpd_netif_enable_timing_output(0);
+
 }
 
 int wr_servo_init(PtpPortDS *clock)
 {
-	hexp_port_state_t pstate;
 	wr_servo_state_t *s = &clock->wr_servo;
 
-
 	/* Determine the alpha coefficient */
-	halexp_get_port_state(&pstate, clock->netPath.ifaceName);
+	if(ptpd_netif_read_calibration_data(clock->netPath.ifaceName, NULL, NULL, &s->fiber_fix_alpha, &s->clock_period_ps) != PTPD_NETIF_OK)
+		return -1;
+
+    ptpd_netif_enable_timing_output(0);
 
 	strncpy(s->if_name, clock->netPath.ifaceName, 16);
 
 	s->state = WR_SYNC_TAI;
 	s->cur_setpoint = 0;
-	s->fiber_fix_alpha = pstate.fiber_fix_alpha;
 
-	// fixme: full precision
-	s->delta_tx_m = ((int32_t)clock->otherNodeDeltaTx.scaledPicoseconds.lsb) >> 16;
-	s->delta_rx_m = ((int32_t)clock->otherNodeDeltaRx.scaledPicoseconds.lsb) >> 16;
-	s->delta_tx_s = pstate.delta_tx;//((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
-	s->delta_rx_s = pstate.delta_rx;//((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
+	s->delta_tx_m = ((((int32_t)clock->otherNodeDeltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->otherNodeDeltaTx.scaledPicoseconds.msb) << 16);
+	s->delta_rx_m = ((((int32_t)clock->otherNodeDeltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->otherNodeDeltaRx.scaledPicoseconds.msb) << 16);
 
-	PTPD_TRACE(TRACE_SERVO, NULL, "Deltas: txm %d rxm %d txs %d rxs %d\n",
+	s->delta_tx_s = ((((int32_t)clock->deltaTx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaTx.scaledPicoseconds.msb) << 16);
+	s->delta_rx_s = ((((int32_t)clock->deltaRx.scaledPicoseconds.lsb) >> 16) & 0xffff) | (((int32_t)clock->deltaRx.scaledPicoseconds.msb) << 16);
+
+    fprintf(stderr,"servo:pre: %d/%dps\n", clock->deltaRx.scaledPicoseconds.lsb,clock->deltaRx.scaledPicoseconds.msb);
+
+	fprintf(stderr,"servo:Deltas: Master: Tx=%dps, Tx=%dps, Slave: tx=%dps, Rx=%dps.\n",
 	s->delta_tx_m,
 	s->delta_rx_m,
 	s->delta_tx_s,
 	s->delta_rx_s);
-	
 
-                                                   
 	cur_servo_state.delta_tx_m = (int64_t)s->delta_tx_m;
 	cur_servo_state.delta_rx_m = (int64_t)s->delta_rx_m;
 	cur_servo_state.delta_tx_s = (int64_t)s->delta_tx_s;
@@ -224,11 +239,9 @@ int wr_servo_got_sync(PtpPortDS *clock, TimeInternal t1, TimeInternal t2)
 	wr_servo_state_t *s = &clock->wr_servo;
 
 	s->t1 = timeint_to_wr(t1);
+	s->t1.correct = 1;
 	s->t2 = timeint_to_wr(t2);
-
-	//merge problem:
-//	dump_timestamp("sync->t1", s->t1);
-//	dump_timestamp("sync->t2", s->t2);
+	s->t2.correct = 1;
 
 	got_sync = 1;
 
@@ -242,9 +255,11 @@ int wr_servo_got_delay(PtpPortDS *clock, Integer32 cf)
 	s->t3 = clock->delayReq_tx_ts;
 	//  s->t3.phase = 0;
 	s->t4 = timeint_to_wr(clock->delay_req_receive_time);
+	s->t4.correct = 1;
 	s->t4.phase = (int64_t) cf * 1000LL / 65536LL;
 	return 0;
 }
+
 
 int wr_servo_update(PtpPortDS *clock)
 {
@@ -255,19 +270,30 @@ int wr_servo_update(PtpPortDS *clock)
 	uint64_t delay_ms_fix;
 
 	wr_timestamp_t ts_offset, ts_offset_hw /*, ts_phase_adjust */;
-	hexp_pps_params_t adjust;
 
 	if(!got_sync)
 		return 0;
-		
+
+    if(!s->t1.correct || !s->t2.correct || !s->t3.correct || !s->t4.correct)
+    {
+       	PTPD_TRACE(TRACE_SERVO, NULL, "servo: TimestampsIncorrect: %d %d %d %d\n",
+                   s->t1.correct, s->t2.correct, s->t3.correct, s->t4.correct);
+
+        return 0;
+    }
+
 	got_sync = 0;
 
 	if (1) { /* enable for debugging */
-		dump_timestamp("->t1", s->t1);
-		dump_timestamp("->t2", s->t2);
-		dump_timestamp("->t3", s->t3);
-		dump_timestamp("->t4", s->t4);
+		dump_timestamp("servo:t1", s->t1);
+		dump_timestamp("servo:t2", s->t2);
+		dump_timestamp("servo:t3", s->t3);
+		dump_timestamp("servo:t4", s->t4);
+
 		dump_timestamp("->mdelay", s->mu);
+		fprintf(stderr,"servo:fix_alpha %d, period %dps\n", s->fiber_fix_alpha, s->clock_period_ps);
+
+
 	}
 #if 0
 //merge problem: do we need it??
@@ -290,13 +316,18 @@ int wr_servo_update(PtpPortDS *clock)
 	big_delta_fix =  s->delta_tx_m + s->delta_tx_s
 		       + s->delta_rx_m + s->delta_rx_s;
 
-	delay_ms_fix = (((uint64_t)(ts_to_picos(s->mu) - big_delta_fix) * (uint64_t) s->fiber_fix_alpha) >> FIX_ALPHA_FRACBITS) 
-		+ ((ts_to_picos(s->mu) - big_delta_fix) >> 1) 
+    fprintf(stderr,"servo:mu_nodeltas: %lld\n", ts_to_picos(s->mu) - big_delta_fix);
+
+	delay_ms_fix = (((int64_t)(ts_to_picos(s->mu) - big_delta_fix) * (int64_t) s->fiber_fix_alpha) >> FIX_ALPHA_FRACBITS)
+		+ ((ts_to_picos(s->mu) - big_delta_fix) >> 1)
 		+ s->delta_tx_m + s->delta_rx_s + ph_adjust;
 
 
 	ts_offset = ts_add(ts_sub(s->t1, s->t2), picos_to_ts(delay_ms_fix));
-	ts_offset_hw = ts_hardwarize(ts_offset);
+	ts_offset_hw = ts_hardwarize(ts_offset, s->clock_period_ps);
+
+/*    dump_timestamp("Offset", ts_offset);
+    dump_timestamp("OffsetHW", ts_offset_hw);*/
 
 	cur_servo_state.mu = (uint64_t)ts_to_picos(s->mu);
 	cur_servo_state.cur_offset = ts_to_picos(ts_offset);
@@ -316,31 +347,28 @@ int wr_servo_update(PtpPortDS *clock)
 
 	tics = ptpd_netif_get_msec_tics();
 
-	dump_timestamp("->HWOffset", ts_offset_hw);
-
+	dump_timestamp("servo:HWOffset", ts_offset_hw);
+	PTPD_TRACE(TRACE_SERVO, NULL, "servo:state: %d\n", s->state);
 
 	switch(s->state)
 	{
-	case WR_WAIT_SYNC_IDLE:
-		strcpy(adjust.port_name, s->if_name);
+        case WR_WAIT_SYNC_IDLE:
 
-		if(!halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &adjust)
-		   && (tics - s->last_tics) > SERVO_ADJUST_TIMEOUT)
-			s->state = s->next_state;
+		if(!ptpd_netif_adjust_in_progress())
+		{
+		   s->state = s->next_state;
+		}else fprintf(stderr,"servo:busy\n");
+
 		break;
 
 	case WR_SYNC_TAI:
 		if(ts_offset_hw.utc != 0)
 		{
-
 			strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
-			strcpy(adjust.port_name, s->if_name);
-			adjust.adjust_utc = ts_offset_hw.utc;
+            ptpd_netif_adjust_counters(ts_offset_hw.utc, 0);
+            ptpd_netif_adjust_phase(0);
 
-
-			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &adjust);
 			s->next_state = WR_SYNC_NSEC;
-
 			s->state = WR_WAIT_SYNC_IDLE;
 			s->last_tics = tics;
 
@@ -352,13 +380,9 @@ int wr_servo_update(PtpPortDS *clock)
 
 		if(ts_offset_hw.nsec != 0)
 		{
+			ptpd_netif_adjust_counters(0, ts_offset_hw.nsec);
 
-			strcpy(adjust.port_name, s->if_name);
-			adjust.adjust_nsec = ts_offset_hw.nsec;
-
-			
-			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &adjust);
-			s->next_state = WR_SYNC_PHASE;
+			s->next_state = WR_SYNC_NSEC;
 			s->state = WR_WAIT_SYNC_IDLE;
 			s->last_tics = tics;
 
@@ -369,18 +393,26 @@ int wr_servo_update(PtpPortDS *clock)
 		strcpy(cur_servo_state.slave_servo_state, "SYNC_PHASE");
 		s->cur_setpoint = ts_offset_hw.phase + ts_offset_hw.nsec * 1000;
 
+        ptpd_netif_adjust_phase(s->cur_setpoint);
 
-		strcpy(adjust.port_name, s->if_name);
-		adjust.adjust_phase_shift = s->cur_setpoint;
-		halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
-
-		s->next_state = WR_TRACK_PHASE;
-		s->state = WR_WAIT_SYNC_IDLE;
+		s->next_state = WR_WAIT_OFFSET_STABLE;
+        s->state = WR_WAIT_SYNC_IDLE;
 		s->last_tics = tics;
 		s->delta_ms_prev = s->delta_ms;
+    	break;
 
-		break;
+    case WR_WAIT_OFFSET_STABLE:
+    {
+        int64_t remaining_offset = abs(ts_to_picos(ts_offset_hw));
 
+        if(remaining_offset < WR_SERVO_OFFSET_STABILITY_THRESHOLD)
+        {
+            ptpd_netif_enable_timing_output(1);
+            s->state = WR_TRACK_PHASE;
+            }
+
+        break;
+    }
 
 	case WR_TRACK_PHASE:
 		strcpy(cur_servo_state.slave_servo_state, "TRACK_PHASE");
@@ -389,21 +421,17 @@ int wr_servo_update(PtpPortDS *clock)
 
 		if(tracking_enabled)
 		{
-         	pps_gen_enable_output(1);
+//         	pps_gen_enable_output(1);
 			// just follow the changes of deltaMS
 			s->cur_setpoint += (s->delta_ms - s->delta_ms_prev);
 
-			strcpy(adjust.port_name, s->if_name);
-			adjust.adjust_phase_shift = s->cur_setpoint;
-			halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &adjust);
+		   	ptpd_netif_adjust_phase(s->cur_setpoint);
 
 			s->delta_ms_prev = s->delta_ms;
 			s->next_state = WR_TRACK_PHASE;
 			s->state = WR_WAIT_SYNC_IDLE;
 			s->last_tics = tics;
-
 		}
-
 		break;
 
 	}
