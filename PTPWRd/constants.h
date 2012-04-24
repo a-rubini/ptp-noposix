@@ -19,7 +19,7 @@
 
 #define DEFAULT_STARTUP_MODE                    DAEMONE_MODE
 
-#define MANUFACTURER_ID "MaceG VanKempen;2.0.0"
+#define MANUFACTURER_ID "CERNWhiteRabbit;2.0.0"
 
 /* implementation specific constants */
 #define DEFAULT_INBOUND_LATENCY			0       /* in nsec */
@@ -148,9 +148,7 @@
 #define WR_SIGNALING_MSG_BASE_LENGTH	48  //=length( header ) + lenght( targetPortId ) + length (tlvType) + lenght(lenghtField) 
 					    //      34          +           10           +         2        +     2 
 
-#define WR_DEFAULT_DELTAS_KNOWN		FALSE
-#define WR_DEFAULT_DELTA_TX		0
-#define WR_DEFAULT_DELTA_RX		0
+#define WR_DEFAULT_PHY_CALIBRATION_REQUIRED FALSE
 
 #define     SEND_CALIBRATION_PATTERN 	0X0001
 #define NOT_SEND_CALIBRATION_PATTERN 	0X0000
