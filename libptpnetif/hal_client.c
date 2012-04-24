@@ -69,15 +69,17 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
 	return rval;
 }
 
-#if 0
-int halexp_pll_cmd(int cmd, hexp_pll_cmd_t *params)
+int halexp_get_timing_state(hexp_timing_state_t *tstate)
 {
-  int rval;
-  wripc_call(hal_ch, "halexp_pll_cmd", &rval, 2, A_INT32(cmd), A_STRUCT(*params));
-	return rval;
-
+	int ret;
+	ret = minipc_call(hal_ch, DEFAULT_TO, &__rpcdef_get_timing_state,
+			 tstate);
+	if (ret < 0)
+		return ret;
+	return 0;
 }
-#endif
+
+
 
 int halexp_client_init()
 {
@@ -89,10 +91,3 @@ int halexp_client_init()
 }
 
 
-int halexp_extsrc_cmd(int command)
-{
-	int ret, rval;
-	ret = minipc_call(hal_ch, DEFAULT_TO, &__rpcdef_extsrc_cmd,
-			  &rval, command);
-	return rval;
-}
