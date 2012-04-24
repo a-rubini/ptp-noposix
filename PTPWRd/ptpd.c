@@ -39,6 +39,7 @@ RunTimeOpts rtOpts = {
    .wrStateTimeout	= WR_DEFAULT_STATE_TIMEOUT_MS,
    .phyCalibrationRequired		= WR_DEFAULT_PHY_CALIBRATION_REQUIRED,
    .masterOnly		= FALSE,
+	.disableFallbackIfWRFails = DEFAULT_DISABLE_FALLBACK_WHEN_WR_FAILS
    /********************************************************/
 };
 

@@ -206,16 +206,20 @@ void wrTimerExpired(UInteger8 currentState, RunTimeOpts *rtOpts, PtpPortDS *ptpP
       }
       else
       {
-	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
+//	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"WR_Slave_TIMEOUT: state[=%d] timeout, repeated %d times, going to Standard PTP\n", \
 	currentState,ptpPortDS->currentWRstateCnt );
 	
 	ptpPortDS->wrModeON = FALSE;
         toWRState(WRS_IDLE, rtOpts, ptpPortDS);
 
-	if(wrMode == WR_MASTER)
+	if(rtOpts->disableFallbackIfWRFails)
+	{
+		PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"WR_Slave_TIMEOUT: state[=%d] timeout, disabling port (standard PTP fallback OFF).\n", currentState);
+
+	  toState(PTP_DISABLED, rtOpts, ptpPortDS);
+	} else if(wrMode == WR_MASTER)
 	  toState(PTP_MASTER, rtOpts, ptpPortDS);
-	else
-	  toState(PTP_SLAVE, rtOpts, ptpPortDS);
+	else toState(PTP_SLAVE, rtOpts, ptpPortDS);
 	/*
 	 * RE-INITIALIZATION OF White Rabbit Data Sets
 	 * (chapter (Re-)Initialization of wrspec

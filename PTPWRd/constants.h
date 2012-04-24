@@ -59,6 +59,7 @@
 #endif
 
 #define DEFAULT_PARENTS_STATS			FALSE
+#define DEFAULT_DISABLE_FALLBACK_WHEN_WR_FAILS TRUE
 
 /* features, only change to refelect changes in implementation */
 #define NUMBER_PORTS		2

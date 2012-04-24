@@ -65,7 +65,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
   int startupMode = DEFAULT_STARTUP_MODE; //1=> daemon, 0=>nondaemon
 
   /* parse command line arguments */
-  while( (c = getopt(argc, argv, "?cf:dDABMSNPxta:w:M:b:1:2:3:u:l:o:n:y:m:gv:r:s:p:q:i:eh")) != -1 ) {
+  while( (c = getopt(argc, argv, "?cf:dDABMSNPxta:w:M:b:1:2:3:u:l:o:n:y:m:g:v:r:s:p:q:i:eh")) != -1 ) {
     switch(c) {
     case '?':
       printf(
@@ -85,6 +85,7 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 "-r NUMBER         specify system clock accuracy\n"
 "-v NUMBER         specify system clock class\n"
 "-p NUMBER         specify priority1 attribute\n"
+"-g [0/1]  			   enable/disable fallback to standard PTP mode in case of WR initialization failure\n"
 "-d                run in daemon mode !!! \n"
 "-c                run in non-daemon mode\n"
 "-A                WR: hands free - multiport mode, autodetection of ports and interfaces ,"
@@ -194,6 +195,8 @@ PtpPortDS * ptpdStartup(int argc, char **argv, Integer16 *ret, RunTimeOpts *rtOp
 //       break;
 
     case 'g':
+     rtOpts->disableFallbackIfWRFails=strtol(optarg, 0, 0) ? TRUE : FALSE;
+
       break;
 
 //     case 's':

@@ -707,6 +707,7 @@ typedef struct {
 	Boolean 	autoPortDiscovery;
 	Boolean		primarySource;
 	Boolean		masterOnly;
+	Boolean  disableFallbackIfWRFails;
 } RunTimeOpts;
 
 #endif /*DATATYPES_H_*/
