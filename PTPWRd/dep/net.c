@@ -50,7 +50,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   
   //port numbers start with 1, but port indexing starts with 0.... a bit of mess
   int port_index = ptpPortDS->portIdentity.portNumber-1;
-  if(port_index < 0) 
+  if(port_index < 0)
     {
       PTPD_TRACE(TRACE_ERROR, ptpPortDS, "ERROR: port numbering problem, index returned: %d\n", port_index);
       return FALSE;
@@ -113,6 +113,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   /* copy mac part to uuid */
   memcpy(ptpPortDS->port_uuid_field,portMacAddress, PTP_UUID_LENGTH);
+  memcpy(netPath->selfAddr.mac, portMacAddress, 6);
 
   PTPD_TRACE(TRACE_NET, ptpPortDS,"[%s] mac: %x:%x:%x:%x:%x:%x\n",__func__,\
     ptpPortDS->port_uuid_field[0],\
@@ -138,7 +139,7 @@ Boolean netInit(NetPath *netPath, RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 Boolean autoDetectPortWrConfig(NetPath *netPath, PtpPortDS *ptpPortDS)
 {
   hexp_port_state_t pstate;
-  
+
   //TODO (12): fixme: error handling
   halexp_get_port_state(&pstate, netPath->ifaceName);
 
@@ -210,15 +211,20 @@ return: received msg's size
 */
 ssize_t netRecvMsg(Octet *buf, NetPath *netPath, wr_timestamp_t *current_rx_ts)
 {
+    wr_sockaddr_t from_addr;
+    int ret, drop = 1;
 
-  wr_sockaddr_t from_addr;
-  int ret;
+    ret = ptpd_netif_recvfrom(netPath->wrSock, &from_addr, buf, 1518, current_rx_ts);
+    if(ret < 0)
+        return ret;
 
-  if((ret = ptpd_netif_recvfrom(netPath->wrSock, &from_addr, buf, 1518, current_rx_ts)) > 0)
-  {
-  }
-  return (ssize_t)ret;
+    if( !memcmp(from_addr.mac_dest, netPath->selfAddr.mac, 6) ||
+        !memcmp(from_addr.mac_dest, netPath->multicastAddr.mac, 6) ||
+        !memcmp(from_addr.mac_dest, netPath->unicastAddr.mac, 6))
+            drop = 0;
 
+
+  return drop ? 0 : ret;
 }
 
 /*
