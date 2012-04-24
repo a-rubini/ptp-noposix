@@ -191,7 +191,8 @@ int ptpd_netif_calibration_pattern_disable(const char *ifaceName);
  *	PTPD_NETIF_NOT_FOUND 	- if deltas are not known
  *	PTPD_NETIF_OK		- if deltas are known, in such case, deltaTx and deltaRx have valid data
  */
-int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx, uint64_t *deltaRx, int32_t *alpha);
+int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
+				     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period);
 
 int ptpd_netif_select(wr_socket_t*);
 int ptpd_netif_get_hw_addr(wr_socket_t *sock, mac_addr_t *mac);
@@ -232,5 +233,8 @@ int ptpd_netif_extsrc_detection();
 int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec);
 int ptpd_netif_adjust_phase(int32_t phase_ps);
 int ptpd_netif_adjust_in_progress();
+int ptpd_netif_get_dmtd_phase(wr_socket_t *sock, int32_t *phase);
+void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, int cntr_ahead, int transition_point, int clock_period);
+int ptpd_netif_enable_timing_output(int enable);
 
 #endif

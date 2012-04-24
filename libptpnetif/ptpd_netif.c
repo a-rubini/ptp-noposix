@@ -102,6 +102,18 @@ static inline int inside_range(int min, int max, int x)
 		return (x<=max || x>=min);
 }
 
+/* For debugging/testing purposes */
+int ptpd_netif_get_dmtd_phase(wr_socket_t *sock, int32_t *phase)
+{
+	struct my_socket *s = (struct my_socket *) sock;
+	hexp_port_state_t pstate;
+
+	halexp_get_port_state(&pstate, s->bind_addr.if_name);
+
+	if(phase) *phase = pstate.phase_val;
+	return pstate.phase_val_valid;
+}
+
 static void update_dmtd(wr_socket_t *sock)
 {
 	struct my_socket *s = (struct my_socket *) sock;
@@ -119,30 +131,25 @@ static void update_dmtd(wr_socket_t *sock)
 	}
 }
 
-static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
-				   int cntr_ahead)
+void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, int cntr_ahead, int transition_point, int clock_period)
 {
-	struct my_socket *s = (struct my_socket *) sock;
 	int trip_lo, trip_hi;
 	int phase;
-
-	update_dmtd(sock);
 
 	// "phase" transition: DMTD output value (in picoseconds)
 	// at which the transition of rising edge
 	// TS counter will appear
-	ts->raw_phase = s->dmtd_phase;
+	ts->raw_phase = dmtd_phase;
 
-  phase = s->clock_period - 1 -s->dmtd_phase;
-
+  phase = clock_period -1 -dmtd_phase;
 
 	// calculate the range within which falling edge timestamp is stable
 	// (no possible transitions)
-	trip_lo = s->phase_transition - s->clock_period / 4;
-	if(trip_lo < 0) trip_lo += s->clock_period;
+	trip_lo = transition_point - clock_period / 4;
+	if(trip_lo < 0) trip_lo += clock_period;
 
-	trip_hi = s->phase_transition + s->clock_period / 4;
-	if(trip_hi >= s->clock_period) trip_hi -= s->clock_period;
+	trip_hi = transition_point + clock_period / 4;
+	if(trip_hi >= clock_period) trip_hi -= clock_period;
 
 	if(inside_range(trip_lo, trip_hi, phase))
 	{
@@ -151,20 +158,20 @@ static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
 		// "reliable" one. cntr_ahead will be 1 when the rising edge
 		//counter is 1 tick ahead of the falling edge counter
 
-		ts->nsec -= cntr_ahead ? (s->clock_period / 1000) : 0;
+		ts->nsec -= cntr_ahead ? (clock_period / 1000) : 0;
 
 		// check if the phase is before the counter transition value
 		// and eventually increase the counter by 1 to simulate a
 		// timestamp transition exactly at s->phase_transition
 		//DMTD phase value
-		if(inside_range(trip_lo, s->phase_transition, phase))
-			ts->nsec += s->clock_period / 1000;
+		if(inside_range(trip_lo, transition_point, phase))
+			ts->nsec += clock_period / 1000;
 
 	}
 
-	ts->phase = phase - s->phase_transition - 1;
-	if(ts->phase  < 0) ts->phase += s->clock_period;
-	ts->phase = s->clock_period - 1 -ts->phase;
+	ts->phase = phase - transition_point - 1;
+	if(ts->phase  < 0) ts->phase += clock_period;
+	ts->phase = clock_period - 1 -ts->phase;
 }
 
 int ptpd_netif_init()
@@ -477,11 +484,15 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 		rx_timestamp->utc =
 			(uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
 
-		rx_timestamp->raw_nsec = sts->hwtimeraw.tv_sec & 0x7fffffff;
+		rx_timestamp->raw_nsec = sts->hwtimeraw.tv_nsec;
 		rx_timestamp->raw_ahead = cntr_ahead;
 
-		linearize_rx_timestamp(rx_timestamp, sock, cntr_ahead);
-		rx_timestamp->correct = 1;
+		update_dmtd(sock);
+		if(s->dmtd_phase_valid)
+		{
+			ptpd_netif_linearize_rx_timestamp(rx_timestamp, s->dmtd_phase, cntr_ahead, s->phase_transition, s->clock_period);
+			rx_timestamp->correct = 1;
+		}
 	}
 
 	return ret - sizeof(struct ethhdr);
@@ -535,14 +546,13 @@ int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName,
 				uint64_t *delta)
 {
 	uint64_t delta_rx, delta_tx;
-	int32_t alpha;
 
-	ptpd_netif_read_calibration_data(ifaceName, &delta_tx, &delta_rx, &alpha);
-	if(txrx)
+	ptpd_netif_read_calibration_data(ifaceName, &delta_tx, &delta_rx, NULL, NULL);
+	if(txrx == PTPD_NETIF_TX)
 		*delta = delta_tx;
 	else
 		*delta = delta_rx;
-		
+
 	return PTPD_NETIF_READY;
 }
 
@@ -552,32 +562,31 @@ int ptpd_netif_calibration_pattern_disable(const char *ifaceName)
 }
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
-				     uint64_t *deltaRx, int32_t *fix_alpha)
+				     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
 {
 	hexp_port_state_t state;
 
 	//read the port state
 	halexp_get_port_state(&state, ifaceName);
 
+
 	// check if the data is available
-	if(state.valid)
+	if(state.valid && state.tx_calibrated && state.rx_calibrated)
 	{
 
-		//check if tx is calibrated,
-		// if so read data
-		if(state.tx_calibrated)
+        fprintf(stderr, "servo:ifaceName: %s (%d / %d)\n", ifaceName, state.delta_tx ,state.delta_rx);
+
+		if(deltaTx)
 			*deltaTx = state.delta_tx;
-		else
-			return PTPD_NETIF_NOT_FOUND;
 
-		//check if rx is calibrated,
-		// if so read data
-		if(state.rx_calibrated)
+		if(deltaRx)
 			*deltaRx = state.delta_rx;
-		else
-			return PTPD_NETIF_NOT_FOUND;
 
-		*fix_alpha = state.fiber_fix_alpha;
+		if(fix_alpha)
+            *fix_alpha = state.fiber_fix_alpha;
+
+        if(clock_period)
+            *clock_period = state.clock_period;
 
 		return PTPD_NETIF_OK;
 	}
@@ -640,6 +649,13 @@ int ptpd_netif_get_port_state(const char *ifaceName)
 	return PTPD_NETIF_ERROR;
 }
 
+int ptpd_netif_extsrc_detection()
+{
+       return 0;
+
+
+}
+
 int ptpd_netif_get_ifName(char *ifname, int number)
 {
 
@@ -668,10 +684,6 @@ uint64_t ptpd_netif_get_msec_tics()
 	return get_tics() / 1000ULL;
 }
 
-int ptpd_netif_extsrc_detection()
-{
-  return PTPD_NETIF_OK;
-}
 
 int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
 {
@@ -715,9 +727,21 @@ int ptpd_netif_adjust_phase(int32_t phase_ps)
 int ptpd_netif_adjust_in_progress()
 {
 	hexp_pps_params_t p;
+
     if(halexp_pps_cmd(HEXP_PPSG_CMD_POLL, &p))
-        return PTPD_NETIF_NOT_READY;
-    else
         return PTPD_NETIF_OK;
+    else
+        return PTPD_NETIF_NOT_READY;
 }
 
+int ptpd_netif_enable_timing_output(int enable)
+{
+    hexp_pps_params_t p;
+
+    p.pps_valid = enable;
+
+    if(halexp_pps_cmd(HEXP_PPSG_CMD_SET_VALID, &p))
+        return PTPD_NETIF_OK;
+    else
+        return PTPD_NETIF_NOT_READY;
+}
