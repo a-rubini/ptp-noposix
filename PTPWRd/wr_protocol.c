@@ -64,7 +64,9 @@ WR  FSM:
 */
 Boolean isPortUp(NetPath *netPath)
 {
-  return ptpd_netif_get_port_state(netPath->ifaceName) == PTPD_NETIF_OK ? TRUE : FALSE;
+
+  Boolean rv= ptpd_netif_get_port_state(netPath->ifaceName) == PTPD_NETIF_OK ? TRUE : FALSE;
+  return rv;
 }
 
 /*
@@ -931,20 +933,29 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
 */
 void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
 {
-  
+  uint64_t d_tx, d_rx;
+
   PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"White Rabbit data (re-)initialization\n");
   int i=0;
   //ptpPortDS->wrMode 			   = NON_WR;
   ptpPortDS->wrModeON    		   = FALSE;
   ptpPortDS->wrPortState 		   = WRS_IDLE;
-  ptpPortDS->calibrated  		   = ptpPortDS->deltasKnown;
+  ptpPortDS->calibrated  		   = !ptpPortDS->phyCalibrationRequired;
 
-  if(ptpPortDS->deltasKnown == TRUE)
+	if(ptpd_netif_read_calibration_data(ptpPortDS->netPath.ifaceName, &d_tx, &d_rx, NULL, NULL) != PTPD_NETIF_OK)
+		PTPD_TRACE(TRACE_ERROR, ptpPortDS, "Failed to obtain port calibration data\n");
+
+  if(ptpPortDS->phyCalibrationRequired == FALSE)
   {
-    ptpPortDS->deltaTx.scaledPicoseconds.lsb  = ptpPortDS->knownDeltaTx.scaledPicoseconds.lsb;
-    ptpPortDS->deltaTx.scaledPicoseconds.msb  = ptpPortDS->knownDeltaTx.scaledPicoseconds.msb;
-    ptpPortDS->deltaRx.scaledPicoseconds.lsb  = ptpPortDS->knownDeltaRx.scaledPicoseconds.lsb;
-    ptpPortDS->deltaRx.scaledPicoseconds.msb  = ptpPortDS->knownDeltaRx.scaledPicoseconds.msb;
+
+    ptpPortDS->deltaTx.scaledPicoseconds.lsb  = 0xFFFFFFFF & (d_tx << 16);
+    ptpPortDS->deltaTx.scaledPicoseconds.msb  = 0xFFFFFFFF & (d_tx >> 16);
+
+    ptpPortDS->deltaRx.scaledPicoseconds.lsb  = 0xFFFFFFFF & (d_rx << 16);
+    ptpPortDS->deltaRx.scaledPicoseconds.msb  = 0xFFFFFFFF & (d_rx >> 16);
+
+	PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS, "PHY calibration not required, deltas: tx = %lldps, rx = %lldps\n", d_tx, d_rx);
+
   }
   else
   {
@@ -953,6 +964,8 @@ void initWrData(PtpPortDS *ptpPortDS, Enumeration8 mode)
     ptpPortDS->deltaRx.scaledPicoseconds.lsb  = 0;
     ptpPortDS->deltaRx.scaledPicoseconds.msb  = 0;
   }
+
+
   ptpPortDS->parentWrConfig	 	  = NON_WR;
   //ptpPortDS->parentWrMode 		  = NON_WR; //useless?
   ptpPortDS->parentWrModeON		  = FALSE;

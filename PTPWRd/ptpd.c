@@ -18,7 +18,6 @@ RunTimeOpts rtOpts = {
    .priority1 = DEFAULT_PRIORITY1,
    .priority2 = DEFAULT_PRIORITY2,
    .domainNumber = DEFAULT_DOMAIN_NUMBER,
-   .slaveOnly = SLAVE_ONLY,
    .currentUtcOffset = DEFAULT_UTC_OFFSET,
    .noResetClock = DEFAULT_NO_RESET_CLOCK,
    .noAdjust = NO_ADJUST,
@@ -30,7 +29,7 @@ RunTimeOpts rtOpts = {
    .max_foreign_records = DEFAULT_MAX_FOREIGN_RECORDS,
    .autoPortDiscovery  	= TRUE,
    .primarySource	= FALSE,
-   
+
    /**************** White Rabbit *************************/
    .portNumber 		= NUMBER_PORTS,
    .calPeriod     	= WR_DEFAULT_CAL_PERIOD,
@@ -38,9 +37,7 @@ RunTimeOpts rtOpts = {
    .wrConfig		= WR_MODE_AUTO, //autodetection
    .wrStateRetry	= WR_DEFAULT_STATE_REPEAT,
    .wrStateTimeout	= WR_DEFAULT_STATE_TIMEOUT_MS,
-   .deltasKnown		= WR_DEFAULT_DELTAS_KNOWN,
-   .knownDeltaTx	= WR_DEFAULT_DELTA_TX,
-   .knownDeltaRx	= WR_DEFAULT_DELTA_RX,
+   .phyCalibrationRequired		= WR_DEFAULT_PHY_CALIBRATION_REQUIRED,
    .masterOnly		= FALSE,
    /********************************************************/
 };

@@ -48,87 +48,82 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
 #ifndef WRPC_EXTRA_SLIM
 
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
- {
+{
+    int           i;
+    PtpPortDS *    cur;
 
-  int           i;
+    rtOpts->wrConfig = WR_MODE_AUTO;
 
-  PtpPortDS *    currentPtpPortDSData;
-
-  currentPtpPortDSData = ptpPortDS;
-
-  ptpd_handle_wripc();
-  
-  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"multiport mode\n");
-  
-  for (i=0; i < rtOpts->portNumber; i++)
-  {
-
-     
-     toState(PTP_INITIALIZING, rtOpts, currentPtpPortDSData);
-     if(!doInit(rtOpts, currentPtpPortDSData))
-     {
-       // doInit Failed!  Exit
-       PTPD_TRACE(TRACE_ERROR, ptpPortDS,"------ port %d failed to doInit()-----------\n",(i+1));
-       //return;
-     }
-     currentPtpPortDSData++;
-  }
-
-  for(;;)
-  {
-    currentPtpPortDSData = ptpPortDS;
-
-    ptpd_handle_wripc();
-    
-    
-    
     for (i=0; i < rtOpts->portNumber; i++)
     {
+        if(!netInit(&ptpPortDS[i].netPath, rtOpts, &ptpPortDS[i]))
+        {
+            PTPD_TRACE(TRACE_ERROR, NULL,"failed to initialize network\n");
+            exit(-1);
+        }
 
-      do
-      {
-      /*
-       * perform calibration for a give port
-       * we can only calibrate one port at a time (HW limitation)
-       * we want the calibration to be performed as quick as possible
-       * and without disturbance, so don't perform doState for other ports
-       * for the time of calibration
-       */
-
-	if(currentPtpPortDSData->portState != PTP_INITIALIZING)
-	  doState(rtOpts, currentPtpPortDSData);
-	else if(!doInit(rtOpts, currentPtpPortDSData))
-	  return;
-
-      }
-      while(currentPtpPortDSData->wrPortState != WRS_IDLE); //non pre-emption of WR FSM
-
-	
-      currentPtpPortDSData++;
+        ptpPortDS[i].linkUP = FALSE;
     }
 
-    if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
+    for(;;)
     {
-	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
-	/* Do after State Decision Even in all the ports */
-	if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
-	  PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
-	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-    }
-      
-    /* Handle Best Master Clock Algorithm globally */
-    if(globalBestForeignMastersUpdate(ptpPortDS))
-    {
-	PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
-	ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
-    }
-    else
-	ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;  
+        for (i=0; i < rtOpts->portNumber; i++)
+        {
+            Boolean went_up = FALSE, went_down = FALSE, link_up;
+            cur = &ptpPortDS[i];
 
-    ptpd_handle_wripc();
-    checkClockClassValidity(ptpPortDS->ptpClockDS);
+            link_up = isPortUp(&cur->netPath);
 
-  }
+            if(link_up && !cur->linkUP)
+                went_up = TRUE;
+            else if(!link_up && cur->linkUP)
+                went_down = TRUE;
+
+            if(went_up)
+            {
+                toState(PTP_INITIALIZING, rtOpts, cur);
+                if(!doInit(rtOpts, cur))
+                    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(i+1));
+
+                PTPD_TRACE(TRACE_STARTUP, cur, "Port '%s' went up.\n", cur->netPath.ifaceName);
+            } else if(went_down) {
+                PTPD_TRACE(TRACE_STARTUP, cur, "Port '%s' went down.\n", cur->netPath.ifaceName);
+            }
+
+            if(link_up)
+            {
+                if(cur->portState != PTP_INITIALIZING)
+                    doState(rtOpts, cur);
+                else if(!doInit(rtOpts, cur))
+                    return;
+            }
+
+            cur->linkUP = link_up;
+        }
+
+        if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
+        {
+        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
+        /* Do after State Decision Even in all the ports */
+        if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
+          PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+        }
+
+        /* Handle Best Master Clock Algorithm globally */
+        if(globalBestForeignMastersUpdate(ptpPortDS))
+        {
+        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
+        }
+        else
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+
+        ptpd_handle_wripc();
+        checkClockClassValidity(ptpPortDS->ptpClockDS);
+
+        usleep(10000);
+    }
 
 }
 
@@ -411,12 +406,6 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 
   /* network init */
-  if(!netInit(&ptpPortDS->netPath, rtOpts, ptpPortDS))
-  {
-    PTPD_TRACE(TRACE_ERROR, NULL,"failed to initialize network\n");
-    toState(PTP_FAULTY, rtOpts, ptpPortDS);
-    return FALSE;
-  }
 
   /* all port data initialization (PTP + WRPTP)  */
   initDataPort(rtOpts, ptpPortDS);
@@ -456,49 +445,10 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 	UInteger8 state;
-	Boolean linkUP;
-	
+	//Boolean linkUP;
 
-	// checking whetehr link up and running (connected)
-	linkUP = isPortUp(&ptpPortDS->netPath);
 
-	if(ptpPortDS->linkUP != linkUP && linkUP == FALSE)
-	{
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK DOWN  <<---------\n");
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
 
-		ptpPortDS->wrModeON 	= FALSE;
-		ptpPortDS->calibrated 	= FALSE;
-		clearForeignMasters(ptpPortDS);		// we remove all the remembered foreign masters
-		ptpPortDS->record_update = TRUE;	// foreign masters removed -> update needed
-		ptpPortDS->wrMode 	= NON_WR;
-		
-		/*
-		 * HACK: This is not standard compliant... but will work
-		 */
-		if(ptpPortDS->ptpClockDS->slaveOnly)
-		{
-		    PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"Slave-only: forcing PTP_LISTENING (a small non-standard hack)\n");
-		    toState(PTP_LISTENING, rtOpts, ptpPortDS);
-		    ptpPortDS->record_update = FALSE;
-		}
-		
-	}
-	
-	if(ptpPortDS->linkUP != linkUP && linkUP == TRUE)
-	{
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"----->> LINK UP  <<---------\n");
-		PTPD_TRACE( (TRACE_PROTO|TRACE_WRPC), ptpPortDS,"\n");
-		wr_servo_reset();
-	}
-	/*
-	 * remember the current state 
-	 * we do it like this to detect the transformation (edge)
-	 */
-	ptpPortDS->linkUP = linkUP; 
-	
 	switch(ptpPortDS->portState)
 	{
 	case PTP_LISTENING:
@@ -624,6 +574,13 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 		break;
 
 	case PTP_LISTENING:
+        if(ptpPortDS->wrConfig == WR_M_ONLY)
+        {
+            PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Port is set to WR-master-only mode. Going to PTP_MASTER state immediately.\n");
+            m1(ptpPortDS);
+			toState(PTP_MASTER, rtOpts, ptpPortDS);
+			break;
+        }
 	case PTP_PASSIVE:
 	case PTP_SLAVE:
 
@@ -642,7 +599,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			ptpPortDS->wrMode = NON_WR;
 			ptpPortDS->wrModeON = FALSE;
 
-			if(!ptpPortDS->ptpClockDS->slaveOnly && ptpPortDS->ptpClockDS->clockQuality.clockClass != 255  )
+			if((! (ptpPortDS->wrConfig == WR_S_ONLY)) && ptpPortDS->ptpClockDS->clockQuality.clockClass != 255  )
 			{
 				m1(ptpPortDS);
 				toState(PTP_MASTER, rtOpts, ptpPortDS);
@@ -705,7 +662,7 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 			}
 		}
 
-		if(ptpPortDS->ptpClockDS->slaveOnly || ptpPortDS->ptpClockDS->clockQuality.clockClass == 255)
+		if(ptpPortDS->wrConfig == WR_S_ONLY || ptpPortDS->ptpClockDS->clockQuality.clockClass == 255)
 			toState(PTP_LISTENING, rtOpts, ptpPortDS);
 
 		break;
