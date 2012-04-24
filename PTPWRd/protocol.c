@@ -47,6 +47,43 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
  */
 #ifndef WRPC_EXTRA_SLIM
 
+void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
+{
+           Boolean went_up = FALSE, went_down = FALSE, link_up;
+
+            link_up = isPortUp(&ptpPortDS->netPath);
+
+            if(link_up && !ptpPortDS->linkUP)
+                went_up = TRUE;
+            else if(!link_up && ptpPortDS->linkUP)
+                went_down = TRUE;
+
+            if(went_up)
+            {
+                toState(PTP_INITIALIZING, rtOpts, ptpPortDS);
+                if(!doInit(rtOpts, ptpPortDS))
+                    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(portIndex+1));
+
+								clearForeignMasters(ptpPortDS);
+
+                PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went up.\n", ptpPortDS->netPath.ifaceName);
+            } else if(went_down) {
+                PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went down.\n", ptpPortDS->netPath.ifaceName);
+            }
+
+            if(link_up)
+            {
+                if(ptpPortDS->portState != PTP_INITIALIZING)
+                    doState(rtOpts, ptpPortDS);
+                else if(!doInit(rtOpts, ptpPortDS))
+                    return;
+            }
+
+            ptpPortDS->linkUP = link_up;
+ 
+}
+
+
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
     int           i;
@@ -68,39 +105,8 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     for(;;)
     {
         for (i=0; i < rtOpts->portNumber; i++)
-        {
-            Boolean went_up = FALSE, went_down = FALSE, link_up;
-            cur = &ptpPortDS[i];
-
-            link_up = isPortUp(&cur->netPath);
-
-            if(link_up && !cur->linkUP)
-                went_up = TRUE;
-            else if(!link_up && cur->linkUP)
-                went_down = TRUE;
-
-            if(went_up)
-            {
-                toState(PTP_INITIALIZING, rtOpts, cur);
-                if(!doInit(rtOpts, cur))
-                    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(i+1));
-
-                PTPD_TRACE(TRACE_STARTUP, cur, "Port '%s' went up.\n", cur->netPath.ifaceName);
-            } else if(went_down) {
-                PTPD_TRACE(TRACE_STARTUP, cur, "Port '%s' went down.\n", cur->netPath.ifaceName);
-            }
-
-            if(link_up)
-            {
-                if(cur->portState != PTP_INITIALIZING)
-                    doState(rtOpts, cur);
-                else if(!doInit(rtOpts, cur))
-                    return;
-            }
-
-            cur->linkUP = link_up;
-        }
-
+						singlePortLoop(rtOpts, &ptpPortDS[i], i);
+						
         if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
         {
         PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
