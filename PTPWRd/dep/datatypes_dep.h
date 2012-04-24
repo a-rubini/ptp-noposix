@@ -22,7 +22,7 @@ typedef unsigned char Enumeration4;
 typedef unsigned char UInteger4;
 typedef unsigned char Nibble;
 
-/** 
+/**
 * \brief Implementation specific of UInteger48 type
  */
 typedef struct {
@@ -30,7 +30,7 @@ typedef struct {
 	unsigned short msb;
 } UInteger48;
 
-/** 
+/**
 * \brief Implementation specific of Integer64 type
  */
 typedef struct {
@@ -38,7 +38,7 @@ typedef struct {
 	int msb;
 } Integer64;
 
-/** 
+/**
 * \brief Implementation specific of Integer64 type
  */
 typedef struct {
@@ -46,37 +46,40 @@ typedef struct {
 	unsigned int msb;
 } UInteger64;
 
-/** 
+/**
 * \brief Struct used to average the offset from master
-* 
+*
 * The FIR filtering of the offset from master input is a simple, two-sample average
 */
 typedef struct {
 	Integer32  nsec_prev, y;
 } offset_from_master_filter;
 
-/** 
+/**
  * \brief Struct used to average the one way delay
- * 
+ *
  * It is a variable cutoff/delay low-pass, infinite impulse response (IIR) filter.
- * 
+ *
  *  The one-way delay filter has the difference equation:
  * s*y[n] - (s-1)*y[n-1] = x[n]/2 + x[n-1]/2,
- * where increasing the stiffness (s) lowers the cutoff and increases the delay. 
+ * where increasing the stiffness (s) lowers the cutoff and increases the delay.
  */
 typedef struct {
 	Integer32  nsec_prev, y;
 	Integer32  s_exp;
 } one_way_delay_filter;
 
-/** 
+/**
  * \brief Struct used to store network datas
  */
 
 typedef struct {
 	wr_socket_t *wrSock;
 	char ifaceName[IFACE_NAME_LENGTH];
-	wr_sockaddr_t multicastAddr, peerMulticastAddr,unicastAddr;
+	wr_sockaddr_t multicastAddr;
+	wr_sockaddr_t peerMulticastAddr;
+	wr_sockaddr_t unicastAddr;
+	wr_sockaddr_t selfAddr;
 } NetPath;
 
 typedef struct {
@@ -103,6 +106,7 @@ typedef struct {
 	uint64_t last_tics;
 
 	int32_t fiber_fix_alpha;
+	int32_t clock_period_ps;
 
 } wr_servo_state_t;
 
