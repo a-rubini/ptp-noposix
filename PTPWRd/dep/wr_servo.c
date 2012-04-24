@@ -168,7 +168,7 @@ void wr_servo_reset()
 //    pps_gen_enable_output(0); /* fixme: unportable */
 	cur_servo_state.valid = 0;
 	servo_state_valid = 0;
-    ptpd_netif_enable_timing_output(0);
+//    ptpd_netif_enable_timing_output(0);
 
 }
 
