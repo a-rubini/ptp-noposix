@@ -216,7 +216,6 @@ clockQuality_display(&(rtOpts->clockQuality));
 printf("priority1 : %d \n",rtOpts->priority1);
 printf("priority2 : %d \n",rtOpts->priority2);
 printf("domainNumber : %d \n",rtOpts->domainNumber);
-printf("slaveOnly : %d \n",rtOpts->slaveOnly);
 printf("currentUtcOffset : %d \n",rtOpts->currentUtcOffset);
 unicast_display(rtOpts->unicastAddress);
 printf("noResetClock : %d \n",rtOpts->noResetClock);
@@ -249,7 +248,6 @@ clockQuality_display(&(ptpPortDS->ptpClockDS->clockQuality));
 printf("priority1 : %d \n",ptpPortDS->ptpClockDS->priority1);
 printf("priority2 : %d \n",ptpPortDS->ptpClockDS->priority2);
 printf("domainNumber : %d \n",ptpPortDS->ptpClockDS->domainNumber);
-printf("slaveOnly : %d \n",ptpPortDS->ptpClockDS->slaveOnly);
 printf("\n");
 }
 
@@ -492,9 +490,9 @@ void displayConfigINFO(RunTimeOpts* rtOpts)
       PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"E2E_mode ........................ TRUE\n")
     else
       PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"P2P_mode ........................ TRUE\n")
-    
+
     PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"portNumber  ..................... %d\n",rtOpts->portNumber);
-    
+
     if(rtOpts->portNumber == 1 && rtOpts->autoPortDiscovery == FALSE)
      PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"running as ...................... single port node (forced, no auto port number discovery)\n")
     else if(rtOpts->portNumber == 1 && rtOpts->autoPortDiscovery == TRUE)
@@ -510,7 +508,7 @@ void displayConfigINFO(RunTimeOpts* rtOpts)
     {
       if(rtOpts->autoPortDiscovery == FALSE) //so the interface is forced, thus in rtOpts
       PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"net ifaceName [port = %d] ........ %s\n",i+1,rtOpts->ifaceName[i]);
-      
+
       if(rtOpts->wrConfig == WR_MODE_AUTO)
 	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ Autodetection (ptpx-implementation-specific) \n",i+1)
       else if(rtOpts->wrConfig == WR_M_AND_S)
@@ -518,14 +516,14 @@ void displayConfigINFO(RunTimeOpts* rtOpts)
       else if(rtOpts->wrConfig == WR_SLAVE)
 	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ Slave \n",i+1)
       else if(rtOpts->wrConfig == WR_MASTER)
-	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ Master \n",i+1)     
+	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ Master \n",i+1)
       else if(rtOpts->wrConfig == NON_WR)
 	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ NON_WR\n",i+1)
       else
 	PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"wrConfig  [port = %d] ............ ERROR\n",i+1)
-    }    
-    
-    PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"----------- now the fun ------------\n\n")     
+    }
+
+    PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"----------- now the fun ------------\n\n")
 
     PTPD_TRACE(TRACE_PTPD_MAIN, NULL,"clockClass ....................... %d\n",rtOpts->clockQuality.clockClass);
 

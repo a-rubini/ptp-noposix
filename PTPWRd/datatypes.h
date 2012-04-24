@@ -283,7 +283,6 @@ typedef struct
 	UInteger8 priority1;
 	UInteger8 priority2;
 	UInteger8 domainNumber;
-	Boolean slaveOnly;
 	
 	/******** Current data set *****/
 
@@ -465,20 +464,11 @@ typedef struct {
 	Enumeration8 wrConfig;	
 
 	/*
-	 * If fixed delays are known (most probably a deterministric PHY is used),
-	 * they are stored in this static fields, if they are not known, 
-	 * the filds shall be set to 0x0
-	 */	
-	FixedDelta knownDeltaTx; 
-	FixedDelta knownDeltaRx; 
-	
-	/*
-	 * If fixed delays are known (most probably a deterministric PHY is used),
-	 * a TRUE value of deltasKnown indicates it and validates the values of
-	 * knownDeltaTx and knownDeltaRx
-	 */		
-	Boolean deltasKnown;
-	
+	 * When true, the PHY must be calibrated using the WR calibration pattern. When false,
+	 * the PHY is deterministic and its deltas are obtained by ptpd_netif_read_calibration_data() call.
+	 */
+	Boolean phyCalibrationRequired;
+
 	/*
 	 * Determines the timeout (in microseconds) for 
 	 * an execution of a state of the WR State Machine
@@ -690,7 +680,6 @@ typedef struct {
 	UInteger8	priority1;
 	UInteger8	priority2;
 	UInteger8	domainNumber;
-	Boolean		slaveOnly;
 	Integer16	currentUtcOffset;
 	Octet		ifaceName[MAX_PORT_NUMBER][IFACE_NAME_LENGTH];
 	Boolean		noResetClock;
@@ -712,10 +701,8 @@ typedef struct {
 	//tmp
 	UInteger8	overrideClockIdentity;
 	Enumeration8 	wrConfig;	
-	FixedDelta 	knownDeltaTx; 
-	FixedDelta 	knownDeltaRx; 
-	Boolean 	deltasKnown;
-	UInteger32 	wrStateTimeout; 
+	Boolean 	phyCalibrationRequired;
+	UInteger32 	wrStateTimeout;
 	UInteger8 	wrStateRetry;
 	Boolean 	autoPortDiscovery;
 	Boolean		primarySource;

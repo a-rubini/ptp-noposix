@@ -45,21 +45,15 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	 * White Rabbit - init static data fields
 	 */
 	ptpPortDS->wrConfig			     = rtOpts->wrConfig;
-	ptpPortDS->deltasKnown			     = rtOpts->deltasKnown;
+	ptpPortDS->phyCalibrationRequired= rtOpts->phyCalibrationRequired;
 	ptpPortDS->wrStateTimeout		     = rtOpts->wrStateTimeout;
 	ptpPortDS->wrStateRetry			     = rtOpts->wrStateRetry;
-	ptpPortDS->calPeriod			     = rtOpts->calPeriod;	
+	ptpPortDS->calPeriod			     = rtOpts->calPeriod;
 	ptpPortDS->calRetry			     = ptpPortDS->ptpClockDS->numberPorts + 2;
-	
-	ptpPortDS->knownDeltaTx.scaledPicoseconds.lsb = rtOpts->knownDeltaTx.scaledPicoseconds.lsb;
-	ptpPortDS->knownDeltaTx.scaledPicoseconds.msb = rtOpts->knownDeltaTx.scaledPicoseconds.msb;
-	
-	ptpPortDS->knownDeltaRx.scaledPicoseconds.lsb = rtOpts->knownDeltaRx.scaledPicoseconds.lsb;
-	ptpPortDS->knownDeltaRx.scaledPicoseconds.msb = rtOpts->knownDeltaRx.scaledPicoseconds.msb;
-	
-	
-	/* 
-	 * White Rabbit - init dynamic data fields 
+
+
+	/*
+	 * White Rabbit - init dynamic data fields
 	 */
 	initWrData(ptpPortDS, INIT);
 	
@@ -87,9 +81,6 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	/*Init other stuff*/
 	ptpPortDS->number_foreign_records = 0;
 	ptpPortDS->max_foreign_records = rtOpts->max_foreign_records;
-    
-	ptpPortDS->linkUP = FALSE;
-	
 }
 
 /* initialize ptpClockDS*/
@@ -111,13 +102,12 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 	ptpClockDS->priority2 = rtOpts->priority2;
 
 	ptpClockDS->domainNumber = rtOpts->domainNumber;
-	ptpClockDS->slaveOnly = rtOpts->slaveOnly;
 
 	ptpClockDS->clockClassValidityTimeout = DEFAULT_CLOCKCLASS_VALIDATE_TIMEOUT;
 	
-	if(rtOpts->slaveOnly)
-          rtOpts->clockQuality.clockClass = 255;
-	else if((rtOpts->masterOnly == TRUE || rtOpts->primarySource == TRUE || rtOpts->clockQuality.clockClass == 6) )
+	/*if(rtOpts->slaveOnly)
+          rtOpts->clockQuality.clockClass = 255;*/
+	if((rtOpts->masterOnly == TRUE || rtOpts->primarySource == TRUE || rtOpts->clockQuality.clockClass == 6) )
 	{
 	  if(extsrcLocked()== TRUE)
 	  {
@@ -180,7 +170,7 @@ void m1(PtpPortDS *ptpPortDS)
 		
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
 	
-	ptpPortDS->ptpClockDS->primarySlavePortNumber=0; 
+	ptpPortDS->ptpClockDS->primarySlavePortNumber=0;
 }
 void m3(PtpPortDS *ptpPortDS)
 {
@@ -605,7 +595,7 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 	Integer8 comp;
 	
 	PTPD_TRACE(TRACE_BMC, ptpPortDS,"SDA: State Decision Algorith,\n");
-	if (rtOpts->slaveOnly)
+	if (ptpPortDS->wrConfig == WR_S_ONLY)
 	{
 		PTPD_TRACE(TRACE_BMC, ptpPortDS,"SDA: .. Slave Only Mode: PTP_SLAVE\n");
 		s1(header,announce,ptpPortDS);
