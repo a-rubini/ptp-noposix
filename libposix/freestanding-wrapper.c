@@ -583,7 +583,7 @@ void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 }
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
-				     uint64_t *deltaRx)
+				     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
 {
 	hexp_port_state_t state;
 
@@ -593,6 +593,8 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 	// check if the data is available
 	if(state.valid)
 	{
+    //TODO:
+    //add fix_alpha and clock_period
 
 		//check if tx is calibrated,
 		// if so read data
@@ -611,6 +613,36 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 	}
 	return PTPD_NETIF_OK;
 
+}
+
+int ptpd_netif_enable_timing_output(int enable)
+{
+  pps_gen_enable_output(enable);
+  return PTPD_NETIF_OK;
+}
+
+int ptpd_netif_adjust_in_progress()
+{
+  return halexp_pps_cmd(HEXP_PPSG_CMD_POLL, NULL);
+}
+
+int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
+{
+  hexp_pps_params_t params;
+
+  params.adjust_utc = adjust_utc;
+  params.adjust_nsec = adjust_nsec;
+
+  return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &params) ||
+    halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &params);
+}
+
+int ptpd_netif_adjust_phase(int32_t phase_ps)
+{
+  hexp_pps_params_t params;
+
+  params.adjust_phase_shift = phase_ps;
+  return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &params);
 }
 
 /*not implemented yet*/
