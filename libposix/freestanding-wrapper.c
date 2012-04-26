@@ -572,7 +572,9 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 	if(state.valid)
 	{
     //TODO:
-    //add fix_alpha and clock_period
+    //add fix_alpha
+
+    *clock_period = state.clock_period;
 
 		//check if tx is calibrated,
 		// if so read data
