@@ -291,61 +291,49 @@ static int t_phase_trans = 0;
 
 void set_phase_trans(int t) { t_phase_trans = t; }
 
-
-static void linearize_rx_timestamp(wr_timestamp_t *ts, wr_socket_t *sock,
-				   int cntr_ahead)
+void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, int cntr_ahead, int transition_point, int clock_period)
 {
-	struct my_socket *s = (struct my_socket *) sock;
-	int trip_lo, trip_hi;
-	int ph;
+  int trip_lo, trip_hi;
+  int phase;
 
+  // "phase" transition: DMTD output value (in picoseconds)
+  // at which the transition of rising edge
+  // TS counter will appear
+  ts->raw_phase = dmtd_phase;
 
-  TRACE_WRAP("%s: got \t utc=%d\n \tnsec=%d\n \tphase=%d\n", __FUNCTION__, ts->utc, ts->nsec, ts->phase);
+  phase = clock_period -1 -dmtd_phase;
 
-    update_dmtd(sock);
+  // calculate the range within which falling edge timestamp is stable
+  // (no possible transitions)
+  trip_lo = transition_point - clock_period / 4;
+  if(trip_lo < 0) trip_lo += clock_period;
 
-    ph = s->clock_period - 1 - s->dmtd_phase;
-    
-	//s->phase_transition = t_phase_trans;
+  trip_hi = transition_point + clock_period / 4;
+  if(trip_hi >= clock_period) trip_hi -= clock_period;
 
-         TRACE_WRAP("ADJx phase %d trans %d period %d ahead %d\n",ph, s->phase_transition, s->clock_period, cntr_ahead );
+  if(inside_range(trip_lo, trip_hi, phase))
+  {
+    // We are within +- 25% range of transition area of
+    // rising counter. Take the falling edge counter value as the
+    // "reliable" one. cntr_ahead will be 1 when the rising edge
+    //counter is 1 tick ahead of the falling edge counter
 
-	// calculate the range within which falling edge timestamp is stable
-	// (no possible transitions)
-	trip_lo = s->phase_transition - s->clock_period / 4;
-	if(trip_lo < 0) trip_lo += s->clock_period;
+    ts->nsec -= cntr_ahead ? (clock_period / 1000) : 0;
 
-	trip_hi = s->phase_transition + s->clock_period / 4;
-	if(trip_hi >= s->clock_period) trip_hi -= s->clock_period;
+    // check if the phase is before the counter transition value
+    // and eventually increase the counter by 1 to simulate a
+    // timestamp transition exactly at s->phase_transition
+    //DMTD phase value
+    if(inside_range(trip_lo, transition_point, phase))
+      ts->nsec += clock_period / 1000;
 
-	
-	//int ph = 8000-ph;
-	
-	if(inside_range(trip_lo, trip_hi, ph))
-	{
-		// We are within +- 25% range of transition area of
-		// rising counter. Take the falling edge counter value as the
-		// "reliable" one. cntr_ahead will be 1 when the rising edge
-		//counter is 1 tick ahead of the falling edge counter
+  }
 
-		ts->nsec -= cntr_ahead ? (s->clock_period / 1000) : 0;
-
-		// check if the phase is before the counter transition value
-		// and eventually increase the counter by 1 to simulate a
-		// timestamp transition exactly at s->phase_transition
-		//DMTD phase value
-		if(inside_range(trip_lo, s->phase_transition, ph))
-			ts->nsec += s->clock_period / 1000;
-
-	}
-
-	ts->phase = ph - s->phase_transition - 1;
-	if(ts->phase  < 0) ts->phase += s->clock_period;
-	ts->phase = s->clock_period - 1 - ts->phase;
-	
-//	TRACE_WRAP("TS linearize %d:%d:%d\n", (uint64_t)ts->utc, ts->nsec, ts->phase);
-    
+  ts->phase = phase - transition_point - 1;
+  if(ts->phase  < 0) ts->phase += clock_period;
+  ts->phase = clock_period - 1 -ts->phase;
 }
+        
 
 
 int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
@@ -412,7 +400,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
     rx_timestamp->nsec  = hwts.nsec;
     rx_timestamp->phase  = 0;
    
-    linearize_rx_timestamp(rx_timestamp, sock, hwts.ahead);
+    ptpd_netif_linearize_rx_timestamp(rx_timestamp, my_sock->dmtd_phase, hwts.ahead, my_sock->phase_transition, my_sock->clock_period);
 
   }
 
