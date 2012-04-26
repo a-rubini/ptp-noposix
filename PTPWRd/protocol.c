@@ -45,7 +45,6 @@ void issuePDelayRespFollowUp(TimeInternal*,MsgHeader*,RunTimeOpts*,PtpPortDS*);
  * 'port_state' by calling toState(), but once they are done we loop around
  * again and perform the actions required for the new 'port_state'.
  */
-#ifndef WRPC_EXTRA_SLIM
 
 void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 {
@@ -83,6 +82,7 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
  
 }
 
+#ifndef WRPC_EXTRA_SLIM
 
 void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
