@@ -613,8 +613,10 @@ int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
   params.adjust_utc = adjust_utc;
   params.adjust_nsec = adjust_nsec;
 
-  return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &params) ||
-    halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &params);
+  if(adjust_utc != 0) halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &params);
+  if(adjust_nsec != 0) halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &params);
+
+  return 0;
 }
 
 int ptpd_netif_adjust_phase(int32_t phase_ps)
