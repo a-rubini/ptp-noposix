@@ -547,37 +547,27 @@ int update_rx_queues(void)
 void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
-  if(ptpPortDS->portState != PTP_INITIALIZING)
-  {
-    doState(rtOpts, ptpPortDS);
-  }
-  else if(!doInit(rtOpts, ptpPortDS))
-  {
-    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"returning...\n");
-    return;
-  }
+  PTPD_TRACE(TRACE_WRPC, ptpPortDS, "nonblock\n");
 
-  //if(ptpPortDS->wrPortState != WRS_IDLE) return;  /*instead of while()*/
+  singlePortLoop(rtOpts, ptpPortDS, 0);
 
-  if(ptpPortDS->ptpClockDS->globalStateDecisionEvent) 
-  {    
+  if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
+  {
     PTPD_TRACE(TRACE_WRPC, ptpPortDS,"update secondary slaves\n");
     /* Do after State Decision Even in all the ports */
     if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
       PTPD_TRACE(TRACE_WRPC, ptpPortDS,"no secondary slaves\n");
     ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-  }    
+  }
 
   /* Handle Best Master Clock Algorithm globally */
   if(globalBestForeignMastersUpdate(ptpPortDS))
-  {    
+  {
     PTPD_TRACE(TRACE_WRPC, ptpPortDS,"Initiate global State Decision Event\n");
     ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
-  }    
-  else 
-  {
-    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
   }
+  else
+    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
 
   checkClockClassValidity(ptpPortDS->ptpClockDS);
 }
