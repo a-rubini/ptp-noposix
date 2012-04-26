@@ -4,7 +4,7 @@
 #include<endpoint.h>
 #include<pps_gen.h>
 #include<minic.h>
-#include<softpll.h>
+#include<softpll_ng.h>
 #include<types.h>
 #include<errno.h>
 #include"../wrsw_hal/hal_exports.h"
@@ -45,7 +45,7 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
       /*not know what to do here*/
       break; 
     case HEXP_PPSG_CMD_ADJUST_PHASE: 
-	softpll_set_phase(params->adjust_phase_shift);
+      spll_set_phase_shift(0, params->adjust_phase_shift);
 	
       //*(dpll + WRD(DMPLL_REG_PSCR_IN0)) = DMPLL_PSCR_IN0_PS_VAL_W(params->adjust_phase_shift);
       /*something new here*/
@@ -67,7 +67,7 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
     case HEXP_PPSG_CMD_POLL:
       //return ( *(dpll + WRD(DMPLL_REG_PSCR_IN0)) & DMPLL_PSCR_IN0_BUSY ) || 
       //       ( (*(ppsg + WRD(PPSG_REG_CR)) & PPSG_CR_CNT_ADJ)==PPSG_CR_CNT_ADJ );
-      return pps_gen_busy() || softpll_busy();
+      return pps_gen_busy() || spll_shifter_busy(0);
       /*add here pll busy to return*/
       break;
   }
@@ -122,7 +122,7 @@ int read_phase_val(hexp_port_state_t *state)
 {
   int32_t dmtd_phase;
   
-  if(ep_get_psval(&dmtd_phase))
+  if(spll_read_ptracker(0, &dmtd_phase))
   {
     if(dmtd_phase & 0x800000) dmtd_phase |= 0xff000000;
     dmtd_phase /= DMTD_AVG_SAMPLES;
@@ -152,12 +152,12 @@ int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
   state->up            = ep_link_up();
   state->tx_calibrated = 1;
   state->rx_calibrated = 1;
-  state->is_locked     = softpll_check_lock();
+  state->is_locked     = spll_check_lock(0);
   state->lock_priority = 0;
-  state->phase_setpoint= softpll_get_setpoint();
+  spll_get_phase_shift(0, NULL, &state->phase_setpoint);
   state->clock_period  = 8000;
-  state->t2_phase_transition = 1600;
-  state->t4_phase_transition = 1600;
+  state->t2_phase_transition = 0; //1600;
+  state->t4_phase_transition = 0; //1600;
   get_mac_addr(state->hw_addr);
   state->hw_index      = 0;
   state->fiber_fix_alpha = (int32_t)75124859;
@@ -249,13 +249,12 @@ int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 
 int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
-  softpll_enable();
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_locking_poll(int txrx, const char *ifaceName, int priority)
 {
-  return softpll_check_lock() ? PTPD_NETIF_READY : PTPD_NETIF_ERROR;
+  return spll_check_lock(0) ? PTPD_NETIF_READY : PTPD_NETIF_ERROR;
 }
 
 static inline int inside_range(int min, int max, int x)
@@ -394,7 +393,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
     
      rx_timestamp->raw_nsec = hwts.nsec;
      rx_timestamp->raw_ahead = hwts.ahead;
-     ep_get_psval(&rx_timestamp->raw_phase);
+     spll_read_ptracker(0, &rx_timestamp->raw_phase);
    
     rx_timestamp->utc   = hwts.utc;
     rx_timestamp->nsec  = hwts.nsec;
