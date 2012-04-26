@@ -146,7 +146,11 @@ int read_phase_val(hexp_port_state_t *state)
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
   state->valid         = 1;
+#ifdef WRPC_MASTER
+  state->mode          = HEXP_PORT_MODE_WR_MASTER;
+#else
   state->mode          = HEXP_PORT_MODE_WR_SLAVE;
+#endif
   ep_get_deltas( &state->delta_tx, &state->delta_rx);
   read_phase_val(state);
   state->up            = ep_link_up();
