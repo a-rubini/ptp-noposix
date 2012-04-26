@@ -451,6 +451,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
   tx_ts->utc   = ts.utc;
   tx_ts->nsec  = ts.nsec;
   tx_ts->phase = 0; //ts.phase;
+  tx_ts->correct = ts.valid;
   
   return rval;
 }
