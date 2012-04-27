@@ -603,6 +603,13 @@ UInteger8 bmcStateDecision (MsgHeader *header,MsgAnnounce *announce, UInteger16 
 		  return PTP_SLAVE;
 	}
 
+	if (ptpPortDS->wrConfig == WR_M_ONLY)
+	{
+		PTPD_TRACE(TRACE_BMC, ptpPortDS,"SDA: .. Master Only Mode: PTP_MASTER\n");
+		m1(ptpPortDS); 
+		return PTP_MASTER;
+	}
+
 	if ((!ptpPortDS->number_foreign_records) && (ptpPortDS->portState == PTP_LISTENING)) //(2)
 	{
 		PTPD_TRACE(TRACE_BMC, ptpPortDS,"SDA: .. No foreing nasters : PTP_LISTENING [3]\n");
