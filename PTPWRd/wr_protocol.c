@@ -692,7 +692,7 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
      PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"\n");
-
+		
 
      break;
 
@@ -891,6 +891,8 @@ void toWRState(UInteger8 enteringState, RunTimeOpts *rtOpts, PtpPortDS *ptpPortD
     PTPD_TRACE(TRACE_WR_PROTO, ptpPortDS,"entering  WRS_LINK_ON\n");
 
     ptpPortDS->wrModeON 	= TRUE;
+    
+    netEnablePhaseTracking(&ptpPortDS->netPath);
     
     if(ptpPortDS->wrMode == WR_MASTER)
       issueWRSignalingMsg(WR_MODE_ON,rtOpts, ptpPortDS);
