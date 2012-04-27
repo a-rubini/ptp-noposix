@@ -223,6 +223,7 @@ ssize_t netRecvMsg(Octet *buf, NetPath *netPath, wr_timestamp_t *current_rx_ts)
         !memcmp(from_addr.mac_dest, netPath->unicastAddr.mac, 6))
             drop = 0;
 
+//    mprintf("Drop: %x\n", drop);
 
   return drop ? 0 : ret;
 }
