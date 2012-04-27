@@ -236,5 +236,6 @@ int ptpd_netif_adjust_in_progress();
 int ptpd_netif_get_dmtd_phase(wr_socket_t *sock, int32_t *phase);
 void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, int cntr_ahead, int transition_point, int clock_period);
 int ptpd_netif_enable_timing_output(int enable);
+int ptpd_netif_enable_phase_tracking(const char *if_name);
 
 #endif

@@ -174,9 +174,13 @@ void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, i
 	ts->phase = clock_period - 1 -ts->phase;
 }
 
+#define HAL_CONNECT_RETRIES 10
+#define HAL_CONNECT_TIMEOUT 2000000 /* us */
+
+
 int ptpd_netif_init()
 {
-	if(halexp_client_init() < 0)
+	if(halexp_client_try_connect(HAL_CONNECT_RETRIES, HAL_CONNECT_TIMEOUT) < 0)
 		return PTPD_NETIF_ERROR;
 
 	return PTPD_NETIF_OK;
@@ -744,4 +748,11 @@ int ptpd_netif_enable_timing_output(int enable)
         return PTPD_NETIF_OK;
     else
         return PTPD_NETIF_NOT_READY;
+}
+
+int ptpd_netif_enable_phase_tracking(const char *if_name)
+{
+  int ret = halexp_lock_cmd(if_name, HEXP_LOCK_CMD_ENABLE_TRACKING, 0);
+
+ 	return (ret < 0 ? PTPD_NETIF_ERROR : PTPD_NETIF_OK);
 }
