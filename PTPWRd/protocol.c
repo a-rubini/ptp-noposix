@@ -52,6 +52,7 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 
             link_up = isPortUp(&ptpPortDS->netPath);
 
+
             if(link_up && !ptpPortDS->linkUP)
                 went_up = TRUE;
             else if(!link_up && ptpPortDS->linkUP)
@@ -72,6 +73,7 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 
             if(link_up)
             {
+            
                 if(ptpPortDS->portState != PTP_INITIALIZING)
                     doState(rtOpts, ptpPortDS);
                 else if(!doInit(rtOpts, ptpPortDS))
@@ -82,9 +84,34 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
  
 }
 
+void sharedPortsLoop(PtpPortDS *ptpPortDS)
+{
+         if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
+        {
+        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
+        /* Do after State Decision Even in all the ports */
+        if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
+          PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+        }
+
+        /* Handle Best Master Clock Algorithm globally */
+        if(globalBestForeignMastersUpdate(ptpPortDS))
+        {
+        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
+        }
+        else
+        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
+
+//        ptpd_handle_wripc();
+        checkClockClassValidity(ptpPortDS->ptpClockDS);
+
+}
+
 #ifndef WRPC_EXTRA_SLIM
 
-void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
+void multiProtocol(RunTimeOpts *rtOpts,)
 {
     int           i;
     PtpPortDS *    cur;
@@ -105,28 +132,10 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
     for(;;)
     {
         for (i=0; i < rtOpts->portNumber; i++)
-						singlePortLoop(rtOpts, &ptpPortDS[i], i);
+			singlePortLoop(rtOpts, &ptpPortDS[i], i);
 						
-        if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
-        {
-        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"update secondary slaves\n");
-        /* Do after State Decision Even in all the ports */
-        if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
-          PTPD_TRACE(TRACE_PROTO, ptpPortDS,"no secondary slaves\n");
-        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-        }
+        sharedPortsLoop(ptpPortDS);
 
-        /* Handle Best Master Clock Algorithm globally */
-        if(globalBestForeignMastersUpdate(ptpPortDS))
-        {
-        PTPD_TRACE(TRACE_PROTO, ptpPortDS,"Initiate global State Decision Event\n");
-        ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
-        }
-        else
-        ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-
-        ptpd_handle_wripc();
-        checkClockClassValidity(ptpPortDS->ptpClockDS);
 
         usleep(10000);
     }
@@ -828,7 +837,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 	{
 		PTPD_TRACE(TRACE_ERROR, NULL,"Too short Announce message\n");
 		toState(PTP_FAULTY, rtOpts, ptpPortDS);
-		return;
+	   	return;
 	}
 
 	if(length > ANNOUNCE_LENGTH)
@@ -899,7 +908,7 @@ void handleAnnounce(MsgHeader *header, Octet *msgIbuf, ssize_t length, Boolean i
 			return;
 		}
 
-		
+//		mprintf("AddForeign!\n");
 		addForeign(ptpPortDS->msgIbuf,header,ptpPortDS);
 		ptpPortDS->record_update = TRUE;
 		break;

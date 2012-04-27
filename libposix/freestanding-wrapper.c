@@ -122,17 +122,10 @@ int read_phase_val(hexp_port_state_t *state)
 {
   int32_t dmtd_phase;
   
-  if(spll_read_ptracker(0, &dmtd_phase))
+  if(spll_read_ptracker(0, &dmtd_phase, NULL))
   {
-    if(dmtd_phase & 0x800000) dmtd_phase |= 0xff000000;
-    dmtd_phase /= DMTD_AVG_SAMPLES;
-
-    if(dmtd_phase > DMTD_MAX_PHASE) dmtd_phase -= DMTD_MAX_PHASE;
-    if(dmtd_phase < 0) dmtd_phase += DMTD_MAX_PHASE;
-
-    state->phase_val = (int32_t) ((int64_t)dmtd_phase * 8000LL / (long long) DMTD_MAX_PHASE);
+    state->phase_val = dmtd_phase;
     state->phase_val_valid = 1;
-    
   }
   else
   {
@@ -234,7 +227,7 @@ int ptpd_netif_close_socket(wr_socket_t *sock)
 int ptpd_netif_get_ifName(char *ifname, int number)
 {
 
-  strcpy(ifname,"wru1");
+  strcpy(ifname,"wru0");
   return PTPD_NETIF_OK;
 }
 
@@ -253,6 +246,7 @@ int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 
 int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
+    spll_init(SPLL_MODE_SLAVE, 0, 1);
   return PTPD_NETIF_OK;
 }
 
@@ -397,7 +391,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
     
      rx_timestamp->raw_nsec = hwts.nsec;
      rx_timestamp->raw_ahead = hwts.ahead;
-     spll_read_ptracker(0, &rx_timestamp->raw_phase);
+     spll_read_ptracker(0, &rx_timestamp->raw_phase, NULL);
    
     rx_timestamp->utc   = hwts.utc;
     rx_timestamp->nsec  = hwts.nsec;
@@ -476,9 +470,9 @@ int update_rx_queues(void)
     return -1;
   
   hdr = (ethhdr_t*) (pkg+sizeof(uint8_t));
-  //TRACE_WRAP("%s: %02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, hdr->dstmac[0], hdr->dstmac[1],hdr->dstmac[2],
-  //                                                          hdr->dstmac[3],hdr->dstmac[4],hdr->dstmac[5],
-  //                                                          hdr->dstmac[6],hdr->dstmac[7]);
+  mprintf("%s: %02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, hdr->dstmac[0], hdr->dstmac[1],hdr->dstmac[2],
+                                                            hdr->dstmac[3],hdr->dstmac[4],hdr->dstmac[5],
+                                                            hdr->dstmac[6],hdr->dstmac[7]);
   /*received frame, find the right socket*/
   
   memcpy(&aligned_ethtype, &hdr->ethtype, 2);
