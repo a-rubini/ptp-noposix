@@ -266,6 +266,18 @@ ssize_t netSendGeneral(Octet *buf, UInteger16 length, NetPath *netPath)
 
 
 }
+
+int netEnablePhaseTracking(NetPath *netPath)
+{
+
+  int ret;
+  ret = ptpd_netif_enable_phase_tracking(netPath->ifaceName);
+
+
+	return ret;
+
+}
+
 /*
 sending Peer Generals messages,
 
