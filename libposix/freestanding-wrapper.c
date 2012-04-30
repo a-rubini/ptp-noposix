@@ -624,6 +624,12 @@ int ptpd_netif_adjust_phase(int32_t phase_ps)
   return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &params);
 }
 
+int ptpd_netif_enable_phase_tracking(const char *if_name)
+{
+  //for WRPC ptracker is enabled once during initialization
+  return PTPD_NETIF_OK;
+}
+
 /*not implemented yet*/
 int ptpd_netif_extsrc_detection()
 {
