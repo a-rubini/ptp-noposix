@@ -71,6 +71,9 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went up.\n", ptpPortDS->netPath.ifaceName);
             } else if(went_down) {
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went down.\n", ptpPortDS->netPath.ifaceName);
+                if(ptpPortDS->wrMode == WR_S_ONLY)
+                	wr_servo_reset();
+                
             }
 
             if(link_up)
