@@ -13,6 +13,8 @@ extern ptpdexp_sync_state_t cur_servo_state;
 
 int ptpdexp_get_sync_state(ptpdexp_sync_state_t *state)
 {
+	
+	fprintf(stderr," GSS: valid %d\n", servo_state_valid);
 	if(servo_state_valid)
 	{
 		memcpy(state, &cur_servo_state, sizeof(ptpdexp_sync_state_t));
@@ -41,6 +43,7 @@ static int export_get_sync_state(const struct minipc_pd *pd,
 	ptpdexp_sync_state_t state;
 
 	ptpdexp_get_sync_state(&state);
+	
 	*(ptpdexp_sync_state_t *)ret = state;
 	return 0;
 
@@ -71,8 +74,7 @@ void ptpd_init_exports(void)
 
 void ptpd_handle_wripc()
 {
-//	fprintf(stderr, ".");
-//	minipc_server_action(ptp_ch, 200 /* ms */);
+		minipc_server_action(ptp_ch, 10 /* ms */);
 }
 
 #endif

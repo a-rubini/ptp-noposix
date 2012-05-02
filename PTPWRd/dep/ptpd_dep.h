@@ -128,6 +128,7 @@ Boolean netInit(NetPath*,RunTimeOpts*,PtpPortDS*);
 Boolean autoDetectPortWrConfig(NetPath*, PtpPortDS*);
 int netSelect(TimeInternal*,NetPath*);
 
+int netEnablePhaseTracking(NetPath*);
 ssize_t netRecvMsg(Octet*, NetPath*, wr_timestamp_t*);
 ssize_t netSendEvent(Octet*, UInteger16, NetPath*, wr_timestamp_t*);
 ssize_t netSendGeneral(Octet*,UInteger16,NetPath*);

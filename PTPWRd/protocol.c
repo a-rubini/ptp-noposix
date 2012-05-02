@@ -58,13 +58,15 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
             else if(!link_up && ptpPortDS->linkUP)
                 went_down = TRUE;
 
-            if(went_up)
+            if(went_up || ptpPortDS->doRestart)
             {
                 toState(PTP_INITIALIZING, rtOpts, ptpPortDS);
                 if(!doInit(rtOpts, ptpPortDS))
                     PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(portIndex+1));
 
-								clearForeignMasters(ptpPortDS);
+								if(ptpPortDS->wrMode == WR_S_ONLY)
+									clearForeignMasters(ptpPortDS);
+								ptpPortDS->doRestart = FALSE;
 
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went up.\n", ptpPortDS->netPath.ifaceName);
             } else if(went_down) {
@@ -136,8 +138,8 @@ void multiProtocol(RunTimeOpts *rtOpts,)
 						
         sharedPortsLoop(ptpPortDS);
 
-
-        usleep(10000);
+		ptpd_handle_wripc();
+        usleep(1000);
     }
 
 }
@@ -658,7 +660,8 @@ void doState(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 			 
 			issueSync(rtOpts, ptpPortDS);
-			issueFollowup(rtOpts,ptpPortDS);
+			if(ptpPortDS->synch_tx_ts.correct)
+				issueFollowup(rtOpts,ptpPortDS);
 		}
 
 		if(timerExpired(&ptpPortDS->timers.announceInterval))
@@ -959,6 +962,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				ptpPortDS->sync_receive_time.seconds = ptpPortDS->current_rx_ts.utc;
 				ptpPortDS->sync_receive_time.nanoseconds = ptpPortDS->current_rx_ts.nsec;
 				ptpPortDS->sync_receive_time.phase = ptpPortDS->current_rx_ts.phase;
+				ptpPortDS->sync_receive_time.correct = ptpPortDS->current_rx_ts.correct;
 
 				if ((header->flagField[0] & 0x02) == TWO_STEP_FLAG)
 				{
@@ -1208,6 +1212,7 @@ void handleDelayResp(MsgHeader *header,Octet *msgIbuf,ssize_t length,Boolean isF
 			ptpPortDS->delay_req_receive_time.seconds = requestReceiptTimestamp.seconds;
 			ptpPortDS->delay_req_receive_time.nanoseconds = requestReceiptTimestamp.nanoseconds;
 			ptpPortDS->delay_req_receive_time.phase = requestReceiptTimestamp.phase;
+			ptpPortDS->delay_req_receive_time.correct = requestReceiptTimestamp.correct;
 
 			/* coppy correctionField from header->cF to local variable (correctionField) */
 			integer64_to_internalTime(header->correctionfield,&correctionField);

@@ -231,6 +231,7 @@ typedef struct {
 	Integer32 seconds;
 	Integer32 nanoseconds;
 	Integer32 phase;
+	int correct;
 } TimeInternal;
 
 /**
@@ -664,6 +665,7 @@ typedef struct {
 	 * or disconnected
 	 */
 	Boolean linkUP;
+	Boolean doRestart;
 	
 } PtpPortDS;
 
