@@ -166,7 +166,7 @@ int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
   state->t4_phase_transition = 5000; //1600;
   get_mac_addr(state->hw_addr);
   state->hw_index      = 0;
-  state->fiber_fix_alpha = (int32_t)75124859;
+  state->fiber_fix_alpha = (int32_t)-73622176; /* fixme: from the SFP! */
   
   return 0;
 }
