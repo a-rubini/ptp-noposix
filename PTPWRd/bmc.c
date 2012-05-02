@@ -15,7 +15,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   PTPD_TRACE(TRACE_BMC, ptpPortDS, "initDataPort\n");
 
-
+	ptpPortDS->doRestart = FALSE;
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
 	//TODO (11): should be in initDataClock()
 	for (i=0;i<CLOCK_IDENTITY_LENGTH;i++)
@@ -139,6 +139,8 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpPortDS *ptpPortDS)
 {
+
+#if 0
 	/*Current data set update*/
 	ptpPortDS->ptpClockDS->stepsRemoved = 0;
 	ptpPortDS->ptpClockDS->offsetFromMaster.nanoseconds = 0;
@@ -147,6 +149,7 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->meanPathDelay.seconds = 0;
 
 	/*Parent data set*/
+
 	memcpy(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpPortDS->ptpClockDS->parentPortIdentity.portNumber = 0;
 	ptpPortDS->ptpClockDS->parentStats = DEFAULT_PARENTS_STATS;
@@ -158,6 +161,7 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance;
 	ptpPortDS->ptpClockDS->grandmasterPriority1 = ptpPortDS->ptpClockDS->priority1;
 	ptpPortDS->ptpClockDS->grandmasterPriority2 = ptpPortDS->ptpClockDS->priority2;
+#endif
 
 	/*White Rabbit*/
 	ptpPortDS->parentWrConfig      	= ptpPortDS->wrConfig;
@@ -172,6 +176,7 @@ void m1(PtpPortDS *ptpPortDS)
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber=0;
 }
+
 void m3(PtpPortDS *ptpPortDS)
 {
 	ptpPortDS->wrSlaveRole = NON_SLAVE;

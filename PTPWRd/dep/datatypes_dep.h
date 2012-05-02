@@ -107,6 +107,7 @@ typedef struct {
 
 	int32_t fiber_fix_alpha;
 	int32_t clock_period_ps;
+	int missed_iters;
 
 } wr_servo_state_t;
 

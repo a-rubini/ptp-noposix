@@ -45,7 +45,7 @@ LDFLAGS = #-L. -lminipc -lptpnetif
 # Flags from the original Makefiles
 
 #CFLAGS += -DPTPD_NO_DAEMON 
-#CFLAGS += -DPTPD_TRACE_MASK=0xFFF7
+CFLAGS += -DPTPD_TRACE_MASK="0xffff"
 #CFLAGS += -DPTPD_TRACE_MASK=0x0000
 #CFLAGS += -DNETIF_VERBOSE
 CFLAGS += -DMACIEK_HACKs
