@@ -219,6 +219,19 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	PTPD_TRACE(TRACE_BMC, ptpPortDS," S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber	= ptpPortDS->portIdentity.portNumber;
+
+ PTPD_TRACE(TRACE_BMC, ptpPortDS," S1 : announceID = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
+      header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
+      header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
+      header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]);
+	
+
+ PTPD_TRACE(TRACE_BMC, ptpPortDS," S1 : parent = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]);
 	
 	
 	PTPD_TRACE(TRACE_BMC, ptpPortDS," S1: g-masterIdentity[announce]. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
