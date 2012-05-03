@@ -52,11 +52,15 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 
             link_up = isPortUp(&ptpPortDS->netPath);
 
+//	         PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "8888: lnkstat %d %d\n", link_up, ptpPortDS->linkUP);
+  
 
             if(link_up && !ptpPortDS->linkUP)
                 went_up = TRUE;
             else if(!link_up && ptpPortDS->linkUP)
                 went_down = TRUE;
+
+            ptpPortDS->linkUP = link_up;
 
             if(went_up || ptpPortDS->doRestart)
             {
@@ -64,25 +68,28 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
                 if(!doInit(rtOpts, ptpPortDS))
                     PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(portIndex+1));
 
-								if(ptpPortDS->wrMode == WR_S_ONLY)
+								if(ptpPortDS->wrConfig == WR_S_ONLY)
 									clearForeignMasters(ptpPortDS);
 								ptpPortDS->doRestart = FALSE;
 
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went up.\n", ptpPortDS->netPath.ifaceName);
             } else if(went_down) {
+    						if(ptpPortDS->wrConfig == WR_S_ONLY)
+									clearForeignMasters(ptpPortDS);
+		
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went down.\n", ptpPortDS->netPath.ifaceName);
             }
-
             if(link_up)
             {
             
                 if(ptpPortDS->portState != PTP_INITIALIZING)
                     doState(rtOpts, ptpPortDS);
                 else if(!doInit(rtOpts, ptpPortDS))
-                    return;
+                    PTPD_TRACE(TRACE_ERROR, ptpPortDS,"Port %d failed to doInit()\n",(portIndex+1));
+
+                //    return;
             }
 
-            ptpPortDS->linkUP = link_up;
  
 }
 
@@ -826,6 +833,18 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
 Boolean msgIsFromCurrentParent(MsgHeader *header, PtpPortDS *ptpPortDS)
 {
+/*	PTPD_TRACE(TRACE_BMC, ptpPortDS," msgIsFromCurrentParent: parent = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]);
+
+	PTPD_TRACE(TRACE_BMC, ptpPortDS," msgIsFromCurrentParent: header = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
+      header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
+      header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
+      header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]);
+*/
 	if(!memcmp(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH)
 	   && (ptpPortDS->ptpClockDS->parentPortIdentity.portNumber == header->sourcePortIdentity.portNumber))
 		return TRUE;
