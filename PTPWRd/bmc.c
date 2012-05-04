@@ -15,7 +15,7 @@ void initDataPort(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   PTPD_TRACE(TRACE_BMC, ptpPortDS, "initDataPort\n");
 
-
+	ptpPortDS->doRestart = FALSE;
 	/*init clockIdentity with MAC address and 0xFF and 0xFE. see spec 7.5.2.2.2*/
 	//TODO (11): should be in initDataClock()
 	for (i=0;i<CLOCK_IDENTITY_LENGTH;i++)
@@ -139,6 +139,8 @@ void initDataClock(RunTimeOpts *rtOpts, PtpClockDS *ptpClockDS)
 /*Local clock is becoming Master. Table 13 (9.3.5) of the spec.*/
 void m1(PtpPortDS *ptpPortDS)
 {
+
+#if 0
 	/*Current data set update*/
 	ptpPortDS->ptpClockDS->stepsRemoved = 0;
 	ptpPortDS->ptpClockDS->offsetFromMaster.nanoseconds = 0;
@@ -147,6 +149,7 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->meanPathDelay.seconds = 0;
 
 	/*Parent data set*/
+
 	memcpy(ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity,ptpPortDS->clockIdentity,CLOCK_IDENTITY_LENGTH);
 	ptpPortDS->ptpClockDS->parentPortIdentity.portNumber = 0;
 	ptpPortDS->ptpClockDS->parentStats = DEFAULT_PARENTS_STATS;
@@ -158,6 +161,7 @@ void m1(PtpPortDS *ptpPortDS)
 	ptpPortDS->ptpClockDS->grandmasterClockQuality.offsetScaledLogVariance = ptpPortDS->ptpClockDS->clockQuality.offsetScaledLogVariance;
 	ptpPortDS->ptpClockDS->grandmasterPriority1 = ptpPortDS->ptpClockDS->priority1;
 	ptpPortDS->ptpClockDS->grandmasterPriority2 = ptpPortDS->ptpClockDS->priority2;
+#endif
 
 	/*White Rabbit*/
 	ptpPortDS->parentWrConfig      	= ptpPortDS->wrConfig;
@@ -172,6 +176,7 @@ void m1(PtpPortDS *ptpPortDS)
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber=0;
 }
+
 void m3(PtpPortDS *ptpPortDS)
 {
 	ptpPortDS->wrSlaveRole = NON_SLAVE;
@@ -214,6 +219,19 @@ void s1(MsgHeader *header,MsgAnnounce *announce,PtpPortDS *ptpPortDS)
 	PTPD_TRACE(TRACE_BMC, ptpPortDS," S1: parentWrConfig.......  0x%x\n", ptpPortDS->parentWrConfig);
 	
 	ptpPortDS->ptpClockDS->primarySlavePortNumber	= ptpPortDS->portIdentity.portNumber;
+
+ PTPD_TRACE(TRACE_BMC, ptpPortDS," S1 : announceID = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      header->sourcePortIdentity.clockIdentity[0], header->sourcePortIdentity.clockIdentity[1],
+      header->sourcePortIdentity.clockIdentity[2], header->sourcePortIdentity.clockIdentity[3],
+      header->sourcePortIdentity.clockIdentity[4], header->sourcePortIdentity.clockIdentity[5],
+      header->sourcePortIdentity.clockIdentity[6], header->sourcePortIdentity.clockIdentity[7]);
+	
+
+ PTPD_TRACE(TRACE_BMC, ptpPortDS," S1 : parent = %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[0], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[1],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[2], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[3],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[4], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[5],
+      ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[6], ptpPortDS->ptpClockDS->parentPortIdentity.clockIdentity[7]);
 	
 	
 	PTPD_TRACE(TRACE_BMC, ptpPortDS," S1: g-masterIdentity[announce]. %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
