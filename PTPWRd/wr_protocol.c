@@ -252,12 +252,12 @@ char *printf_bits(UInteger32 bits)
 #ifndef WRPC_EXTRA_SLIM
 char *format_wr_timestamp(wr_timestamp_t ts)
 {
-  char buf[64];
+  static char ts_buf[64];
 
-  snprintf(buf,64, "sec: %lld nsec: %ld ", (long long)ts.utc,
+  snprintf(ts_buf,64, "sec: %lld nsec: %ld ", (long long)ts.utc,
 	   (long) ts.nsec);
 
-  return strdup(buf);
+  return ts_buf;
 }
 #endif
 
