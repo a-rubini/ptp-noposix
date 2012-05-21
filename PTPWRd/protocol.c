@@ -54,6 +54,7 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 
 //	         PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "8888: lnkstat %d %d\n", link_up, ptpPortDS->linkUP);
   
+
             if(link_up && !ptpPortDS->linkUP)
                 went_up = TRUE;
             else if(!link_up && ptpPortDS->linkUP)
@@ -77,6 +78,9 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 									clearForeignMasters(ptpPortDS);
 		
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went down.\n", ptpPortDS->netPath.ifaceName);
+                if(ptpPortDS->wrMode == WR_S_ONLY)
+                	wr_servo_reset();
+                
             }
             if(link_up)
             {

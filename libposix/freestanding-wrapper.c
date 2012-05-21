@@ -1,4 +1,4 @@
-#include<sys/time.h>
+#include<sys/time.h>                                                        \
 #include<board.h>
 #include<timer.h>
 #include<endpoint.h>
@@ -45,7 +45,7 @@ int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
       /*not know what to do here*/
       break; 
     case HEXP_PPSG_CMD_ADJUST_PHASE: 
-      spll_set_phase_shift(0, params->adjust_phase_shift);
+      spll_set_phase_shift(SPLL_ALL_CHANNELS, params->adjust_phase_shift);
 	
       //*(dpll + WRD(DMPLL_REG_PSCR_IN0)) = DMPLL_PSCR_IN0_PS_VAL_W(params->adjust_phase_shift);
       /*something new here*/
@@ -98,9 +98,18 @@ int ptpd_netif_calibrating_enable(int txrx, const char *ifaceName)
   return PTPD_NETIF_OK;
 }
 
-int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName, uint64_t *delta)
+int ptpd_netif_calibrating_poll(int txrx, const char *ifaceName,
+	uint64_t *delta)
 {
-  return PTPD_NETIF_READY;
+	uint64_t delta_rx, delta_tx;
+
+	ptpd_netif_read_calibration_data(ifaceName, &delta_tx, &delta_rx, NULL, NULL);
+	if(txrx == PTPD_NETIF_TX)
+		*delta = delta_tx;
+	else
+		*delta = delta_rx;
+
+	return PTPD_NETIF_READY;
 }
 
 int ptpd_netif_calibration_pattern_enable(const char *ifaceName,
@@ -146,18 +155,18 @@ int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 #endif
   ep_get_deltas( &state->delta_tx, &state->delta_rx);
   read_phase_val(state);
-  state->up            = ep_link_up();
+  state->up            = ep_link_up(NULL);
   state->tx_calibrated = 1;
   state->rx_calibrated = 1;
   state->is_locked     = spll_check_lock(0);
   state->lock_priority = 0;
   spll_get_phase_shift(0, NULL, &state->phase_setpoint);
   state->clock_period  = 8000;
-  state->t2_phase_transition = 0; //1600;
-  state->t4_phase_transition = 0; //1600;
+  state->t2_phase_transition = 7000;
+  state->t4_phase_transition = 7000;
   get_mac_addr(state->hw_addr);
   state->hw_index      = 0;
-  state->fiber_fix_alpha = (int32_t)75124859;
+  state->fiber_fix_alpha = (int32_t)-73622176; /* fixme: from the SFP! */
   
   return 0;
 }
@@ -205,7 +214,7 @@ wr_socket_t *ptpd_netif_create_socket(int sock_type, int flags, wr_sockaddr_t *b
 
   /*tmo_init() in WRSW*/
   sock->dmtd_update_tmo.start_tics = timer_get_tics();
-  sock->dmtd_update_tmo.timeout = 1000; 
+  sock->dmtd_update_tmo.timeout = 100; 
 
   /*packet queue*/
   sock->queue.head = sock->queue.tail = 0;
@@ -227,14 +236,13 @@ int ptpd_netif_close_socket(wr_socket_t *sock)
 int ptpd_netif_get_ifName(char *ifname, int number)
 {
 
-  strcpy(ifname,"wru0");
+  strcpy(ifname, "wr0");
   return PTPD_NETIF_OK;
 }
 
 int ptpd_netif_get_port_state(const char *ifaceName)
 {
-
-  return ep_link_up() ? PTPD_NETIF_OK : PTPD_NETIF_ERROR;
+  return ep_link_up(NULL) ? PTPD_NETIF_OK : PTPD_NETIF_ERROR;
 }
 
 int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
@@ -246,7 +254,8 @@ int ptpd_netif_locking_disable(int txrx, const char *ifaceName, int priority)
 
 int ptpd_netif_locking_enable(int txrx, const char *ifaceName, int priority)
 {
-    spll_init(SPLL_MODE_SLAVE, 0, 1);
+  spll_init(SPLL_MODE_SLAVE, 0, 1);
+  spll_enable_ptracker(0, 1);
   return PTPD_NETIF_OK;
 }
 
@@ -277,8 +286,8 @@ static void update_dmtd(wr_socket_t *sock)
 
 		// FIXME: ccheck if phase value is ready
 		s->dmtd_phase = pstate.phase_val;
-    		s->clock_period = pstate.clock_period;
-        	s->phase_transition = pstate.t2_phase_transition;
+   		s->clock_period = pstate.clock_period;
+       	s->phase_transition = pstate.t2_phase_transition;
 		s->dmtd_update_tmo.start_tics = timer_get_tics();
 	}
 }
@@ -393,11 +402,13 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
      rx_timestamp->raw_ahead = hwts.ahead;
      spll_read_ptracker(0, &rx_timestamp->raw_phase, NULL);
    
-    rx_timestamp->utc   = hwts.utc;
-    rx_timestamp->nsec  = hwts.nsec;
-    rx_timestamp->phase  = 0;
+	 rx_timestamp->utc   = hwts.utc;
+	 rx_timestamp->nsec  = hwts.nsec;
+     rx_timestamp->phase  = 0;
+     rx_timestamp->correct = hwts.valid;
    
-    ptpd_netif_linearize_rx_timestamp(rx_timestamp, my_sock->dmtd_phase, hwts.ahead, my_sock->phase_transition, my_sock->clock_period);
+     ptpd_netif_linearize_rx_timestamp(rx_timestamp, rx_timestamp->raw_phase, hwts.ahead, my_sock->phase_transition, my_sock->clock_period);
+//   		mprintf("Linearize: rawph: %d period: %d ahead: %d postph %d\n", rx_timestamp->raw_phase, hwts.ahead, my_sock->clock_period, rx_timestamp->phase);
 
   }
 
@@ -529,7 +540,7 @@ int update_rx_queues(void)
   return sizeof(uint8_t)+ETH_HEADER_SIZE+recvd+sizeof(struct hw_timestamp);
 }
 
-
+#if 0
 void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
 
@@ -557,6 +568,7 @@ void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
   checkClockClassValidity(ptpPortDS->ptpClockDS);
 }
+#endif
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 				     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
@@ -565,14 +577,17 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
 
 	halexp_get_port_state(&state, ifaceName);
 
-    TRACE_WRAP("ReadCalibrationData:  state.valid %d tx_calibrated %d rx_calibrated %d tx_delta %d rx_delta %x\n", state.valid, state.tx_calibrated, state.rx_calibrated, state.delta_tx, state.delta_rx);
+//    mprintf("ReadCalibrationData:  state.valid %d tx_calibrated %d rx_calibrated %d tx_delta %d rx_delta %d\n", state.valid, state.tx_calibrated, state.rx_calibrated, (int32_t)state.delta_tx, (int32_t)state.delta_rx);
 	// check if the data is available
 	if(state.valid)
 	{
 
-    *fix_alpha = state.fiber_fix_alpha;
+	if(fix_alpha)
+		*fix_alpha = state.fiber_fix_alpha;
+		
     *clock_period = state.clock_period;
 
+		
 		//check if tx is calibrated,
 		// if so read data
 		if(state.tx_calibrated)
@@ -624,16 +639,16 @@ int ptpd_netif_adjust_phase(int32_t phase_ps)
   return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &params);
 }
 
-int ptpd_netif_enable_phase_tracking(const char *if_name)
-{
-  //for WRPC ptracker is enabled once during initialization
-  return PTPD_NETIF_OK;
-}
-
 /*not implemented yet*/
 int ptpd_netif_extsrc_detection()
 {
   return PTPD_NETIF_OK;
+}
+
+int ptpd_netif_get_dmtd_phase(wr_socket_t *sock, int32_t *phase)
+{
+	if(phase)
+		spll_read_ptracker(0, phase, NULL);
 }
 
 char* format_wr_timestamp(wr_timestamp_t ts)
@@ -641,4 +656,9 @@ char* format_wr_timestamp(wr_timestamp_t ts)
   static char buf[10];
   buf[0]='\0';
   return buf;
+}
+
+int ptpd_netif_enable_phase_tracking(const char *if_name) 
+{
+   	return PTPD_NETIF_OK;
 }
