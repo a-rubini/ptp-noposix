@@ -481,9 +481,6 @@ int update_rx_queues(void)
     return -1;
   
   hdr = (ethhdr_t*) (pkg+sizeof(uint8_t));
-  mprintf("%s: %02x:%02x:%02x:%02x:%02x:%02x\n", __FUNCTION__, hdr->dstmac[0], hdr->dstmac[1],hdr->dstmac[2],
-                                                            hdr->dstmac[3],hdr->dstmac[4],hdr->dstmac[5],
-                                                            hdr->dstmac[6],hdr->dstmac[7]);
   /*received frame, find the right socket*/
   
   memcpy(&aligned_ethtype, &hdr->ethtype, 2);
