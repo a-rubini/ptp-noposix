@@ -145,6 +145,14 @@ int read_phase_val(hexp_port_state_t *state)
   return 0;
 }
 
+//static int t2_phase_transition= 7000;
+
+void ptpd_netif_set_phase_transition(wr_socket_t *sock, int phase)
+{
+	struct my_socket *s = (struct my_socket *) sock;
+	s->phase_transition = phase;
+}
+
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
   state->valid         = 1;
@@ -293,9 +301,6 @@ static void update_dmtd(wr_socket_t *sock)
 }
 
 
-static int t_phase_trans = 0;
-
-void set_phase_trans(int t) { t_phase_trans = t; }
 
 void ptpd_netif_linearize_rx_timestamp(wr_timestamp_t *ts, int32_t dmtd_phase, int cntr_ahead, int transition_point, int clock_period)
 {
