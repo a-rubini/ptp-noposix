@@ -662,5 +662,6 @@ char* format_wr_timestamp(wr_timestamp_t ts)
 
 int ptpd_netif_enable_phase_tracking(const char *if_name) 
 {
-   	return PTPD_NETIF_OK;
+  spll_enable_ptracker(0, 1);
+  return PTPD_NETIF_OK;
 }
