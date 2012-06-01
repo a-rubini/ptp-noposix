@@ -592,14 +592,18 @@ int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
     //check if tx is calibrated,
     // if so read data
     if(state.tx_calibrated)
-      *deltaTx = state.delta_tx;
+    {
+      if(deltaTx) *deltaTx = state.delta_tx;
+    }
     else
       return PTPD_NETIF_NOT_FOUND;
 
     //check if rx is calibrated,
     // if so read data
     if(state.rx_calibrated)
-      *deltaRx = state.delta_rx;
+    {
+      if(deltaRx) *deltaRx = state.delta_rx;
+    }
     else
       return PTPD_NETIF_NOT_FOUND;
 
