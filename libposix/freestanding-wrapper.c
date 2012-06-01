@@ -573,39 +573,38 @@ void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 #endif
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
-				     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
+    uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
 {
-	hexp_port_state_t state;
+  hexp_port_state_t state;
 
-	halexp_get_port_state(&state, ifaceName);
+  halexp_get_port_state(&state, ifaceName);
 
-//    mprintf("ReadCalibrationData:  state.valid %d tx_calibrated %d rx_calibrated %d tx_delta %d rx_delta %d\n", state.valid, state.tx_calibrated, state.rx_calibrated, (int32_t)state.delta_tx, (int32_t)state.delta_rx);
-	// check if the data is available
-	if(state.valid)
-	{
+  // check if the data is available
+  if(state.valid)
+  {
 
-	if(fix_alpha)
-		*fix_alpha = state.fiber_fix_alpha;
-		
-    *clock_period = state.clock_period;
+    if(fix_alpha)
+      *fix_alpha = state.fiber_fix_alpha;
 
-		
-		//check if tx is calibrated,
-		// if so read data
-		if(state.tx_calibrated)
-			*deltaTx = state.delta_tx;
-		else
-			return PTPD_NETIF_NOT_FOUND;
+    if(clock_period)
+      *clock_period = state.clock_period;
 
-		//check if rx is calibrated,
-		// if so read data
-		if(state.rx_calibrated)
-			*deltaRx = state.delta_rx;
-		else
-			return PTPD_NETIF_NOT_FOUND;
+    //check if tx is calibrated,
+    // if so read data
+    if(state.tx_calibrated)
+      *deltaTx = state.delta_tx;
+    else
+      return PTPD_NETIF_NOT_FOUND;
 
-	}
-	return PTPD_NETIF_OK;
+    //check if rx is calibrated,
+    // if so read data
+    if(state.rx_calibrated)
+      *deltaRx = state.delta_rx;
+    else
+      return PTPD_NETIF_NOT_FOUND;
+
+  }
+  return PTPD_NETIF_OK;
 
 }
 
