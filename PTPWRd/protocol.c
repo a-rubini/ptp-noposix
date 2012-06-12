@@ -123,7 +123,7 @@ void sharedPortsLoop(PtpPortDS *ptpPortDS)
 
 #ifndef WRPC_EXTRA_SLIM
 
-void multiProtocol(RunTimeOpts *rtOpts,)
+void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 {
     int           i;
     PtpPortDS *    cur;
