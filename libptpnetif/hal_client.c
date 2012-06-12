@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <minipc.h>
 
@@ -84,7 +85,6 @@ int halexp_get_timing_state(hexp_timing_state_t *tstate)
 
 int halexp_client_try_connect(int retries, int timeout)
 {
-	hexp_port_list_t plist;
 	
 	for(;;) {
 		hal_ch = minipc_client_create(WRSW_HAL_SERVER_ADDR, MINIPC_FLAG_VERBOSE);
