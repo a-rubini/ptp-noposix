@@ -705,12 +705,12 @@ int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
 
 	if(adjust_utc)
 	{
-	    cmd = HEXP_PPSG_CMD_ADJUST_UTC;
-	    p.adjust_utc = adjust_utc;
+	    cmd = HEXP_PPSG_CMD_ADJUST_SEC;
+	    p.adjust_sec = adjust_utc;
 	} else {
-        cmd = HEXP_PPSG_CMD_ADJUST_NSEC;
-        p.adjust_nsec = adjust_nsec;
-    }
+      cmd = HEXP_PPSG_CMD_ADJUST_NSEC;
+      p.adjust_nsec = adjust_nsec;
+  }
 
     if(!halexp_pps_cmd(cmd, &p))
         return PTPD_NETIF_OK;

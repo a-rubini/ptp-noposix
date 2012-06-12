@@ -35,16 +35,13 @@
 
 #define HEXP_PPSG_CMD_GET 0
 #define HEXP_PPSG_CMD_ADJUST_PHASE 1
-#define HEXP_PPSG_CMD_ADJUST_UTC 2
+#define HEXP_PPSG_CMD_ADJUST_SEC 2
 #define HEXP_PPSG_CMD_ADJUST_NSEC 3
 #define HEXP_PPSG_CMD_POLL 4
 #define HEXP_PPSG_CMD_SET_VALID 5
 
 #define HEXP_ON 1
 #define HEXP_OFF 0
-
-#define HEXP_HPLL 0
-#define HEXP_DMPLL 1
 
 #define HEXP_FREQ 0
 #define HEXP_PHASE 1
@@ -72,10 +69,10 @@ typedef struct {
   uint32_t current_phase_shift;
   int32_t adjust_phase_shift;
 
-  int64_t adjust_utc;
+  int64_t adjust_sec;
   int32_t adjust_nsec;
 
-  uint64_t current_utc;
+  uint64_t current_sec;
   uint32_t current_nsec;
 
 } hexp_pps_params_t;
