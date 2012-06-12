@@ -254,7 +254,7 @@ char *format_wr_timestamp(wr_timestamp_t ts)
 {
   static char ts_buf[64];
 
-  snprintf(ts_buf,64, "sec: %lld nsec: %ld ", (long long)ts.utc,
+  snprintf(ts_buf,64, "sec: %lld nsec: %ld ", (long long)ts.sec,
 	   (long) ts.nsec);
 
   return ts_buf;

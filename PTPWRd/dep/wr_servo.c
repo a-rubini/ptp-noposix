@@ -40,13 +40,12 @@ void wr_servo_enable_tracking(int enable)
 
 static void dump_timestamp(char *what, wr_timestamp_t ts)
 {
-	//fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
-	fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.utc, ts.nsec, ts.phase);
+	fprintf(stderr, "%s = %d:%d:%d\n", what, (int32_t)ts.sec, ts.nsec, ts.phase);
 }
 
 static int64_t ts_to_picos(wr_timestamp_t ts)
 {
-	return (int64_t) ts.utc * (int64_t)1000000000000LL
+	return (int64_t) ts.sec * (int64_t)1000000000000LL
 		+ (int64_t) ts.nsec * (int64_t)1000LL
 		+ (int64_t) ts.phase;
 }
@@ -60,7 +59,7 @@ static wr_timestamp_t picos_to_ts(int64_t picos)
 	picos = (picos-nsec)/1000000000LL;
 
 	wr_timestamp_t ts;
-	ts.utc = (int64_t) picos;
+	ts.sec = (int64_t) picos;
 	ts.nsec = (int32_t) nsec;
 	ts.phase = (int32_t) phase;
 
@@ -71,7 +70,7 @@ static wr_timestamp_t ts_add(wr_timestamp_t a, wr_timestamp_t b)
 {
 	wr_timestamp_t c;
 
-	c.utc = 0;
+	c.sec = 0;
 	c.nsec = 0;
 
 	c.phase =a.phase + b.phase;
@@ -87,10 +86,10 @@ static wr_timestamp_t ts_add(wr_timestamp_t a, wr_timestamp_t b)
 	while(c.nsec >= 1000000000L)
 	{
 		c.nsec -= 1000000000L;
-		c.utc++;
+		c.sec++;
 	}
 
-	c.utc += (a.utc + b.utc);
+	c.sec += (a.sec + b.sec);
 
 	return c;
 }
@@ -99,7 +98,7 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 {
 	wr_timestamp_t c;
 
-	c.utc = 0;
+	c.sec = 0;
 	c.nsec = 0;
 
 	c.phase = a.phase - b.phase;
@@ -114,10 +113,10 @@ static wr_timestamp_t ts_sub(wr_timestamp_t a, wr_timestamp_t b)
 	while(c.nsec < 0)
 	{
 		c.nsec += 1000000000L;
-		c.utc--;
+		c.sec--;
 	}
 
-	c.utc += a.utc - b.utc;
+	c.sec += a.sec - b.sec;
 
 	return c;
 }
@@ -143,16 +142,16 @@ static wr_timestamp_t ts_hardwarize(wr_timestamp_t ts, int clock_period_ps)
 
 	if(ts.nsec < 0) {
 	 	ts.nsec += 1000000000LL;
-	 	ts.utc--;
+	 	ts.sec--;
 	}
 
-    if(ts.utc == -1 && ts.nsec > 0)
+    if(ts.sec == -1 && ts.nsec > 0)
     {
-        ts.utc++;
+        ts.sec++;
         ts.nsec -= 1000000000LL;
     }
 
-    if(ts.nsec < 0 && ts.nsec >= (-q_threshold) && ts.utc == 0)
+    if(ts.nsec < 0 && ts.nsec >= (-q_threshold) && ts.sec == 0)
     {
         ts.nsec += q_threshold;
         ts.phase -= q_threshold * 1000;
@@ -223,7 +222,7 @@ int wr_servo_init(PtpPortDS *clock)
 wr_timestamp_t timeint_to_wr(TimeInternal t)
 {
 	wr_timestamp_t ts;
-	ts.utc = t.seconds;
+	ts.sec = t.seconds;
 	ts.nsec = t.nanoseconds;
 	ts.phase = t.phase;
 	return ts;
@@ -354,10 +353,10 @@ int wr_servo_update(PtpPortDS *clock)
 	case WR_SYNC_TAI:
     ptpd_netif_enable_timing_output(0);
 
-		if(ts_offset_hw.utc != 0)
+		if(ts_offset_hw.sec != 0)
 		{
-			strcpy(cur_servo_state.slave_servo_state, "SYNC_UTC");
-            ptpd_netif_adjust_counters(ts_offset_hw.utc, 0);
+			strcpy(cur_servo_state.slave_servo_state, "SYNC_SEC");
+            ptpd_netif_adjust_counters(ts_offset_hw.sec, 0);
             ptpd_netif_adjust_phase(0);
 
 			s->next_state = WR_SYNC_NSEC;
@@ -397,7 +396,7 @@ int wr_servo_update(PtpPortDS *clock)
     {
         int64_t remaining_offset = abs(ts_to_picos(ts_offset_hw));
 
-				if(ts_offset_hw.utc !=0 || ts_offset_hw.nsec != 0)
+				if(ts_offset_hw.sec !=0 || ts_offset_hw.nsec != 0)
 					s->state = WR_SYNC_TAI;
         else if(remaining_offset < WR_SERVO_OFFSET_STABILITY_THRESHOLD)
         {
@@ -416,7 +415,7 @@ int wr_servo_update(PtpPortDS *clock)
 		cur_servo_state.cur_setpoint = s->cur_setpoint;
 		cur_servo_state.cur_skew = s->delta_ms - s->delta_ms_prev;
 
-		if(ts_offset_hw.utc !=0 || ts_offset_hw.nsec != 0)
+		if(ts_offset_hw.sec !=0 || ts_offset_hw.nsec != 0)
 				s->state = WR_SYNC_TAI;
 
 		if(tracking_enabled)

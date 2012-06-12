@@ -8,6 +8,7 @@
 * This header file includes all default values used during initialization
 * and enumeration defined in the spec
  */
+#undef PACKED
 #include "ptpd_netif.h"
 
 /**

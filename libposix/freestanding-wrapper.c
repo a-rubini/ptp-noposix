@@ -37,44 +37,6 @@ uint64_t ptpd_netif_get_msec_tics(void)
   return timer_get_tics();
 }
 
-int halexp_pps_cmd(int cmd, hexp_pps_params_t *params)
-{
-  switch(cmd)
-  {
-    case HEXP_PPSG_CMD_GET:
-      /*not know what to do here*/
-      break; 
-    case HEXP_PPSG_CMD_ADJUST_PHASE: 
-      spll_set_phase_shift(SPLL_ALL_CHANNELS, params->adjust_phase_shift);
-	
-      //*(dpll + WRD(DMPLL_REG_PSCR_IN0)) = DMPLL_PSCR_IN0_PS_VAL_W(params->adjust_phase_shift);
-      /*something new here*/
-      break;
-    case HEXP_PPSG_CMD_ADJUST_UTC:
-      pps_gen_adjust_utc((uint32_t)params->adjust_utc);
-      //*(ppsg + WRD(PPSG_REG_ADJ_UTCLO)) = (params->adjust_utc & 0xffffffffLL);
-      //*(ppsg + WRD(PPSG_REG_ADJ_UTCHI)) = (params->adjust_utc >> 32);
-      //*(ppsg + WRD(PPSG_REG_ADJ_NSEC))  = 0x00;
-      //*(ppsg + WRD(PPSG_REG_CR))        = PPSG_CR_CNT_EN | PPSG_CR_PWIDTH_W(PPS_WIDTH) | PPSG_CR_CNT_ADJ;
-      break;
-    case HEXP_PPSG_CMD_ADJUST_NSEC:
-      pps_gen_adjust_nsec(params->adjust_nsec);
-      //*(ppsg + WRD(PPSG_REG_ADJ_UTCLO)) = 0x0;
-      //*(ppsg + WRD(PPSG_REG_ADJ_UTCHI)) = 0x0;
-      //*(ppsg + WRD(PPSG_REG_ADJ_NSEC))  = params->adjust_nsec;
-      //*(ppsg + WRD(PPSG_REG_CR))        = PPSG_CR_CNT_EN | PPSG_CR_PWIDTH_W(PPS_WIDTH) | PPSG_CR_CNT_ADJ;
-      break;
-    case HEXP_PPSG_CMD_POLL:
-      //return ( *(dpll + WRD(DMPLL_REG_PSCR_IN0)) & DMPLL_PSCR_IN0_BUSY ) || 
-      //       ( (*(ppsg + WRD(PPSG_REG_CR)) & PPSG_CR_CNT_ADJ)==PPSG_CR_CNT_ADJ );
-      return pps_gen_busy() || spll_shifter_busy(0);
-      /*add here pll busy to return*/
-      break;
-  }
-
-  return 0;
-}
-
 int ptpd_netif_init()
 {
   memset(wr_sockets, 0, sizeof(wr_sockets));
@@ -407,7 +369,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
      rx_timestamp->raw_ahead = hwts.ahead;
      spll_read_ptracker(0, &rx_timestamp->raw_phase, NULL);
    
-	 rx_timestamp->utc   = hwts.utc;
+	 rx_timestamp->sec   = hwts.sec;
 	 rx_timestamp->nsec  = hwts.nsec;
      rx_timestamp->phase  = 0;
      rx_timestamp->correct = hwts.valid;
@@ -461,7 +423,7 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
   rval = minic_tx_frame(hdr, (uint8_t*)data, data_length + ETH_HEADER_SIZE, &ts);
   
-  tx_ts->utc   = ts.utc;
+  tx_ts->sec   = ts.sec;
   tx_ts->nsec  = ts.nsec;
   tx_ts->phase = 0; //ts.phase;
   tx_ts->correct = ts.valid;
@@ -516,16 +478,6 @@ int update_rx_queues(void)
   memcpy(pkg, &size, sizeof(uint8_t));
   memcpy(pkg+ETH_HEADER_SIZE+recvd+sizeof(uint8_t), &hwts, sizeof(struct hw_timestamp));
   size += sizeof(uint8_t); /*size of data + 1 byte for size itself*/
-  //TRACE_WRAP("storing: ");
-  //for(i=0; i<size; i++)
-  //  TRACE_WRAP("%x ", pkg[i]);
-  //TRACE_WRAP("\n");
-
-  //memcpy(&tstest, pkg+ETH_HEADER_SIZE+recvd+sizeof(uint8_t), sizeof(struct hw_timestamp));
-  //TRACE_WRAP("aabc up: ");
-  //for(i=0;i<size-1;i++)
-  //  TRACE_WRAP("%d ", pkg[i+1]);
-  //TRACE_WRAP("\n%s: %x: %x: %x size=%d, recvd=%d, ETH_HEADER_SIZE=%d\n", "aabc", tstest.utc, tstest.nsec, tstest.phase, size-1, recvd, ETH_HEADER_SIZE);
 
   while(size) 
   {
@@ -541,36 +493,6 @@ int update_rx_queues(void)
   TRACE_WRAP("%s: saved packet to queue\n", __FUNCTION__);
   return sizeof(uint8_t)+ETH_HEADER_SIZE+recvd+sizeof(struct hw_timestamp);
 }
-
-#if 0
-void protocol_nonblock(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
-{
-
-  PTPD_TRACE(TRACE_WRPC, ptpPortDS, "nonblock\n");
-
-  singlePortLoop(rtOpts, ptpPortDS, 0);
-
-  if(ptpPortDS->ptpClockDS->globalStateDecisionEvent)
-  {
-    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"update secondary slaves\n");
-    /* Do after State Decision Even in all the ports */
-    if(globalSecondSlavesUpdate(ptpPortDS) == FALSE)
-      PTPD_TRACE(TRACE_WRPC, ptpPortDS,"no secondary slaves\n");
-    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-  }
-
-  /* Handle Best Master Clock Algorithm globally */
-  if(globalBestForeignMastersUpdate(ptpPortDS))
-  {
-    PTPD_TRACE(TRACE_WRPC, ptpPortDS,"Initiate global State Decision Event\n");
-    ptpPortDS->ptpClockDS->globalStateDecisionEvent = TRUE;
-  }
-  else
-    ptpPortDS->ptpClockDS->globalStateDecisionEvent = FALSE;
-
-  checkClockClassValidity(ptpPortDS->ptpClockDS);
-}
-#endif
 
 int ptpd_netif_read_calibration_data(const char *ifaceName, uint64_t *deltaTx,
     uint64_t *deltaRx, int32_t *fix_alpha, int32_t *clock_period)
@@ -620,28 +542,22 @@ int ptpd_netif_enable_timing_output(int enable)
 
 int ptpd_netif_adjust_in_progress()
 {
-  return halexp_pps_cmd(HEXP_PPSG_CMD_POLL, NULL);
+  return pps_gen_busy() || spll_shifter_busy(0);
 }
 
-int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
+int ptpd_netif_adjust_counters(int64_t adjust_sec, int32_t adjust_nsec)
 {
-  hexp_pps_params_t params;
-
-  params.adjust_utc = adjust_utc;
-  params.adjust_nsec = adjust_nsec;
-
-  if(adjust_utc != 0) halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_UTC, &params);
-  if(adjust_nsec != 0) halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_NSEC, &params);
-
-  return 0;
+	if(adjust_sec)
+	  pps_gen_adjust(PPSG_ADJUST_SEC, adjust_sec);
+	if(adjust_nsec)
+	  pps_gen_adjust(PPSG_ADJUST_NSEC, adjust_nsec);
+	
+	return 0;
 }
 
 int ptpd_netif_adjust_phase(int32_t phase_ps)
 {
-  hexp_pps_params_t params;
-
-  params.adjust_phase_shift = phase_ps;
-  return halexp_pps_cmd(HEXP_PPSG_CMD_ADJUST_PHASE, &params);
+  spll_set_phase_shift(SPLL_ALL_CHANNELS, phase_ps);
 }
 
 /*not implemented yet*/
@@ -658,7 +574,7 @@ int ptpd_netif_get_dmtd_phase(wr_socket_t *sock, int32_t *phase)
 
 char* format_wr_timestamp(wr_timestamp_t ts)
 {
-  static char buf[10];
+  static char buf[1];
   buf[0]='\0';
   return buf;
 }

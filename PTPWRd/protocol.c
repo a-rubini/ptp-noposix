@@ -754,7 +754,7 @@ void handle(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 	* WR: to comply with old PTP daemon work flow
 	* this should go to netRecvMsg
 	*/
-	time.seconds = ptpPortDS->current_rx_ts.utc;
+	time.seconds = ptpPortDS->current_rx_ts.sec;
 	time.nanoseconds = ptpPortDS->current_rx_ts.nsec;
 	// !!!!!!!!!!!!!!!!!
 
@@ -985,7 +985,7 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 				/*
 				* WR: HW timestamps
 				*/
-				ptpPortDS->sync_receive_time.seconds = ptpPortDS->current_rx_ts.utc;
+				ptpPortDS->sync_receive_time.seconds = ptpPortDS->current_rx_ts.sec;
 				ptpPortDS->sync_receive_time.nanoseconds = ptpPortDS->current_rx_ts.nsec;
 				ptpPortDS->sync_receive_time.phase = ptpPortDS->current_rx_ts.phase;
 				ptpPortDS->sync_receive_time.correct = ptpPortDS->current_rx_ts.correct;
@@ -1729,7 +1729,7 @@ void issueFollowup(RunTimeOpts *rtOpts,PtpPortDS *ptpPortDS)
 	else
 	{
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... FOLLOW_UP: succedded [sending time of sync tx: sec = %lld  nanosec = %lld]\n",\
-		(unsigned long long)ptpPortDS->synch_tx_ts.utc,\
+		(unsigned long long)ptpPortDS->synch_tx_ts.sec,\
 		(unsigned long long)ptpPortDS->synch_tx_ts.nsec);
 
 	}
@@ -1847,7 +1847,7 @@ void issuePDelayRespFollowUp(TimeInternal *time,MsgHeader *header,RunTimeOpts *r
 	else
 	{
 		PTPD_TRACE(TRACE_PROTO, ptpPortDS,"issue  ..... PDELAY_RESP_FOLLOW_UP, succedded [sending time of pDelayResp tx]: \n\t\t sec = %lld \n\t\t  nanosec = %lld\n",\
-		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.utc,\
+		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.sec,\
 		(unsigned long long)ptpPortDS->pDelayResp_tx_ts.nsec);
 	}
 }

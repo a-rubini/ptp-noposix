@@ -421,7 +421,7 @@ static void poll_tx_timestamp(wr_socket_t *sock, wr_timestamp_t *tx_timestamp)
 				tx_timestamp->correct = 1;
 				tx_timestamp->phase = 0;
 				tx_timestamp->nsec = sts->hwtimeraw.tv_nsec;
-				tx_timestamp->utc = (uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
+				tx_timestamp->sec = (uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
 			}
 	}
 }
@@ -485,7 +485,7 @@ int ptpd_netif_recvfrom(wr_socket_t *sock, wr_sockaddr_t *from, void *data,
 	{
 		int cntr_ahead = sts->hwtimeraw.tv_sec & 0x80000000 ? 1: 0;
 		rx_timestamp->nsec = sts->hwtimeraw.tv_nsec;
-		rx_timestamp->utc =
+		rx_timestamp->sec =
 			(uint64_t) sts->hwtimeraw.tv_sec & 0x7fffffff;
 
 		rx_timestamp->raw_nsec = sts->hwtimeraw.tv_nsec;
@@ -689,24 +689,24 @@ uint64_t ptpd_netif_get_msec_tics()
 }
 
 
-int ptpd_netif_adjust_counters(int64_t adjust_utc, int32_t adjust_nsec)
+int ptpd_netif_adjust_counters(int64_t adjust_sec, int32_t adjust_nsec)
 {
 	hexp_pps_params_t p;
 	int cmd;
 
-    if(!adjust_nsec && !adjust_utc)
+    if(!adjust_nsec && !adjust_sec)
         return PTPD_NETIF_OK;
 
-	if(adjust_utc && adjust_nsec)
+	if(adjust_sec && adjust_nsec)
 	{
-	    fprintf(stderr, " FATAL : trying to adjust both the UTC and the NS counters simultaneously. \n");
+	    fprintf(stderr, " FATAL : trying to adjust both the SEC and the NS counters simultaneously. \n");
 	    exit(-1);
 	}
 
-	if(adjust_utc)
+	if(adjust_sec)
 	{
 	    cmd = HEXP_PPSG_CMD_ADJUST_SEC;
-	    p.adjust_sec = adjust_utc;
+	    p.adjust_sec = adjust_sec;
 	} else {
       cmd = HEXP_PPSG_CMD_ADJUST_NSEC;
       p.adjust_nsec = adjust_nsec;

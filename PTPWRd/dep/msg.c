@@ -407,8 +407,8 @@ void msgPackFollowUp(void *buf,PtpPortDS *ptpPortDS)
 	*(Integer8*)(buf+33) = ptpPortDS->logSyncInterval;
 
 	/*Follow_up message*/
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32));
-	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->synch_tx_ts.sec >> 32));
+	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->synch_tx_ts.sec);
 	put_be32(buf+40, ptpPortDS->synch_tx_ts.nsec);
 
 	/*
@@ -419,8 +419,8 @@ void msgPackFollowUp(void *buf,PtpPortDS *ptpPortDS)
 	PTPD_TRACE(TRACE_MSG, NULL,"------------ msgPackFollowUp-------\n");
 	PTPD_TRACE(TRACE_MSG, NULL," syncSequenceId ............... %u\n", ptpPortDS->sentSyncSequenceId-1);
 	PTPD_TRACE(TRACE_MSG, NULL," logMinDelayReqInterval ....... %u\n", ptpPortDS->logSyncInterval);
-	PTPD_TRACE(TRACE_MSG, NULL," syncTransTimestamp.secs.hi.... %d\n", (int)(0xFFFF & (ptpPortDS->synch_tx_ts.utc >> 32)));
-	PTPD_TRACE(TRACE_MSG, NULL," syncTransTimestamp.secs.lo.... %d\n", (int)(0xFFFFFFFF & ptpPortDS->synch_tx_ts.utc));
+	PTPD_TRACE(TRACE_MSG, NULL," syncTransTimestamp.secs.hi.... %d\n", (int)(0xFFFF & (ptpPortDS->synch_tx_ts.sec >> 32)));
+	PTPD_TRACE(TRACE_MSG, NULL," syncTransTimestamp.secs.lo.... %d\n", (int)(0xFFFFFFFF & ptpPortDS->synch_tx_ts.sec));
 	PTPD_TRACE(TRACE_MSG, NULL," syncTransTimestamp.nsecs...... %d\n", ptpPortDS->synch_tx_ts.nsec);
 	PTPD_TRACE(TRACE_MSG, NULL,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 
@@ -508,8 +508,8 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	*(Integer8*)(buf+33) = ptpPortDS->logMinDelayReqInterval; //Table 24
 
 	/*Pdelay_resp message*/
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32));
-	put_be32(buf+36, 0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.sec >> 32));
+	put_be32(buf+36, 0xFFFFFFFF & ptpPortDS->current_rx_ts.sec);
 	put_be32(buf+40, ptpPortDS->current_rx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
@@ -522,8 +522,8 @@ void msgPackDelayResp(void *buf,MsgHeader *header,PtpPortDS *ptpPortDS)
 	PTPD_TRACE(TRACE_MSG, NULL," correctionfield.lsb........... %d\n", header->correctionfield.lsb);
 	PTPD_TRACE(TRACE_MSG, NULL," sequenceId ................... %u\n", header->sequenceId);
 	PTPD_TRACE(TRACE_MSG, NULL," logMinDelayReqInterval ....... %u\n", ptpPortDS->logMinDelayReqInterval);
-	PTPD_TRACE(TRACE_MSG, NULL," delayReceiptTimestamp.secs.hi. %d\n", (int)(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32)));
-	PTPD_TRACE(TRACE_MSG, NULL," delayReceiptTimestamp.secs.lo. %d\n", (int)(0xFFFFFFFF & ptpPortDS->current_rx_ts.utc));
+	PTPD_TRACE(TRACE_MSG, NULL," delayReceiptTimestamp.secs.hi. %d\n", (int)(0xFFFF & (ptpPortDS->current_rx_ts.sec >> 32)));
+	PTPD_TRACE(TRACE_MSG, NULL," delayReceiptTimestamp.secs.lo. %d\n", (int)(0xFFFFFFFF & ptpPortDS->current_rx_ts.sec));
 	PTPD_TRACE(TRACE_MSG, NULL," delayReceiptTimestamp.nsecs... %d\n", ptpPortDS->current_rx_ts.nsec);
 	PTPD_TRACE(TRACE_MSG, NULL," requestingSourceUuid.......... %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
 	    header->sourcePortIdentity.clockIdentity[0],
@@ -554,8 +554,8 @@ void msgPackPDelayResp(void *buf,MsgHeader *header,Timestamp *requestReceiptTime
 	*(UInteger8*)(buf+32) = 0x05; //Table 23
 	*(Integer8*)(buf+33) = 0x7F; //Table 24
 
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.utc >> 32 ));
-	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->current_rx_ts.utc);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->current_rx_ts.sec >> 32 ));
+	put_be32(buf+36,0xFFFFFFFF & ptpPortDS->current_rx_ts.sec);
 	put_be32(buf+40, ptpPortDS->current_rx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
@@ -644,8 +644,8 @@ void msgPackPDelayRespFollowUp(void *buf,MsgHeader *header,Timestamp *responseOr
 	*(Integer32*)(buf+8) = flip32(header->correctionfield.msb);
 	*(Integer32*)(buf+12) = flip32(header->correctionfield.lsb);
 
-	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->pDelayResp_tx_ts.utc >> 32));
-	put_be32(buf+36, 0xFFFFFFFF &  ptpPortDS->pDelayResp_tx_ts.utc);
+	*(UInteger16*)(buf+34) = flip16(0xFFFF & (ptpPortDS->pDelayResp_tx_ts.sec >> 32));
+	put_be32(buf+36, 0xFFFFFFFF &  ptpPortDS->pDelayResp_tx_ts.sec);
 	put_be32(buf+40, ptpPortDS->pDelayResp_tx_ts.nsec);
 
 	memcpy((buf+44),header->sourcePortIdentity.clockIdentity,CLOCK_IDENTITY_LENGTH);
