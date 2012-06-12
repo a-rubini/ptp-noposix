@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <unistd.h>
 /*
  * This is a freestanding compilation, and we may miss some data
  * structures. For example misses <stdint.h>. Most likely it's
@@ -55,7 +56,7 @@ static inline void ptpd_handle_wripc() {}
 
 #define printf(x, ...) mprintf(x, ##__VA_ARGS__)
 #define fprintf(file, x, ...) mprintf(x, ##__VA_ARGS__)
-#define sprintf(buf, ...) msprintf(buf, __VA_ARGS__)
+//#define sprintf(buf, ...) msprintf(buf, __VA_ARGS__)
 //#define DBG(x, ...) mprintf(x, ##__VA_ARGS__)
 
 

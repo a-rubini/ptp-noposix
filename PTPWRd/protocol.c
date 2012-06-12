@@ -445,6 +445,10 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   else
     PTPD_TRACE(TRACE_PROTO, ptpPortDS,"wrConfig .............. FORCED configuration\n")  ;
 
+
+	/* Slave-only port reinitialized: reset the servo. FIXME: won't work with multiple slave ports. */
+	if(ptpPortDS->wrConfig == WR_S_ONLY)
+		wr_servo_reset();
   
   /* Create the timers (standard PTP only, the WR ones are created in another function: initWrData) */
   timerInit(&ptpPortDS->timers.sync, "Sync");
