@@ -6,7 +6,7 @@
 void integer64_to_internalTime(Integer64 bigint,TimeInternal *internal)
 {
 	int s_msb;
-	double ns_msb;
+  int64_t ns_msb;
 	int entire;
 	char  *p_lsb,*p_msb;
 	Boolean negative = FALSE;
@@ -33,13 +33,12 @@ void integer64_to_internalTime(Integer64 bigint,TimeInternal *internal)
 
 			/*(2^32 / 10^9) = 4,294967296*/
 			s_msb = 4*bigint.msb;
-			ns_msb = 0.294967296*(double)bigint.msb;
-			entire = (int)ns_msb;
+      ns_msb = (int64_t)bigint.msb*294967296L;
+			entire = ns_msb/1000000000LL;
 			s_msb += entire;
-			ns_msb -= entire;
-			ns_msb *= 1000000000;
-			internal->nanoseconds = internal->nanoseconds + (int)ns_msb;
-			internal->seconds += s_msb;
+			ns_msb %= 1000000000;
+      internal->nanoseconds = internal->nanoseconds + (int32_t)ns_msb;
+      internal->seconds += s_msb;
 			normalizeTime(internal);
 
 	}
@@ -72,11 +71,10 @@ void integer64_to_internalTime(Integer64 bigint,TimeInternal *internal)
 
 			/*(2^32 / 10^9) = 4,294967296*/
 			s_msb = 4*bigint.msb;
-			ns_msb = 0.294967296*(double)bigint.msb;
-			entire = (int)ns_msb;
+      ns_msb = (int64_t)bigint.msb*294967296;
+			entire = ns_msb/1000000000L;
 			s_msb += entire;
-			ns_msb -= entire;
-			ns_msb *= 1000000000;
+			ns_msb %= 1000000000L;
 
 			internal->nanoseconds = internal->nanoseconds + (int)ns_msb;
 			internal->seconds += s_msb;

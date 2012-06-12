@@ -249,4 +249,8 @@ static inline unsigned long pow_2(int exp)
 }
 
 
+void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex);
+void sharedPortsLoop(PtpPortDS *ptpPortDS);
+
 #endif /*PTPD_H_*/
+

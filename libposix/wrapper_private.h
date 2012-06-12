@@ -9,6 +9,9 @@
 #define SOCKS_NUM 3
 #define DMTD_UPDATE_INTERVAL 100
 
+extern int32_t sfp_alpha;
+extern uint32_t cal_phase_transition;
+
 //PACKED struct etherpacket {
 //	struct ethhdr ether;
 //	char data[ETHER_MTU];

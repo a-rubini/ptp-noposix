@@ -78,6 +78,9 @@ void singlePortLoop(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS, int portIndex)
 									clearForeignMasters(ptpPortDS);
 		
                 PTPD_TRACE(TRACE_STARTUP, ptpPortDS, "Port '%s' went down.\n", ptpPortDS->netPath.ifaceName);
+                if(ptpPortDS->wrMode == WR_S_ONLY)
+                	wr_servo_reset();
+                
             }
             if(link_up)
             {
@@ -120,7 +123,7 @@ void sharedPortsLoop(PtpPortDS *ptpPortDS)
 
 #ifndef WRPC_EXTRA_SLIM
 
-void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
+void multiProtocol(RunTimeOpts *rtOpts,)
 {
     int           i;
     PtpPortDS *    cur;
@@ -140,13 +143,13 @@ void multiProtocol(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
 
     for(;;)
     {
-        for (i=0; i < rtOpts->portNumber; i++)
-			singlePortLoop(rtOpts, &ptpPortDS[i], i);
-						
-        sharedPortsLoop(ptpPortDS);
+      for (i=0; i < rtOpts->portNumber; i++)
+        singlePortLoop(rtOpts, &ptpPortDS[i], i);
 
-		ptpd_handle_wripc();
-        usleep(1000);
+      sharedPortsLoop(ptpPortDS);
+
+      ptpd_handle_wripc();
+      usleep(1000);
     }
 
 }
@@ -442,6 +445,10 @@ Boolean doInit(RunTimeOpts *rtOpts, PtpPortDS *ptpPortDS)
   else
     PTPD_TRACE(TRACE_PROTO, ptpPortDS,"wrConfig .............. FORCED configuration\n")  ;
 
+
+	/* Slave-only port reinitialized: reset the servo. FIXME: won't work with multiple slave ports. */
+	if(ptpPortDS->wrConfig == WR_S_ONLY)
+		wr_servo_reset();
   
   /* Create the timers (standard PTP only, the WR ones are created in another function: initWrData) */
   timerInit(&ptpPortDS->timers.sync, "Sync");
