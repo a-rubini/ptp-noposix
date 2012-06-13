@@ -1,29 +1,15 @@
-#include<sys/time.h>                                                        \
-#include<board.h>
-#include<timer.h>
-#include<endpoint.h>
-#include<pps_gen.h>
-#include<minic.h>
-#include<softpll_ng.h>
-#include<types.h>
-#include<errno.h>
-#include"../wrsw_hal/hal_exports.h"
-#include"ptpd_netif.h"
-#include"../PTPWRd/ptpd.h"
-#include"../PTPWRd/datatypes.h"
-
-#include "wrapper_private.h"
-
-#define min(x,y) (x<y ? x : y)
-
-//#define netif_mprintf(...)
-
-//static hal_port_state_t port_state;
-static struct my_socket wr_sockets[SOCKS_NUM];
-
-/* lets save some memory, we are not threaded so ptpd_netif_recvfrom() and update_rx_queues()
- * can share this buffer*/
-static uint8_t pkg[sizeof(uint8_t)+ETH_HEADER_SIZE+MAX_PAYLOAD+sizeof(struct hw_timestamp)];
+#include <sys/time.h>
+#include <board.h>
+#include <timer.h>
+#include <endpoint.h>
+#include <pps_gen.h>
+#include <softpll_ng.h>
+#include <types.h>
+#include <errno.h>
+#include "../wrsw_hal/hal_exports.h"
+#include "ptpd_netif.h"
+#include "../PTPWRd/ptpd.h"
+#include "../PTPWRd/datatypes.h"
 
 int usleep(useconds_t useconds)
 {
@@ -93,6 +79,9 @@ static int read_phase_val(hexp_port_state_t *state)
 
   return 0;
 }
+
+extern int32_t cal_phase_transition;
+extern int32_t sfp_alpha;
 
 int halexp_get_port_state(hexp_port_state_t *state, const char *port_name)
 {
