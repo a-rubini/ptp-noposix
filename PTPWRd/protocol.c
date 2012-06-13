@@ -1010,7 +1010,11 @@ void handleSync(MsgHeader *header, Octet *msgIbuf, ssize_t length, TimeInternal 
 					PTPD_TRACE(TRACE_ERROR, NULL,"BAD !!!!!!!! we don't use this; handle Sync msg, one step clock\n");
 					msgUnpackSync(ptpPortDS->msgIbuf,&ptpPortDS->msgTmp.sync);
 					integer64_to_internalTime(ptpPortDS->msgTmpHeader.correctionfield,&correctionField);
+
+#ifndef WRPC_EXTRA_SLIM
 					timeInternal_display(&correctionField);
+#endif
+
 					ptpPortDS->waitingForFollow = FALSE;
 					toInternalTime(&OriginTimestamp,&ptpPortDS->msgTmp.sync.originTimestamp);
 					updateOffset(&OriginTimestamp,&ptpPortDS->sync_receive_time,&ptpPortDS->ofm_filt,rtOpts,ptpPortDS,&correctionField);

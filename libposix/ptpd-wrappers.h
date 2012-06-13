@@ -52,8 +52,6 @@ extern int usleep(useconds_t usec);
 static inline void ptpd_init_exports() {}
 static inline void ptpd_handle_wripc() {}
 
-#define PPS_WIDTH 1000000
-
 #define printf(x, ...) mprintf(x, ##__VA_ARGS__)
 #define fprintf(file, x, ...) mprintf(x, ##__VA_ARGS__)
 //#define sprintf(buf, ...) msprintf(buf, __VA_ARGS__)
