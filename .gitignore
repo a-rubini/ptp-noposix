@@ -1,3 +1,5 @@
 *.o
 *.a
 *~
+build.sh
+ptpd
