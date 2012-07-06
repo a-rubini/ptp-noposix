@@ -269,11 +269,12 @@ int ptpd_netif_sendto(wr_socket_t *sock, wr_sockaddr_t *to, void *data,
 
   rval = minic_tx_frame((uint8_t *) &hdr, (uint8_t*)data, data_length + ETH_HEADER_SIZE, &hwts);
   
-  tx_timestamp->sec   = hwts.sec;
-  tx_timestamp->nsec  = hwts.nsec;
-  tx_timestamp->phase = 0; 
-  tx_timestamp->correct = hwts.valid;
-  
+  if (tx_timestamp) {
+	  tx_timestamp->sec   = hwts.sec;
+	  tx_timestamp->nsec  = hwts.nsec;
+	  tx_timestamp->phase = 0; 
+	  tx_timestamp->correct = hwts.valid;
+  }
   return rval;
 }
 
